@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>电商大盘及竞争数据 - 多维度可视化</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Microsoft YaHei", sans-serif; margin: 0; padding: 12px; background: #f5f6fa; }
+    h1 { margin: 0 0 8px 0; font-size: 1.4rem; color: #1a1a2e; }
+    .load-bar { margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .load-bar label { cursor: pointer; padding: 6px 12px; background: #4a69bd; color: #fff; border-radius: 6px; font-size: 14px; }
+    .load-bar input[type="file"] { display: none; }
+    .load-bar span { font-size: 13px; color: #666; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 16px; }
+    .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 12px; }
+    .card h3 { margin: 0 0 8px 0; font-size: 14px; color: #2d3436; }
+    .card .chart { width: 100%; height: 320px; }
+    .card.wide { grid-column: 1 / -1; }
+    .card.wide .chart { height: 380px; }
+    .date-range { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; font-size: 13px; }
+    .date-range label { color: #555; }
+    .date-range select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 100px; }
+  </style>
+</head>
+<body>
+  <h1>电商大盘及竞争数据 · 多维度可视化</h1>
+  <div class="load-bar">
+    <label for="dataFile">选择 Excel 文档</label>
+    <input type="file" id="dataFile" accept=".xlsx,.xls,.json" />
+    <span id="loadStatus">请上传电商大盘及竞争数据 Excel（或已导出的 features-output.json）以查看图表。</span>
+  </div>
+  <div class="grid" id="chartGrid">
+    <div class="card"><h3>维度一：渠道对比（销量 / 销售额 / 客单价）</h3><div class="date-range">起始：<select id="dim1Start"></select> 结束：<select id="dim1End"></select></div><div id="chart1" class="chart"></div></div>
+    <div class="card"><h3>维度二：价格段结构（销量占比）</h3><div class="date-range">起始：<select id="dim2Start"></select> 结束：<select id="dim2End"></select></div><div id="chart2" class="chart"></div></div>
+    <div class="card wide"><h3>维度三：大盘时间趋势（销量、销售额、同比）</h3><div id="chart3" class="chart"></div></div>
+    <div class="card wide"><h3>维度四：分渠道销量趋势</h3><div id="chart4" class="chart"></div></div>
+    <div class="card wide"><h3>维度五：价格段销量占比随时间（堆叠面积）</h3><div id="chart5" class="chart"></div></div>
+    <div class="card"><h3>维度六：渠道 × 价格段 销量热力</h3><div id="chart6" class="chart"></div></div>
+    <div class="card"><h3>维度七：指定月份 渠道×价格段 销量</h3><div class="load-bar" style="margin-bottom:8px"><select id="monthSelect"><option value="">选择月份</option></select></div><div id="chart7" class="chart"></div></div>
+    <div class="card"><h3>维度八：各渠道 / 价格段客单价</h3><div id="chart8" class="chart"></div></div>
+    <div class="card wide"><h3>维度九：各渠道销量占比随时间</h3><div id="chart9" class="chart"></div></div>
+    <div class="card"><h3>维度十：渠道销量排名与集中度</h3><div id="chart10" class="chart"></div></div>
+  </div>
+
+  <script>
+    (function () {
+      var charts = {};
+      var dataSource = null;
+
+      // ========== Excel 解析与特征提取（与 extract-features.js 一致） ==========
+      function excelDateToStr(serial) {
+        var utc_days = Math.floor(serial - 25569);
+        var d = new Date(utc_days * 86400 * 1000);
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).length === 1 ? '0' + (d.getMonth() + 1) : (d.getMonth() + 1);
+        var day = String(d.getDate()).length === 1 ? '0' + d.getDate() : d.getDate();
+        return y + '-' + m + '-' + day;
+      }
+      function parseExcelRows(raw) {
+        if (!raw || raw.length < 2) return [];
+        var rows = [];
+        for (var i = 1; i < raw.length; i++) {
+          var r = raw[i];
+          var dateVal = r[2];
+          var dateStr = typeof dateVal === 'number' ? excelDateToStr(dateVal) : String(dateVal || '').slice(0, 10);
+          rows.push({
+            渠道: r[0],
+            价格段: r[1],
+            日期: dateVal,
+            日期_str: dateStr,
+            销量: Number(r[3]) || 0,
+            销售额: Number(r[4]) || 0
+          });
+        }
+        return rows;
+      }
+      var EXCLUDE_PRICE_FOR_AVG = '0-1k';
+      function dimension1_channel(rows) {
+        var totalSales = 0, totalAmount = 0;
+        var byChannel = {}, byChannelExclude01k = {};
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          totalSales += r.销量;
+          totalAmount += r.销售额;
+          if (!byChannel[r.渠道]) byChannel[r.渠道] = { 销量: 0, 销售额: 0 };
+          byChannel[r.渠道].销量 += r.销量;
+          byChannel[r.渠道].销售额 += r.销售额;
+          if (r.价格段 !== EXCLUDE_PRICE_FOR_AVG) {
+            if (!byChannelExclude01k[r.渠道]) byChannelExclude01k[r.渠道] = { 销量: 0, 销售额: 0 };
+            byChannelExclude01k[r.渠道].销量 += r.销量;
+            byChannelExclude01k[r.渠道].销售额 += r.销售额;
+          }
+        }
+        var list = [];
+        for (var ch in byChannel) {
+          var v = byChannel[ch];
+          var ex = byChannelExclude01k[ch] || { 销量: 0, 销售额: 0 };
+          list.push({
+            渠道: ch,
+            销量: v.销量,
+            销售额: v.销售额,
+            销量占比: totalSales ? v.销量 / totalSales : 0,
+            销售额占比: totalAmount ? v.销售额 / totalAmount : 0,
+            客单价: ex.销量 ? ex.销售额 / ex.销量 : 0
+          });
+        }
+        return { 说明: '各渠道销量合计、销售额合计、占比、客单价（客单价已排除0-1k）', 全盘销量合计: totalSales, 全盘销售额合计: totalAmount, 按渠道: list };
+      }
+      function dimension2_priceRange(rows) {
+        var totalSales = 0, totalAmount = 0;
+        var byPrice = {};
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          totalSales += r.销量;
+          totalAmount += r.销售额;
+          if (!byPrice[r.价格段]) byPrice[r.价格段] = { 销量: 0, 销售额: 0 };
+          byPrice[r.价格段].销量 += r.销量;
+          byPrice[r.价格段].销售额 += r.销售额;
+        }
+        var list = [];
+        for (var p in byPrice) {
+          var v = byPrice[p];
+          list.push({
+            价格段: p,
+            销量: v.销量,
+            销售额: v.销售额,
+            销量占比: totalSales ? v.销量 / totalSales : 0,
+            销售额占比: totalAmount ? v.销售额 / totalAmount : 0,
+            销量占比与销售额占比差: totalSales && totalAmount ? v.销量 / totalSales - v.销售额 / totalAmount : 0
+          });
+        }
+        return { 说明: '各价格段销量、销售额、占比', 全盘销量合计: totalSales, 全盘销售额合计: totalAmount, 按价格段: list };
+      }
+      function dimension3_timeTrend(rows) {
+        var byDate = {};
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i], d = r.日期_str;
+          if (!byDate[d]) byDate[d] = { 销量: 0, 销售额: 0 };
+          byDate[d].销量 += r.销量;
+          byDate[d].销售额 += r.销售额;
+        }
+        var dates = Object.keys(byDate).sort();
+        var list = [];
+        for (var i = 0; i < dates.length; i++) {
+          var d = dates[i];
+          var curr = byDate[d];
+          var prev = i > 0 ? byDate[dates[i - 1]] : null;
+          var sameMonthLastYear = null;
+          for (var j = 0; j < dates.length; j++) {
+            var x = dates[j];
+            if (x !== d && x.slice(5) === d.slice(5) && parseInt(x.split('-')[0], 10) === parseInt(d.split('-')[0], 10) - 1) { sameMonthLastYear = x; break; }
+          }
+          var lastYear = sameMonthLastYear ? byDate[sameMonthLastYear] : null;
+          list.push({
+            日期: d,
+            销量: curr.销量,
+            销售额: curr.销售额,
+            销量环比: prev && prev.销量 ? curr.销量 / prev.销量 - 1 : null,
+            销售额环比: prev && prev.销售额 ? curr.销售额 / prev.销售额 - 1 : null,
+            销量同比: lastYear && lastYear.销量 ? curr.销量 / lastYear.销量 - 1 : null,
+            销售额同比: lastYear && lastYear.销售额 ? curr.销售额 / lastYear.销售额 - 1 : null
+          });
+        }
+        return { 说明: '全盘月度销量、销售额、环比/同比', 按日期: list };
+      }
+      function dimension4_channelTime(rows) {
+        var byChannelDate = {}, byDateTotal = {}, byDateTotalAmount = {};
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          var key = r.渠道 + '\t' + r.日期_str;
+          if (!byChannelDate[key]) byChannelDate[key] = { 渠道: r.渠道, 日期: r.日期_str, 销量: 0, 销售额: 0 };
+          byChannelDate[key].销量 += r.销量;
+          byChannelDate[key].销售额 += r.销售额;
+          byDateTotal[r.日期_str] = (byDateTotal[r.日期_str] || 0) + r.销量;
+          byDateTotalAmount[r.日期_str] = (byDateTotalAmount[r.日期_str] || 0) + r.销售额;
+        }
+        var list = [];
+        for (var k in byChannelDate) {
+          var v = byChannelDate[k];
+          list.push({
+            渠道: v.渠道,
+            日期: v.日期,
+            销量: v.销量,
+            销售额: v.销售额,
+            当月全盘销量: byDateTotal[v.日期] || 0,
+            当月全盘销售额: byDateTotalAmount[v.日期] || 0,
+            当月销量占比: byDateTotal[v.日期] ? v.销量 / byDateTotal[v.日期] : 0,
+            当月销售额占比: byDateTotalAmount[v.日期] ? v.销售额 / byDateTotalAmount[v.日期] : 0
+          });
+        }
+        return { 说明: '各渠道按月销量、销售额及当月占比', 按渠道与日期: list };
+      }
+      function dimension5_priceTime(rows) {
+        var byPriceDate = {}, byDateTotal = {}, byDateTotalAmount = {};
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          var key = r.价格段 + '\t' + r.日期_str;
+          if (!byPriceDate[key]) byPriceDate[key] = { 价格段: r.价格段, 日期: r.日期_str, 销量: 0, 销售额: 0 };
+          byPriceDate[key].销量 += r.销量;
+          byPriceDate[key].销售额 += r.销售额;
+          byDateTotal[r.日期_str] = (byDateTotal[r.日期_str] || 0) + r.销量;
+          byDateTotalAmount[r.日期_str] = (byDateTotalAmount[r.日期_str] || 0) + r.销售额;
+        }
+        var list = [];
+        for (var k in byPriceDate) {
+          var v = byPriceDate[k];
+          list.push({
+            价格段: v.价格段,
+            日期: v.日期,
+            销量: v.销量,
+            销售额: v.销售额,
+            当月销量占比: byDateTotal[v.日期] ? v.销量 / byDateTotal[v.日期] : 0,
+            当月销售额占比: byDateTotalAmount[v.日期] ? v.销售额 / byDateTotalAmount[v.日期] : 0
+          });
+        }
+        return { 说明: '各价格段月度销量、销售额及当月占比', 按价格段与日期: list };
+      }
+      function dimension6_channelPrice(rows) {
+        var byChannel = {}, byChannelAmount = {}, byKey = {};
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          byChannel[r.渠道] = (byChannel[r.渠道] || 0) + r.销量;
+          byChannelAmount[r.渠道] = (byChannelAmount[r.渠道] || 0) + r.销售额;
+          var key = r.渠道 + '\t' + r.价格段;
+          if (!byKey[key]) byKey[key] = { 渠道: r.渠道, 价格段: r.价格段, 销量: 0, 销售额: 0 };
+          byKey[key].销量 += r.销量;
+          byKey[key].销售额 += r.销售额;
+        }
+        var list = [];
+        for (var k in byKey) {
+          var v = byKey[k];
+          var 客单价 = v.价格段 === EXCLUDE_PRICE_FOR_AVG ? null : (v.销量 ? v.销售额 / v.销量 : 0);
+          list.push({
+            渠道: v.渠道,
+            价格段: v.价格段,
+            销量: v.销量,
+            销售额: v.销售额,
+            客单价: 客单价,
+            渠道内销量占比: byChannel[v.渠道] ? v.销量 / byChannel[v.渠道] : 0,
+            渠道内销售额占比: byChannelAmount[v.渠道] ? v.销售额 / byChannelAmount[v.渠道] : 0
+          });
+        }
+        return { 说明: '各渠道在各价格段的销量、销售额、客单价（0-1k不参与）、渠道内占比', 按渠道与价格段: list };
+      }
+      function dimension7_channelPriceTime(rows) {
+        var byDateTotal = {}, byDateTotalAmount = {}, byKey = {};
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          byDateTotal[r.日期_str] = (byDateTotal[r.日期_str] || 0) + r.销量;
+          byDateTotalAmount[r.日期_str] = (byDateTotalAmount[r.日期_str] || 0) + r.销售额;
+          var key = r.渠道 + '\t' + r.价格段 + '\t' + r.日期_str;
+          if (!byKey[key]) byKey[key] = { 渠道: r.渠道, 价格段: r.价格段, 日期: r.日期_str, 销量: 0, 销售额: 0 };
+          byKey[key].销量 += r.销量;
+          byKey[key].销售额 += r.销售额;
+        }
+        var list = [];
+        for (var k in byKey) {
+          var v = byKey[k];
+          list.push({
+            渠道: v.渠道,
+            价格段: v.价格段,
+            日期: v.日期,
+            销量: v.销量,
+            销售额: v.销售额,
+            当月销量占比: byDateTotal[v.日期] ? v.销量 / byDateTotal[v.日期] : 0,
+            当月销售额占比: byDateTotalAmount[v.日期] ? v.销售额 / byDateTotalAmount[v.日期] : 0
+          });
+        }
+        return { 说明: '各渠道×价格段×日期的月度销量、销售额及当月占比', 按渠道与价格段与日期: list };
+      }
+      function dimension8_avgPrice(rows) {
+        var d1 = dimension1_channel(rows);
+        var d2 = dimension2_priceRange(rows);
+        var d6 = dimension6_channelPrice(rows);
+        var byDate = {};
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          if (r.价格段 === EXCLUDE_PRICE_FOR_AVG) continue;
+          if (!byDate[r.日期_str]) byDate[r.日期_str] = { 销量: 0, 销售额: 0 };
+          byDate[r.日期_str].销量 += r.销量;
+          byDate[r.日期_str].销售额 += r.销售额;
+        }
+        var dates = Object.keys(byDate).sort();
+        var 按时间客单价 = [];
+        for (var i = 0; i < dates.length; i++) {
+          var 日期 = dates[i], v = byDate[日期];
+          按时间客单价.push({ 日期: 日期, 销量: v.销量, 销售额: v.销售额, 客单价: v.销量 ? v.销售额 / v.销量 : 0 });
+        }
+        var 按价格段列表 = [];
+        for (var i = 0; i < d2.按价格段.length; i++) {
+          var x = d2.按价格段[i];
+          if (x.价格段 === EXCLUDE_PRICE_FOR_AVG) continue;
+          按价格段列表.push({ 价格段: x.价格段, 客单价: x.销量 ? x.销售额 / x.销量 : 0 });
+        }
+        var 按渠道与价格段列表 = [];
+        for (var i = 0; i < d6.按渠道与价格段.length; i++) {
+          var x = d6.按渠道与价格段[i];
+          if (x.价格段 === EXCLUDE_PRICE_FOR_AVG) continue;
+          按渠道与价格段列表.push({ 渠道: x.渠道, 价格段: x.价格段, 客单价: x.客单价 });
+        }
+        return {
+          说明: '各维度下客单价（全部已排除0-1k）',
+          按渠道: d1.按渠道.map(function(x) { return { 渠道: x.渠道, 客单价: x.客单价 }; }),
+          按价格段: 按价格段列表,
+          按渠道与价格段: 按渠道与价格段列表,
+          按时间: 按时间客单价
+        };
+      }
+      function dimension9_shareGrowth(rows) {
+        var d4 = dimension4_channelTime(rows);
+        var d5 = dimension5_priceTime(rows);
+        var byDateChannel = {};
+        for (var i = 0; i < d4.按渠道与日期.length; i++) {
+          var v = d4.按渠道与日期[i];
+          if (!byDateChannel[v.日期]) byDateChannel[v.日期] = {};
+          byDateChannel[v.日期][v.渠道] = v.当月销量占比;
+        }
+        var dates = Object.keys(byDateChannel).sort();
+        var 渠道销量占比随时间 = [];
+        for (var i = 0; i < dates.length; i++) {
+          var d = dates[i], prev = i > 0 ? byDateChannel[dates[i - 1]] : null;
+          for (var ch in byDateChannel[d]) {
+            var 占比 = byDateChannel[d][ch];
+            渠道销量占比随时间.push({
+              日期: d,
+              渠道: ch,
+              销量占比: 占比,
+              销量占比环比: prev && prev[ch] != null && prev[ch] !== 0 ? 占比 / prev[ch] - 1 : null
+            });
+          }
+        }
+        var byDatePrice = {};
+        for (var i = 0; i < d5.按价格段与日期.length; i++) {
+          var v = d5.按价格段与日期[i];
+          if (!byDatePrice[v.日期]) byDatePrice[v.日期] = {};
+          byDatePrice[v.日期][v.价格段] = v.当月销量占比;
+        }
+        var 价格段销量占比随时间 = [];
+        for (var i = 0; i < dates.length; i++) {
+          var d = dates[i], prev = i > 0 ? byDatePrice[dates[i - 1]] : null;
+          var o = byDatePrice[d] || {};
+          for (var p in o) {
+            价格段销量占比随时间.push({
+              日期: d,
+              价格段: p,
+              销量占比: o[p],
+              销量占比环比: prev && prev[p] != null && prev[p] !== 0 ? o[p] / prev[p] - 1 : null
+            });
+          }
+        }
+        return { 说明: '各渠道/价格段按月占比及占比环比', 渠道销量占比随时间: 渠道销量占比随时间, 价格段销量占比随时间: 价格段销量占比随时间 };
+      }
+      function dimension10_ranking(rows) {
+        var d1 = dimension1_channel(rows);
+        var d2 = dimension2_priceRange(rows);
+        var byChannel = d1.按渠道.slice().sort(function(a, b) { return b.销量 - a.销量; });
+        var totalSales = d1.全盘销量合计, totalAmount = d1.全盘销售额合计;
+        var sumS = 0, sumA = 0;
+        var 渠道按销量排名 = [];
+        for (var i = 0; i < byChannel.length; i++) {
+          var x = byChannel[i];
+          sumS += x.销量;
+          sumA += x.销售额;
+          渠道按销量排名.push({
+            排名: i + 1,
+            渠道: x.渠道,
+            销量: x.销量,
+            销售额: x.销售额,
+            销量占比: x.销量占比,
+            CRn_销量: totalSales ? sumS / totalSales : 0,
+            CRn_销售额: totalAmount ? sumA / totalAmount : 0
+          });
+        }
+        var 渠道按销售额排名 = d1.按渠道.slice().sort(function(a, b) { return b.销售额 - a.销售额; }).map(function(x, i) {
+          return { 排名: i + 1, 渠道: x.渠道, 销售额: x.销售额, 销量: x.销量 };
+        });
+        var byPrice = d2.按价格段.slice().sort(function(a, b) { return b.销量 - a.销量; });
+        var sumPS = 0, sumPA = 0;
+        var 价格段按销量排名 = [];
+        for (var i = 0; i < byPrice.length; i++) {
+          var x = byPrice[i];
+          sumPS += x.销量;
+          sumPA += x.销售额;
+          价格段按销量排名.push({
+            排名: i + 1,
+            价格段: x.价格段,
+            销量: x.销量,
+            销售额: x.销售额,
+            销量占比: x.销量占比,
+            CRn_销量: d2.全盘销量合计 ? sumPS / d2.全盘销量合计 : 0,
+            CRn_销售额: d2.全盘销售额合计 ? sumPA / d2.全盘销售额合计 : 0
+          });
+        }
+        var cr1 = 渠道按销量排名[0], cr2 = 渠道按销量排名[1], cr3 = 渠道按销量排名[2];
+        return {
+          说明: '渠道/价格段 销量与销售额排名、CR1/CR2/CR3',
+          渠道按销量排名: 渠道按销量排名,
+          渠道按销售额排名: 渠道按销售额排名,
+          价格段按销量排名: 价格段按销量排名,
+          渠道集中度: {
+            CR1_销量: cr1 ? cr1.CRn_销量 : 0,
+            CR2_销量: cr2 ? 渠道按销量排名[1].CRn_销量 : 0,
+            CR3_销量: cr3 ? 渠道按销量排名[2].CRn_销量 : 0,
+            CR1_销售额: cr1 ? cr1.CRn_销售额 : 0,
+            CR2_销售额: cr2 ? 渠道按销量排名[1].CRn_销售额 : 0,
+            CR3_销售额: cr3 ? 渠道按销量排名[2].CRn_销售额 : 0
+          },
+          价格段集中度: {
+            CR1_销量: 价格段按销量排名[0] ? 价格段按销量排名[0].CRn_销量 : 0,
+            CR2_销量: 价格段按销量排名[1] ? 价格段按销量排名[1].CRn_销量 : 0,
+            CR3_销量: 价格段按销量排名[2] ? 价格段按销量排名[2].CRn_销量 : 0
+          }
+        };
+      }
+      function parseExcelAndExtract(arrayBuffer, fileName) {
+        var wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+        var sheetName = wb.SheetNames[0];
+        var raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 });
+        var rows = parseExcelRows(raw);
+        return {
+          数据说明: { 数据源: fileName || 'Excel', 提取时间: new Date().toISOString(), 原始行数: rows.length },
+          维度一_渠道维度: dimension1_channel(rows),
+          维度二_价格段维度: dimension2_priceRange(rows),
+          维度三_时间趋势: dimension3_timeTrend(rows),
+          维度四_渠道与时间: dimension4_channelTime(rows),
+          维度五_价格段与时间: dimension5_priceTime(rows),
+          维度六_渠道与价格段: dimension6_channelPrice(rows),
+          维度七_渠道与价格段与时间: dimension7_channelPriceTime(rows),
+          维度八_客单价衍生: dimension8_avgPrice(rows),
+          维度九_增长与占比: dimension9_shareGrowth(rows),
+          维度十_集中度与排名: dimension10_ranking(rows)
+        };
+      }
+
+      function formatNum(n) {
+        if (n == null) return '-';
+        if (n >= 1e8) return (n / 1e8).toFixed(2) + '亿';
+        if (n >= 1e4) return (n / 1e4).toFixed(2) + '万';
+        if (Math.abs(n) <= 1 && n !== 0) return (n * 100).toFixed(2) + '%';
+        return Number(n).toLocaleString();
+      }
+
+      function getDateList() {
+        var d = dataSource && dataSource['维度三_时间趋势'] && dataSource['维度三_时间趋势'].按日期;
+        if (!d || !d.length) return [];
+        var arr = d.map(function (r) { return r.日期; }).filter(Boolean);
+        arr.sort();
+        return arr;
+      }
+
+      function initDateRangeSelects() {
+        var dates = getDateList();
+        var opts = dates.map(function (dt) { return '<option value="' + dt + '">' + (dt ? dt.slice(0, 7) : dt) + '</option>'; });
+        var html = '<option value="">全量</option>' + opts.join('');
+        var dim1Start = document.getElementById('dim1Start');
+        var dim1End = document.getElementById('dim1End');
+        var dim2Start = document.getElementById('dim2Start');
+        var dim2End = document.getElementById('dim2End');
+        if (dim1Start) { dim1Start.innerHTML = html; if (dates.length) { dim1Start.value = dates[0]; dim1End.value = dates[dates.length - 1]; } }
+        if (dim1End) dim1End.innerHTML = html;
+        if (dim2Start) { dim2Start.innerHTML = html; if (dates.length) { dim2Start.value = dates[0]; dim2End.value = dates[dates.length - 1]; } }
+        if (dim2End) dim2End.innerHTML = html;
+      }
+
+      function bindDateRangeChange() {
+        var dim1Start = document.getElementById('dim1Start');
+        var dim1End = document.getElementById('dim1End');
+        var dim2Start = document.getElementById('dim2Start');
+        var dim2End = document.getElementById('dim2End');
+        function onDim1() { render1(); }
+        function onDim2() { render2(); }
+        if (dim1Start) dim1Start.onchange = onDim1;
+        if (dim1End) dim1End.onchange = onDim1;
+        if (dim2Start) dim2Start.onchange = onDim2;
+        if (dim2End) dim2End.onchange = onDim2;
+      }
+
+      function renderAll() {
+        if (!dataSource) return;
+        initDateRangeSelects();
+        bindDateRangeChange();
+        render1();
+        render2();
+        render3();
+        render4();
+        render5();
+        render6();
+        render7();
+        render8();
+        render9();
+        render10();
+      }
+
+      // 维度一：渠道 - 柱状图（销量、销售额）+ 右轴客单价，支持时间范围
+      function render1() {
+        var startVal = document.getElementById('dim1Start') && document.getElementById('dim1Start').value;
+        var endVal = document.getElementById('dim1End') && document.getElementById('dim1End').value;
+        var list;
+        if (startVal && endVal && startVal <= endVal) {
+          var d7 = dataSource['维度七_渠道与价格段与时间'];
+          if (!d7 || !d7.按渠道与价格段与日期) return;
+          var raw = d7.按渠道与价格段与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          var byCh = {};
+          var byChExclude01k = {};
+          raw.forEach(function (r) {
+            if (!byCh[r.渠道]) byCh[r.渠道] = { 销量: 0, 销售额: 0 };
+            byCh[r.渠道].销量 += r.销量;
+            byCh[r.渠道].销售额 += r.销售额;
+            if (r.价格段 !== '0-1k') {
+              if (!byChExclude01k[r.渠道]) byChExclude01k[r.渠道] = { 销量: 0, 销售额: 0 };
+              byChExclude01k[r.渠道].销量 += r.销量;
+              byChExclude01k[r.渠道].销售额 += r.销售额;
+            }
+          });
+          var totalS = 0, totalA = 0;
+          Object.keys(byCh).forEach(function (ch) { totalS += byCh[ch].销量; totalA += byCh[ch].销售额; });
+          list = Object.entries(byCh).map(function (entry) {
+            var ch = entry[0], v = entry[1];
+            var ex = byChExclude01k[ch] || { 销量: 0, 销售额: 0 };
+            return {
+              渠道: ch,
+              销量: v.销量,
+              销售额: v.销售额,
+              销量占比: totalS ? v.销量 / totalS : 0,
+              销售额占比: totalA ? v.销售额 / totalA : 0,
+              客单价: ex.销量 ? ex.销售额 / ex.销量 : 0
+            };
+          });
+        } else {
+          var d = dataSource['维度一_渠道维度'];
+          if (!d || !d.按渠道) return;
+          list = d.按渠道;
+        }
+        var x = list.map(function (r) { return r.渠道; });
+        var s1 = list.map(function (r) { return r.销量; });
+        var s2 = list.map(function (r) { return r.销售额; });
+        var s3 = list.map(function (r) { return r.客单价; });
+        var opt = {
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+          legend: { data: ['销量', '销售额', '客单价'], top: 6, left: 'center' },
+          grid: { left: 60, right: 56, top: 40, bottom: 44 },
+          xAxis: { type: 'category', data: x },
+          yAxis: [
+            { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
+            { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } }
+          ],
+          series: [
+            { name: '销量', type: 'bar', data: s1 },
+            { name: '销售额', type: 'bar', data: s2 },
+            { name: '客单价', type: 'line', yAxisIndex: 1, data: s3 }
+          ]
+        };
+        if (!charts.chart1) charts.chart1 = echarts.init(document.getElementById('chart1'));
+        charts.chart1.setOption(opt, true);
+      }
+
+      // 维度二：价格段 - 饼图（销量占比），支持时间范围
+      function render2() {
+        var startVal = document.getElementById('dim2Start') && document.getElementById('dim2Start').value;
+        var endVal = document.getElementById('dim2End') && document.getElementById('dim2End').value;
+        var list;
+        if (startVal && endVal && startVal <= endVal) {
+          var d5 = dataSource['维度五_价格段与时间'];
+          if (!d5 || !d5.按价格段与日期) return;
+          var raw = d5.按价格段与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          var byPr = {};
+          raw.forEach(function (r) {
+            if (!byPr[r.价格段]) byPr[r.价格段] = 0;
+            byPr[r.价格段] += r.销量;
+          });
+          var total = 0;
+          Object.keys(byPr).forEach(function (p) { total += byPr[p]; });
+          list = Object.entries(byPr).map(function (entry) {
+            return { name: entry[0], value: entry[1] };
+          });
+        } else {
+          var d = dataSource['维度二_价格段维度'];
+          if (!d || !d.按价格段) return;
+          list = d.按价格段.map(function (r) {
+            return { name: r.价格段, value: r.销量 };
+          });
+        }
+        var opt = {
+          tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+          legend: { orient: 'vertical', right: 8, top: 'center' },
+          series: [{ type: 'pie', radius: ['40%', '70%'], data: list, emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' } } }]
+        };
+        if (!charts.chart2) charts.chart2 = echarts.init(document.getElementById('chart2'));
+        charts.chart2.setOption(opt, true);
+      }
+
+      // 维度三：时间趋势 - 折线（销量、销售额、同比）
+      function render3() {
+        var d = dataSource['维度三_时间趋势'];
+        if (!d || !d.按日期) return;
+        var list = d.按日期;
+        var x = list.map(function (r) { return r.日期; });
+        var s1 = list.map(function (r) { return r.销量; });
+        var s2 = list.map(function (r) { return r.销售额; });
+        var s3 = list.map(function (r) { return r.销量同比 != null ? (r.销量同比 * 100) : null; });
+        var opt = {
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['销量', '销售额', '销量同比(%)'], top: 6, left: 'center' },
+          grid: { left: 56, right: 56, top: 40, bottom: 72 },
+          xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          yAxis: [
+            { type: 'value', name: '销量/销售额', axisLabel: { formatter: formatNum } },
+            { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return v + '%'; } } }
+          ],
+          series: [
+            { name: '销量', type: 'line', data: s1, smooth: true },
+            { name: '销售额', type: 'line', data: s2, smooth: true },
+            { name: '销量同比(%)', type: 'line', yAxisIndex: 1, data: s3, smooth: true }
+          ]
+        };
+        if (!charts.chart3) charts.chart3 = echarts.init(document.getElementById('chart3'));
+        charts.chart3.setOption(opt, true);
+      }
+
+      // 维度四：渠道×时间 - 多系列折线（各渠道销量）
+      function render4() {
+        var d = dataSource['维度四_渠道与时间'];
+        if (!d || !d.按渠道与日期) return;
+        var raw = d.按渠道与日期;
+        var channels = [];
+        var byCh = {};
+        raw.forEach(function (r) {
+          if (byCh[r.渠道] === undefined) { byCh[r.渠道] = {}; channels.push(r.渠道); }
+          byCh[r.渠道][r.日期] = r.销量;
+        });
+        var dates = [];
+        var seen = {};
+        raw.forEach(function (r) {
+          if (!seen[r.日期]) { seen[r.日期] = true; dates.push(r.日期); }
+        });
+        dates.sort();
+        var series = channels.map(function (ch) {
+          return { name: ch, type: 'line', data: dates.map(function (dt) { return byCh[ch][dt] != null ? byCh[ch][dt] : null; }), smooth: true };
+        });
+        var opt = {
+          tooltip: { trigger: 'axis' },
+          legend: { data: channels, top: 6, left: 'center' },
+          grid: { left: 56, right: 24, top: 40, bottom: 72 },
+          xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          yAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
+          series: series
+        };
+        if (!charts.chart4) charts.chart4 = echarts.init(document.getElementById('chart4'));
+        charts.chart4.setOption(opt, true);
+      }
+
+      // 维度五：价格段×时间 - 堆叠面积（各价格段销量占比）
+      function render5() {
+        var d = dataSource['维度五_价格段与时间'];
+        if (!d || !d.按价格段与日期) return;
+        var raw = d.按价格段与日期;
+        var priceRanges = [];
+        var byPr = {};
+        raw.forEach(function (r) {
+          if (byPr[r.价格段] === undefined) { byPr[r.价格段] = {}; priceRanges.push(r.价格段); }
+          byPr[r.价格段][r.日期] = (r.当月销量占比 || 0) * 100;
+        });
+        var dates = [];
+        var seen = {};
+        raw.forEach(function (r) {
+          if (!seen[r.日期]) { seen[r.日期] = true; dates.push(r.日期); }
+        });
+        dates.sort();
+        var colors = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272'];
+        var series = priceRanges.map(function (pr, i) {
+          return {
+            name: pr,
+            type: 'line',
+            stack: 'total',
+            areaStyle: { color: colors[i % colors.length] },
+            data: dates.map(function (dt) { return byPr[pr][dt] != null ? byPr[pr][dt] : null; })
+          };
+        });
+        var opt = {
+          tooltip: { trigger: 'axis' },
+          legend: { data: priceRanges, top: 6, left: 'center' },
+          grid: { left: 56, right: 24, top: 40, bottom: 72 },
+          xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
+          series: series
+        };
+        if (!charts.chart5) charts.chart5 = echarts.init(document.getElementById('chart5'));
+        charts.chart5.setOption(opt, true);
+      }
+
+      // 维度六：渠道×价格段 - 热力图
+      function render6() {
+        var d = dataSource['维度六_渠道与价格段'];
+        if (!d || !d.按渠道与价格段) return;
+        var raw = d.按渠道与价格段;
+        var channels = [];
+        var prices = [];
+        var byCh = {}, byPr = {};
+        raw.forEach(function (r) {
+          if (byCh[r.渠道] === undefined) { byCh[r.渠道] = true; channels.push(r.渠道); }
+          if (byPr[r.价格段] === undefined) { byPr[r.价格段] = true; prices.push(r.价格段); }
+        });
+        var orderPr = ['0-1k','1-2k','2-3k','3-4k','4-6k','6k以上'];
+        prices = orderPr.filter(function (p) { return byPr[p]; });
+        var data = [];
+        raw.forEach(function (r) {
+          var j = channels.indexOf(r.渠道);
+          var i = prices.indexOf(r.价格段);
+          if (i >= 0 && j >= 0) data.push([i, j, r.销量]);
+        });
+        var opt = {
+          tooltip: { position: 'top', formatter: function (params) { return prices[params.data[0]] + ' / ' + channels[params.data[1]] + ': ' + formatNum(params.data[2]); } },
+          grid: { left: 80, right: 120, top: 24, bottom: 48 },
+          xAxis: { type: 'category', data: prices, splitArea: { show: false } },
+          yAxis: { type: 'category', data: channels, splitArea: { show: false } },
+          visualMap: { min: 0, max: Math.max.apply(null, data.map(function (x) { return x[2]; })), calculable: true, orient: 'horizontal', left: 'center', bottom: 8, inRange: { color: ['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] } },
+          series: [{ type: 'heatmap', data: data, label: { show: false }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } } }]
+        };
+        if (!charts.chart6) charts.chart6 = echarts.init(document.getElementById('chart6'));
+        charts.chart6.setOption(opt, true);
+      }
+
+      // 维度七：渠道×价格段×时间 - 选择月份后该月热力图
+      function render7() {
+        var d = dataSource['维度七_渠道与价格段与时间'];
+        if (!d || !d.按渠道与价格段与日期) return;
+        var raw = d.按渠道与价格段与日期;
+        var dates = [];
+        var seen = {};
+        raw.forEach(function (r) {
+          if (!seen[r.日期]) { seen[r.日期] = true; dates.push(r.日期); }
+        });
+        dates.sort();
+        var sel = document.getElementById('monthSelect');
+        sel.innerHTML = '<option value="">选择月份</option>' + dates.map(function (dt) { return '<option value="' + dt + '">' + dt.slice(0, 7) + '</option>'; }).join('');
+        if (dates.length) sel.value = dates[dates.length - 1];
+        sel.onchange = function () { render7Heatmap(raw, sel.value); };
+        render7Heatmap(raw, sel.value);
+      }
+      function render7Heatmap(raw, date) {
+        if (!date) return;
+        var list = raw.filter(function (r) { return r.日期 === date; });
+        var channels = [];
+        var prices = [];
+        var byCh = {}, byPr = {};
+        list.forEach(function (r) {
+          if (byCh[r.渠道] === undefined) { byCh[r.渠道] = true; channels.push(r.渠道); }
+          if (byPr[r.价格段] === undefined) { byPr[r.价格段] = true; prices.push(r.价格段); }
+        });
+        var orderPr = ['0-1k','1-2k','2-3k','3-4k','4-6k','6k以上'];
+        prices = orderPr.filter(function (p) { return byPr[p]; });
+        var data = [];
+        list.forEach(function (r) {
+          var j = channels.indexOf(r.渠道);
+          var i = prices.indexOf(r.价格段);
+          if (i >= 0 && j >= 0) data.push([i, j, r.销量]);
+        });
+        var maxVal = data.length ? Math.max.apply(null, data.map(function (x) { return x[2]; })) : 0;
+        var opt = {
+          tooltip: { position: 'top', formatter: function (params) { return prices[params.data[0]] + ' / ' + channels[params.data[1]] + ': ' + formatNum(params.data[2]); } },
+          grid: { left: 80, right: 120, top: 24, bottom: 48 },
+          xAxis: { type: 'category', data: prices, splitArea: { show: false } },
+          yAxis: { type: 'category', data: channels, splitArea: { show: false } },
+          visualMap: { min: 0, max: maxVal, calculable: true, orient: 'horizontal', left: 'center', bottom: 8, inRange: { color: ['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] } },
+          series: [{ type: 'heatmap', data: data, label: { show: false }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } } }]
+        };
+        if (!charts.chart7) charts.chart7 = echarts.init(document.getElementById('chart7'));
+        charts.chart7.setOption(opt, true);
+      }
+
+      // 维度八：客单价 - 柱状（渠道 + 价格段，已排除 0-1k）
+      function render8() {
+        var d = dataSource['维度八_客单价衍生'];
+        if (!d) return;
+        var ch = (d.按渠道 || []).map(function (r) { return { name: r.渠道, value: r.客单价 }; });
+        var pr = (d.按价格段 || []).filter(function (r) { return r.价格段 !== '0-1k'; }).map(function (r) { return { name: r.价格段, value: r.客单价 }; });
+        var x = ch.map(function (r) { return r.name; }).concat(['—'].concat(pr.map(function (r) { return r.name; })));
+        var val = ch.map(function (r) { return r.value; }).concat([null].concat(pr.map(function (r) { return r.value; })));
+        var opt = {
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { var p = params[0]; if (p.data != null) return p.name + ': ' + formatNum(p.data); return ''; } },
+          grid: { left: 56, right: 24, top: 36, bottom: 68 },
+          xAxis: { type: 'category', data: x, axisLabel: { rotate: 28, interval: 0 } },
+          yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } },
+          series: [{ type: 'bar', data: val, itemStyle: { color: function (p) { return p.data == null ? 'transparent' : (p.dataIndex < ch.length ? '#5470c6' : '#91cc75'); } } }]
+        };
+        if (!charts.chart8) charts.chart8 = echarts.init(document.getElementById('chart8'));
+        charts.chart8.setOption(opt, true);
+      }
+
+      // 维度九：各渠道销量占比随时间
+      function render9() {
+        var d = dataSource['维度九_增长与占比'];
+        if (!d || !d.渠道销量占比随时间) return;
+        var raw = d.渠道销量占比随时间;
+        var channels = [];
+        var byCh = {};
+        raw.forEach(function (r) {
+          if (byCh[r.渠道] === undefined) { byCh[r.渠道] = {}; channels.push(r.渠道); }
+          byCh[r.渠道][r.日期] = (r.销量占比 || 0) * 100;
+        });
+        var dates = [];
+        var seen = {};
+        raw.forEach(function (r) {
+          if (!seen[r.日期]) { seen[r.日期] = true; dates.push(r.日期); }
+        });
+        dates.sort();
+        var series = channels.map(function (ch) {
+          return { name: ch, type: 'line', data: dates.map(function (dt) { return byCh[ch][dt] != null ? byCh[ch][dt] : null; }), smooth: true };
+        });
+        var opt = {
+          tooltip: { trigger: 'axis', formatter: function (params) { var s = params[0].axisValue + '<br/>'; params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? p.value.toFixed(2) + '%' : '-') + '<br/>'; }); return s; } },
+          legend: { data: channels, top: 6, left: 'center' },
+          grid: { left: 56, right: 24, top: 40, bottom: 72 },
+          xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
+          series: series
+        };
+        if (!charts.chart9) charts.chart9 = echarts.init(document.getElementById('chart9'));
+        charts.chart9.setOption(opt, true);
+      }
+
+      // 维度十：渠道排名条形 + 集中度
+      function render10() {
+        var d = dataSource['维度十_集中度与排名'];
+        if (!d || !d.渠道按销量排名) return;
+        var list = d.渠道按销量排名;
+        var y = list.map(function (r) { return r.渠道; }).reverse();
+        var val = list.map(function (r) { return r.销量; }).reverse();
+        var cr = d.渠道集中度 || {};
+        var opt = {
+          tooltip: { trigger: 'axis', formatter: function (params) { var i = params[0].dataIndex; var r = list[list.length - 1 - i]; return r.渠道 + '<br/>销量: ' + formatNum(r.销量) + '<br/>CRn销量: ' + ((r.CRn_销量 || 0) * 100).toFixed(2) + '%'; } },
+          grid: { left: 72, right: 80, top: 36, bottom: 52 },
+          xAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
+          yAxis: { type: 'category', data: y },
+          series: [{ type: 'bar', data: val, itemStyle: { color: '#5470c6' }, label: { show: true, position: 'right', formatter: function (p) { return formatNum(p.value); } } }],
+          title: { text: 'CR1: ' + ((cr.CR1_销量 || 0) * 100).toFixed(1) + '%  CR2: ' + ((cr.CR2_销量 || 0) * 100).toFixed(1) + '%  CR3: ' + ((cr.CR3_销量 || 0) * 100).toFixed(1) + '%', left: 'center', bottom: 4, textStyle: { fontSize: 12, fontWeight: 'normal' } }
+        };
+        if (!charts.chart10) charts.chart10 = echarts.init(document.getElementById('chart10'));
+        charts.chart10.setOption(opt, true);
+      }
+
+      function loadJson(obj) {
+        dataSource = obj;
+        document.getElementById('loadStatus').textContent = '已加载 ' + (obj.数据说明 ? (obj.数据说明.原始行数 + ' 条原始数据') : '') + '，图表已刷新。';
+        renderAll();
+      }
+
+      document.getElementById('dataFile').addEventListener('change', function (e) {
+        var f = e.target.files[0];
+        if (!f) return;
+        var name = (f.name || '').toLowerCase();
+        var statusEl = document.getElementById('loadStatus');
+        if (name.indexOf('.json') !== -1) {
+          var r = new FileReader();
+          r.onload = function () {
+            try {
+              var obj = JSON.parse(r.result);
+              loadJson(obj);
+            } catch (err) {
+              statusEl.textContent = 'JSON 解析失败: ' + err.message;
+            }
+          };
+          r.readAsText(f, 'UTF-8');
+          return;
+        }
+        statusEl.textContent = '正在解析 Excel 并计算特征…';
+        var r = new FileReader();
+        r.onload = function () {
+          try {
+            if (typeof XLSX === 'undefined') {
+              statusEl.textContent = '请确保已加载 xlsx 库（CDN）。';
+              return;
+            }
+            var result = parseExcelAndExtract(r.result, f.name);
+            loadJson(result);
+          } catch (err) {
+            statusEl.textContent = 'Excel 解析或计算失败: ' + (err.message || err);
+          }
+        };
+        r.readAsArrayBuffer(f);
+      });
+
+      window.resizeCharts = function () {
+        Object.keys(charts).forEach(function (id) {
+          if (charts[id]) charts[id].resize();
+        });
+      };
+      window.addEventListener('resize', window.resizeCharts);
+    })();
+  </script>
+</body>
+</html>
