@@ -974,8 +974,8 @@
           grid: { left: 60, right: 56, top: 40, bottom: 44 },
           xAxis: { type: 'category', data: x },
           yAxis: [
-            { type: 'value', name: '销量(万)', position: 'left', axisLabel: { formatter: function (v) { return (Number(v) / 1e4).toFixed(0) + '万'; } } },
-            { type: 'value', name: '销售额(亿)', position: 'right', axisLabel: { formatter: function (v) { return (Number(v) / 1e8).toFixed(2) + '亿'; } } }
+            { type: 'value', name: '销量(万)', position: 'left', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e4).toFixed(0) + '万'; } } },
+            { type: 'value', name: '销售额(亿)', position: 'right', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e8).toFixed(2) + '亿'; } } }
           ],
           series: [
             { name: '销量', type: 'bar', data: s1, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? (p.value / 1e4).toFixed(1) + '万' : ''; } } },
