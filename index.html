@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>电商大盘及竞争数据 - 多维度可视化</title>
+  <title>学习机品类 - 电商数据可视化</title>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="data/default-data.js"></script>
@@ -26,37 +26,75 @@
     .date-range { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; font-size: 13px; }
     .date-range label { color: #555; }
     .date-range select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 100px; }
-    .section-title { font-size: 1.1rem; margin: 20px 0 10px 0; color: #2d3436; }
+    .section-block { margin-bottom: 0; }
+    .section-block.section-brand { margin-top: 32px; padding-top: 32px; border-top: 2px solid #e2e8f0; border-radius: 0 0 12px 12px; padding-bottom: 4px; }
+    .section-title { font-size: 1.35rem; font-weight: 700; color: #1a1a2e; margin: 0 0 12px 0; padding: 8px 16px; border-left: 4px solid #4a69bd; border-radius: 0 10px 10px 0; letter-spacing: 0.03em; line-height: 1.3; }
+    .upload-area { display: none; }
+    .page-footer { margin-top: 32px; padding-bottom: 24px; }
+    .page-footer .footer-divider { border: none; border-top: 1px solid #e2e8f0; margin: 0 0 16px 0; }
+    .page-footer .footer-note { margin: 0; font-size: 12px; color: #64748b; text-align: center; }
     .tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 1px solid #ddd; }
     .tabs .tab { padding: 10px 20px; cursor: pointer; background: #eee; border: 1px solid #ddd; border-bottom: none; border-radius: 6px 6px 0 0; margin-right: 4px; }
     .tabs .tab.active { background: #fff; font-weight: 600; margin-bottom: -1px; padding-bottom: 11px; }
     .tab-pane { display: none; padding: 16px 0 0 0; }
     .tab-pane.active { display: block; }
+    #auth-gate { position: fixed; inset: 0; z-index: 10001; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); display: flex; align-items: center; justify-content: center; }
+    #auth-gate .auth-box { background: #fff; border-radius: 12px; padding: 32px 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); min-width: 320px; }
+    #auth-gate .auth-title { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; margin: 0 0 24px 0; text-align: center; }
+    #auth-gate .auth-error { font-size: 13px; color: #c0392b; margin-top: 12px; text-align: center; display: none; }
+    #auth-gate .auth-error.show { display: block; }
+    #auth-gate input[type="password"] { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 16px; box-sizing: border-box; }
+    #auth-gate button { width: 100%; padding: 12px; background: #4a69bd; color: #fff; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-family: inherit; }
+    #auth-gate button:hover { background: #3d5aa0; }
+    #global-loading { position: fixed; inset: 0; z-index: 10000; background: rgba(255,255,255,0.92); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; pointer-events: all; overflow: hidden; }
+    #global-loading.show { display: flex; }
+    #global-loading .spinner { width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: #4a69bd; border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #global-loading .loading-text { font-size: 14px; color: #64748b; }
+    body.loading-active { overflow: hidden; }
   </style>
 </head>
 <body>
+  <div id="auth-gate">
+    <div class="auth-box">
+      <h2 class="auth-title">希倍思内部平台</h2>
+      <input type="password" id="auth-password" placeholder="请输入密码" autocomplete="off" />
+      <button type="button" id="auth-submit">进入</button>
+      <p class="auth-error" id="auth-error">密码错误，如需使用请联系胡鹏辉</p>
+    </div>
+  </div>
+  <div id="global-loading">
+    <div class="spinner"></div>
+    <span class="loading-text">加载中…</span>
+  </div>
+  <div id="main-content" style="display:none">
   <div style="position:relative;z-index:1">
   <div class="page-header">
-    <h1>学习机数据 · 多维度可视化</h1>
-    <div class="subtitle">20260314-v1</div>
+    <h1>学习机品类 - 电商数据可视化</h1>
+    <div class="subtitle">数据更新至2026年2月，版本号20260314-v1</div>
   </div>
+  <div class="section-block">
   <div class="section-title">大盘数据</div>
   <div class="grid" id="chartGrid">
-    <div class="card"><h3>渠道对比（销量 / 销售额 / 客单价）</h3><div class="date-range">起始：<select id="dim1Start"></select> 结束：<select id="dim1End"></select></div><div id="chart1" class="chart"></div></div>
+    <div class="card"><h3>渠道对比（销量 / 销售额）</h3><div class="date-range">起始：<select id="dim1Start"></select> 结束：<select id="dim1End"></select></div><div id="chart1" class="chart"></div></div>
     <div class="card"><h3>价格段结构（销量占比）</h3><div class="date-range">起始：<select id="dim2Start"></select> 结束：<select id="dim2End"></select></div><div id="chart2" class="chart"></div></div>
     <div class="card wide"><h3>大盘时间趋势（销量、销量同比）</h3><div class="date-range">起始：<select id="dim3Start"></select> 结束：<select id="dim3End"></select></div><div id="chart3" class="chart"></div></div>
     <div class="card wide"><h3>分渠道销量趋势</h3><div class="date-range">起始：<select id="dim4Start"></select> 结束：<select id="dim4End"></select></div><div id="chart4" class="chart"></div></div>
-    <div class="card wide"><h3>价格段销量占比随时间（堆叠面积）</h3><div class="date-range">起始：<select id="dim5Start"></select> 结束：<select id="dim5End"></select></div><div id="chart5" class="chart"></div></div>
-    <div class="card wide"><h3>各渠道销量占比随时间</h3><div class="date-range">起始：<select id="dim6Start"></select> 结束：<select id="dim6End"></select></div><div id="chart9" class="chart"></div></div>
+    <div class="card wide"><h3>价格段销量占比</h3><div class="date-range">起始：<select id="dim5Start"></select> 结束：<select id="dim5End"></select></div><div id="chart5" class="chart"></div></div>
+    <div class="card wide"><h3>各渠道销量占比</h3><div class="date-range">起始：<select id="dim6Start"></select> 结束：<select id="dim6End"></select></div><div id="chart9" class="chart"></div></div>
   </div>
+  </div>
+  <div class="section-block section-brand">
   <div class="section-title">品牌数据</div>
   <div class="grid" id="chartGridBrand">
-    <div class="card"><h3>前十大品牌 销量 / 销额 对比</h3><div class="date-range">起始：<select id="dimB1Start"></select> 结束：<select id="dimB1End"></select></div><div id="chartB1" class="chart"></div></div>
-    <div class="card"><h3>前十大品牌 在三大渠道的销量占比</h3><div class="date-range">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select></div><div id="chartB2" class="chart"></div></div>
-    <div class="card wide"><h3>前十大品牌 各月份市场占有率（堆叠面积）</h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select></div><div id="chartB3" class="chart"></div></div>
-    <div class="card"><h3>前十大品牌 客单价对比</h3><div class="date-range">起始：<select id="dimB5Start"></select> 结束：<select id="dimB5End"></select></div><div id="chartB5" class="chart"></div></div>
-    <div class="card wide"><h3>前十大品牌 各品牌价格段销量随时间</h3><div class="load-bar" style="margin-bottom:8px"><select id="brandTop10Select"><option value="">选择品牌</option></select><span style="margin-left:8px">起始：<select id="dimB6Start"></select> 结束：<select id="dimB6End"></select></span></div><div id="chartB6" class="chart"></div></div>
+    <div class="card wide"><h3>品牌销量/销额对比</h3><div class="date-range">起始：<select id="dimB1Start"></select> 结束：<select id="dimB1End"></select></div><div id="chartB1" class="chart"></div></div>
+    <div class="card wide"><h3>品牌渠道占比</h3><div class="date-range">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select></div><div id="chartB2" class="chart"></div></div>
+    <div class="card wide"><h3>品牌市占率</h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select></div><div id="chartB3" class="chart"></div></div>
+    <div class="card wide"><h3>品牌价格段销量</h3><div class="load-bar" style="margin-bottom:8px"><select id="brandTop10Select"><option value="">选择品牌</option></select><span style="margin-left:8px">起始：<select id="dimB6Start"></select> 结束：<select id="dimB6End"></select></span></div><div id="chartB6" class="chart"></div></div>
+    <div class="card wide"><h3>客单价对比</h3><div class="date-range">起始：<select id="dimB5Start"></select> 结束：<select id="dimB5End"></select></div><div id="chartB5" class="chart"></div></div>
   </div>
+  </div>
+  <div class="upload-area">
   <div class="load-bar" style="margin-top:24px">
     <label for="dataFile">上传大盘 Excel</label>
     <input type="file" id="dataFile" accept=".xlsx,.xls,.json" />
@@ -68,9 +106,56 @@
     <span id="loadStatusBrand">请上传「三站分品牌分价格销量销售额」Excel。两份表均会自动剔除 0-1K。</span>
   </div>
   </div>
+  </div>
+  <div class="page-footer">
+    <hr class="footer-divider" />
+    <p class="footer-note">暂未开放实时更新数据功能，如需更新或发现数据错误请联系胡鹏辉</p>
+  </div>
+  </div>
 
   <script>
     (function () {
+      var AUTH_KEY = 'xbs_authed';
+      var AUTH_PWD = 'xbs2026';
+      var authGate = document.getElementById('auth-gate');
+      var mainContent = document.getElementById('main-content');
+      var globalLoading = document.getElementById('global-loading');
+
+      function showLoading() {
+        globalLoading.classList.add('show');
+        document.body.classList.add('loading-active');
+      }
+      function hideLoading() {
+        globalLoading.classList.remove('show');
+        document.body.classList.remove('loading-active');
+      }
+      function enterApp() {
+        authGate.style.display = 'none';
+        mainContent.style.display = 'block';
+        showLoading();
+      }
+
+      if (sessionStorage.getItem(AUTH_KEY) === '1') {
+        enterApp();
+      } else {
+        mainContent.style.display = 'none';
+        document.getElementById('auth-submit').addEventListener('click', function () {
+          var pwd = (document.getElementById('auth-password').value || '').trim();
+          var errEl = document.getElementById('auth-error');
+          if (pwd !== AUTH_PWD) {
+            errEl.classList.add('show');
+            return;
+          }
+          errEl.classList.remove('show');
+          sessionStorage.setItem(AUTH_KEY, '1');
+          enterApp();
+          window.__runAfterAuth__();
+        });
+        document.getElementById('auth-password').addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') document.getElementById('auth-submit').click();
+        });
+      }
+
       var charts = {};
       var dataSource = null;
 
@@ -85,6 +170,10 @@
         var m = String(d.getMonth() + 1).length === 1 ? '0' + (d.getMonth() + 1) : (d.getMonth() + 1);
         var day = String(d.getDate()).length === 1 ? '0' + d.getDate() : d.getDate();
         return y + '-' + m + '-' + day;
+      }
+      function isPriceSegment01k(seg) {
+        var s = String(seg == null ? '' : seg).trim().toLowerCase();
+        return s === '0-1k';
       }
       function parseExcelRows(raw) {
         if (!raw || raw.length < 2) return [];
@@ -102,7 +191,7 @@
             销售额: Number(r[4]) || 0
           });
         }
-        return rows.filter(function (r) { return r.价格段 !== '0-1k'; });
+        return rows.filter(function (r) { return !isPriceSegment01k(r.价格段); });
       }
       function dimension1_channel(rows) {
         var totalSales = 0, totalAmount = 0;
@@ -168,20 +257,24 @@
           var d = dates[i];
           var curr = byDate[d];
           var prev = i > 0 ? byDate[dates[i - 1]] : null;
-          var sameMonthLastYear = null;
+          var parts = d.split('-'), cy = parts[0], cm = parts[1];
+          var targetYear = parseInt(cy, 10) - 1;
+          var lastYearSum = { 销量: 0, 销售额: 0 };
           for (var j = 0; j < dates.length; j++) {
-            var x = dates[j];
-            if (x !== d && x.slice(5) === d.slice(5) && parseInt(x.split('-')[0], 10) === parseInt(d.split('-')[0], 10) - 1) { sameMonthLastYear = x; break; }
+            var x = dates[j], xp = x.split('-');
+            if (parseInt(xp[0], 10) === targetYear && xp[1] === cm) {
+              lastYearSum.销量 += byDate[x].销量;
+              lastYearSum.销售额 += byDate[x].销售额;
+            }
           }
-          var lastYear = sameMonthLastYear ? byDate[sameMonthLastYear] : null;
           list.push({
             日期: d,
             销量: curr.销量,
             销售额: curr.销售额,
             销量环比: prev && prev.销量 ? curr.销量 / prev.销量 - 1 : null,
             销售额环比: prev && prev.销售额 ? curr.销售额 / prev.销售额 - 1 : null,
-            销量同比: lastYear && lastYear.销量 ? curr.销量 / lastYear.销量 - 1 : null,
-            销售额同比: lastYear && lastYear.销售额 ? curr.销售额 / lastYear.销售额 - 1 : null
+            销量同比: lastYearSum.销量 ? curr.销量 / lastYearSum.销量 - 1 : null,
+            销售额同比: lastYearSum.销售额 ? curr.销售额 / lastYearSum.销售额 - 1 : null
           });
         }
         return { 说明: '全盘月度销量、销售额、环比/同比', 按日期: list };
@@ -476,7 +569,7 @@
             销售额: Number(r[col.销售额]) || 0
           });
         }
-        return rows.filter(function (x) { return x.价格段 !== '0-1k'; });
+        return rows.filter(function (x) { return !isPriceSegment01k(x.价格段); });
       }
       // 固定前十大品牌名单（SEEWO/希沃 与 seewo/希沃 已通过 normalizeBrand 统一为 SEEWO/希沃）
       var FIXED_TOP_BRANDS = ['学而思', '科大讯飞', '作业帮', '小猿', '小度', 'BBK/步步高', 'SEEWO/希沃', 'BOE/京东方', '清北道远', '智能精准学'];
@@ -875,20 +968,18 @@
         var x = list.map(function (r) { return r.渠道; });
         var s1 = list.map(function (r) { return r.销量; });
         var s2 = list.map(function (r) { return r.销售额; });
-        var s3 = list.map(function (r) { return r.客单价; });
         var opt = {
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-          legend: { data: ['销量', '销售额', '客单价'], top: 6, left: 'center' },
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { if (p.seriesName === '销量') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e4).toFixed(2) + '万' : '-'); else if (p.seriesName === '销售额') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : '-'); }); return s; } },
+          legend: { data: ['销量', '销售额'], top: 6, left: 'center' },
           grid: { left: 60, right: 56, top: 40, bottom: 44 },
           xAxis: { type: 'category', data: x },
           yAxis: [
-            { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
-            { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } }
+            { type: 'value', name: '销量(万)', position: 'left', axisLabel: { formatter: function (v) { return (Number(v) / 1e4).toFixed(0) + '万'; } } },
+            { type: 'value', name: '销售额(亿)', position: 'right', axisLabel: { formatter: function (v) { return (Number(v) / 1e8).toFixed(2) + '亿'; } } }
           ],
           series: [
-            { name: '销量', type: 'bar', data: s1 },
-            { name: '销售额', type: 'bar', data: s2 },
-            { name: '客单价', type: 'line', yAxisIndex: 1, data: s3 }
+            { name: '销量', type: 'bar', data: s1, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? (p.value / 1e4).toFixed(1) + '万' : ''; } } },
+            { name: '销售额', type: 'bar', yAxisIndex: 1, data: s2, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : ''; } } }
           ]
         };
         if (!charts.chart1) charts.chart1 = echarts.init(document.getElementById('chart1'));
@@ -949,7 +1040,7 @@
               var line = (params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>';
               params.forEach(function (p) {
                 var val = p.value;
-                if (p.seriesName === '销量同比(%)') {
+                if (p.seriesName === '同比增长率') {
                   line += p.marker + p.seriesName + ': ' + (val != null ? (typeof val === 'number' ? val.toFixed(2) : val) + '%' : '-') + '<br/>';
                 } else {
                   line += p.marker + p.seriesName + ': ' + (val != null ? formatNum(val) : '-') + '<br/>';
@@ -958,17 +1049,18 @@
               return line;
             }
           },
-          legend: { data: ['销量', '销量同比(%)'], top: 6, left: 'center' },
+          legend: { data: ['销量', '同比增长率'], top: 6, left: 'center' },
           grid: { left: 56, right: 56, top: 40, bottom: 72 },
           xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: [
             { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
-            { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return (typeof v === 'number' ? v.toFixed(2) : v) + '%'; } } }
+            { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return (typeof v === 'number' ? v.toFixed(2) : v) + '%'; } }, splitLine: { show: false } }
           ],
           series: [
             { name: '销量', type: 'line', data: s1, smooth: true },
-            { name: '销量同比(%)', type: 'line', yAxisIndex: 1, data: s3, smooth: true,
-              itemStyle: { color: function (params) { var v = params.value; return v != null && v < 0 ? '#ee6666' : undefined; } } }
+            { name: '同比增长率', type: 'line', yAxisIndex: 1, data: s3, smooth: true,
+              itemStyle: { color: function (params) { var v = params.value; if (v == null) return undefined; return v > 0 ? '#67c23a' : (v < 0 ? '#ee6666' : '#909399'); } },
+              markLine: { silent: true, symbol: 'none', data: [{ yAxis: 0 }], lineStyle: { type: 'dashed', color: '#999' } } }
           ]
         };
         if (!charts.chart3) charts.chart3 = echarts.init(document.getElementById('chart3'));
@@ -1018,12 +1110,14 @@
         var endVal = document.getElementById('dim5End') && document.getElementById('dim5End').value;
         var raw = d.按价格段与日期;
         if (startVal && endVal && startVal <= endVal) raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
-        var priceRanges = [];
         var byPr = {};
         raw.forEach(function (r) {
-          if (byPr[r.价格段] === undefined) { byPr[r.价格段] = {}; priceRanges.push(r.价格段); }
+          if (!byPr[r.价格段]) byPr[r.价格段] = {};
           byPr[r.价格段][r.日期] = (r.当月销量占比 || 0) * 100;
         });
+        var orderPr = ['1-2k','2-3k','3-4k','4-6k','6k以上'];
+        var priceRanges = orderPr.filter(function (p) { return byPr[p]; });
+        Object.keys(byPr).forEach(function (p) { if (priceRanges.indexOf(p) === -1) priceRanges.push(p); });
         var dates = [];
         var seen = {};
         raw.forEach(function (r) {
@@ -1034,9 +1128,10 @@
         var series = priceRanges.map(function (pr, i) {
           return {
             name: pr,
-            type: 'line',
+            type: 'bar',
             stack: 'total',
-            areaStyle: { color: colors[i % colors.length] },
+            itemStyle: { color: colors[i % colors.length] },
+            label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (params) { var v = params.value; if (v == null || v < 5) return ''; return v.toFixed(1) + '%'; } },
             data: dates.map(function (dt) { return byPr[pr][dt] != null ? byPr[pr][dt] : null; })
           };
         });
@@ -1044,7 +1139,7 @@
           tooltip: { trigger: 'axis', formatter: function (params) { var s = (params[0] && params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>'; params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-') + '<br/>'; }); return s; } },
           legend: { data: priceRanges, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 72 },
-          xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
           series: series
         };
@@ -1064,7 +1159,7 @@
           if (byCh[r.渠道] === undefined) { byCh[r.渠道] = true; channels.push(r.渠道); }
           if (byPr[r.价格段] === undefined) { byPr[r.价格段] = true; prices.push(r.价格段); }
         });
-        var orderPr = ['0-1k','1-2k','2-3k','3-4k','4-6k','6k以上'];
+        var orderPr = ['1-2k','2-3k','3-4k','4-6k','6k以上'];
         prices = orderPr.filter(function (p) { return byPr[p]; });
         var data = [];
         raw.forEach(function (r) {
@@ -1111,7 +1206,7 @@
           if (byCh[r.渠道] === undefined) { byCh[r.渠道] = true; channels.push(r.渠道); }
           if (byPr[r.价格段] === undefined) { byPr[r.价格段] = true; prices.push(r.价格段); }
         });
-        var orderPr = ['0-1k','1-2k','2-3k','3-4k','4-6k','6k以上'];
+        var orderPr = ['1-2k','2-3k','3-4k','4-6k','6k以上'];
         prices = orderPr.filter(function (p) { return byPr[p]; });
         var data = [];
         list.forEach(function (r) {
@@ -1137,7 +1232,7 @@
         var d = getDaPan()['维度八_客单价衍生'];
         if (!d) return;
         var ch = (d.按渠道 || []).map(function (r) { return { name: r.渠道, value: r.客单价 }; });
-        var pr = (d.按价格段 || []).filter(function (r) { return r.价格段 !== '0-1k'; }).map(function (r) { return { name: r.价格段, value: r.客单价 }; });
+        var pr = (d.按价格段 || []).filter(function (r) { return !isPriceSegment01k(r.价格段); }).map(function (r) { return { name: r.价格段, value: r.客单价 }; });
         var x = ch.map(function (r) { return r.name; }).concat(['—'].concat(pr.map(function (r) { return r.name; })));
         var val = ch.map(function (r) { return r.value; }).concat([null].concat(pr.map(function (r) { return r.value; })));
         var opt = {
@@ -1171,11 +1266,12 @@
           if (!seen[r.日期]) { seen[r.日期] = true; dates.push(r.日期); }
         });
         dates.sort();
-        var series = channels.map(function (ch) {
-          return { name: ch, type: 'line', data: dates.map(function (dt) { return byCh[ch][dt] != null ? byCh[ch][dt] : null; }), smooth: true };
+        var colors = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272'];
+        var series = channels.map(function (ch, i) {
+          return { name: ch, type: 'bar', stack: 'total', itemStyle: { color: colors[i % colors.length] }, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (params) { var v = params.value; if (v == null || v < 5) return ''; return v.toFixed(1) + '%'; } }, data: dates.map(function (dt) { return byCh[ch][dt] != null ? byCh[ch][dt] : null; }) };
         });
         var opt = {
-          tooltip: { trigger: 'axis', formatter: function (params) { var s = params[0].axisValue + '<br/>'; params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? p.value.toFixed(2) + '%' : '-') + '<br/>'; }); return s; } },
+          tooltip: { trigger: 'axis', formatter: function (params) { var s = (params[0] && params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>'; params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-') + '<br/>'; }); return s; } },
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 72 },
           xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
@@ -1288,17 +1384,17 @@
         }
         var x = list.map(function (r) { return r.品牌; });
         var opt = {
-          tooltip: { trigger: 'axis' },
+          tooltip: { trigger: 'axis', formatter: function (params) { var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { if (p.seriesName === '销量') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e4).toFixed(2) + '万' : '-'); else if (p.seriesName === '销售额') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : '-'); }); return s; } },
           legend: { data: ['销量', '销售额'], top: 6, left: 'center' },
           grid: { left: 64, right: 64, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: x, axisLabel: { rotate: 45, interval: 0, fontSize: 11 } },
           yAxis: [
-            { type: 'value', name: '销量', position: 'left', axisLabel: { formatter: formatNum } },
-            { type: 'value', name: '销售额', position: 'right', axisLabel: { formatter: formatNum } }
+            { type: 'value', name: '销量(万)', position: 'left', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e4).toFixed(0) + '万'; } } },
+            { type: 'value', name: '销售额(亿)', position: 'right', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e8).toFixed(2) + '亿'; } } }
           ],
           series: [
-            { name: '销量', type: 'bar', data: list.map(function (r) { return r.销量; }) },
-            { name: '销售额', type: 'bar', yAxisIndex: 1, data: list.map(function (r) { return r.销售额; }) }
+            { name: '销量', type: 'bar', data: list.map(function (r) { return r.销量; }), label: { show: true, position: 'top', fontSize: 11, formatter: function (p) { return p.value != null ? (p.value / 1e4).toFixed(1) + '万' : ''; } } },
+            { name: '销售额', type: 'bar', yAxisIndex: 1, data: list.map(function (r) { return r.销售额; }), label: { show: true, position: 'top', fontSize: 11, formatter: function (p) { return p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : ''; } } }
           ]
         };
         if (!charts.chartB1) charts.chartB1 = echarts.init(document.getElementById('chartB1'));
@@ -1347,7 +1443,8 @@
             type: 'bar',
             stack: 'channel',
             data: topBrands.map(function (b) { return ((byBrandCh[b] && byBrandCh[b][ch]) || 0) * 100; }),
-            itemStyle: { color: colors[i % colors.length] }
+            itemStyle: { color: colors[i % colors.length] },
+            label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (params) { var v = params.value; if (v == null || v < 5) return ''; return v.toFixed(1) + '%'; } }
           };
         });
         var opt = {
@@ -1429,12 +1526,13 @@
         }
         var x = list.map(function (r) { return r.品牌; });
         var val = list.map(function (r) { return r.客单价; });
+        var brandColors = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc','#c4b25e'];
         var opt = {
           tooltip: { trigger: 'axis' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: x, axisLabel: { rotate: 45, interval: 0, fontSize: 11 } },
           yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } },
-          series: [{ type: 'bar', data: val, itemStyle: { color: '#91cc75' } }]
+          series: [{ type: 'bar', data: val, itemStyle: { color: function (params) { return brandColors[params.dataIndex % brandColors.length]; } }, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? String(Math.round(p.value)) : ''; } } }]
         };
         if (!charts.chartB5) charts.chartB5 = echarts.init(document.getElementById('chartB5'));
         charts.chartB5.setOption(opt, true);
@@ -1508,33 +1606,59 @@
         charts.chartB6.setOption(opt, true);
       }
 
+      function strip01kFromDaPan(dp) {
+        if (!dp) return;
+        if (dp.维度二_价格段维度 && Array.isArray(dp.维度二_价格段维度.按价格段)) dp.维度二_价格段维度.按价格段 = dp.维度二_价格段维度.按价格段.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+        if (dp.维度五_价格段与时间 && Array.isArray(dp.维度五_价格段与时间.按价格段与日期)) dp.维度五_价格段与时间.按价格段与日期 = dp.维度五_价格段与时间.按价格段与日期.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+        if (dp.维度六_渠道与价格段 && Array.isArray(dp.维度六_渠道与价格段.按渠道与价格段)) dp.维度六_渠道与价格段.按渠道与价格段 = dp.维度六_渠道与价格段.按渠道与价格段.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+        if (dp.维度七_渠道与价格段与时间 && Array.isArray(dp.维度七_渠道与价格段与时间.按渠道与价格段与日期)) dp.维度七_渠道与价格段与时间.按渠道与价格段与日期 = dp.维度七_渠道与价格段与时间.按渠道与价格段与日期.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+        if (dp.维度八_客单价衍生) {
+          if (Array.isArray(dp.维度八_客单价衍生.按价格段)) dp.维度八_客单价衍生.按价格段 = dp.维度八_客单价衍生.按价格段.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+          if (Array.isArray(dp.维度八_客单价衍生.按渠道与价格段)) dp.维度八_客单价衍生.按渠道与价格段 = dp.维度八_客单价衍生.按渠道与价格段.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+        }
+        if (dp.维度九_增长与占比 && Array.isArray(dp.维度九_增长与占比.价格段销量占比随时间)) dp.维度九_增长与占比.价格段销量占比随时间 = dp.维度九_增长与占比.价格段销量占比随时间.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+        if (dp.维度十_集中度与排名 && Array.isArray(dp.维度十_集中度与排名.价格段按销量排名)) dp.维度十_集中度与排名.价格段按销量排名 = dp.维度十_集中度与排名.价格段按销量排名.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+      }
       function loadJson(obj) {
         var prevFen = dataSource && dataSource.分品牌;
         if (obj.分品牌 != null) {
           dataSource = obj;
+          if (dataSource.大盘) strip01kFromDaPan(dataSource.大盘);
+          if (dataSource.分品牌) strip01kFromBrand(dataSource.分品牌);
         } else {
           dataSource = { 大盘: obj, 分品牌: prevFen || null };
+          strip01kFromDaPan(obj);
         }
         var dp = dataSource.大盘 || dataSource;
         document.getElementById('loadStatus').textContent = '已加载大盘 ' + (dp.数据说明 ? dp.数据说明.原始行数 + ' 条' : '') + (dataSource.分品牌 ? '，分品牌已保留' : '') + '。';
         renderAll();
         if (dataSource.分品牌) renderBrandAll();
       }
+      function strip01kFromBrand(fb) {
+        if (!fb || !fb.品牌价格段分布) return;
+        var byBrand = fb.品牌价格段分布.按品牌;
+        if (byBrand) Object.keys(byBrand).forEach(function (b) {
+          var arr = byBrand[b].按价格段与日期;
+          if (Array.isArray(arr)) byBrand[b].按价格段与日期 = arr.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+        });
+        if (Array.isArray(fb.按品牌与价格段)) fb.按品牌与价格段 = fb.按品牌与价格段.filter(function (r) { return !isPriceSegment01k(r.价格段); });
+      }
       function loadBrandJson(obj) {
         if (!dataSource) dataSource = { 大盘: null, 分品牌: null };
+        strip01kFromBrand(obj);
         dataSource.分品牌 = obj;
         document.getElementById('loadStatusBrand').textContent = '已加载分品牌 ' + (obj.数据说明 ? (obj.数据说明.原始行数 ? obj.数据说明.原始行数 + ' 条' : '') + (obj.数据说明.前十大品牌 ? '，前十大已计算' : '') : '') + '，图表已刷新。';
         renderBrandAll();
       }
 
-      function loadDefaultData() {
+      function loadDefaultData(done) {
         var statusEl = document.getElementById('loadStatus');
         var statusBrandEl = document.getElementById('loadStatusBrand');
         statusEl.textContent = '正在加载默认数据…';
         statusBrandEl.textContent = '正在加载默认数据…';
         function tryDapan(obj) { if (obj) { loadJson(obj); return true; } return false; }
         function tryBrand(obj) { if (obj) { loadBrandJson(obj); return true; } return false; }
-        fetch('data/features-output.json')
+        var p1 = fetch('data/features-output.json')
           .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('未找到')); })
           .then(function (obj) { tryDapan(obj); })
           .catch(function () {
@@ -1542,7 +1666,7 @@
               statusEl.textContent = '未加载默认大盘数据，请上传「电商大盘及竞争数据-情报通」Excel 或 JSON。';
             }
           });
-        fetch('data/features-brand-top10.json')
+        var p2 = fetch('data/features-brand-top10.json')
           .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('未找到')); })
           .then(function (obj) { tryBrand(obj); })
           .catch(function () {
@@ -1550,6 +1674,7 @@
               statusBrandEl.textContent = '未加载默认分品牌数据，请上传「三站分品牌分价格销量销售额」Excel 或 JSON。';
             }
           });
+        Promise.all([p1, p2]).then(function () { if (typeof done === 'function') done(); });
       }
 
       document.getElementById('dataFile').addEventListener('change', function (e) {
@@ -1620,7 +1745,11 @@
         }
       });
 
-      loadDefaultData();
+      if (sessionStorage.getItem(AUTH_KEY) === '1') {
+        loadDefaultData(hideLoading);
+      } else {
+        window.__runAfterAuth__ = function () { loadDefaultData(hideLoading); };
+      }
 
       window.resizeCharts = function () {
         Object.keys(charts).forEach(function (id) {

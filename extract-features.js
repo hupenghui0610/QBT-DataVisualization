@@ -23,6 +23,12 @@ const DEFAULT_OUTPUT = path.join(process.cwd(), 'features-output.json');
 const inputPath = process.argv[2] || DEFAULT_INPUT;
 const outputPath = process.argv[3] || DEFAULT_OUTPUT;
 
+// 判定是否为 0-1K 价格段（不区分大小写、trim），用于全量剔除
+function isPriceSegment01k(seg) {
+  const s = String(seg == null ? '' : seg).trim().toLowerCase();
+  return s === '0-1k';
+}
+
 // ============ 工具：Excel 序列号转日期字符串 ============
 function excelDateToStr(serial) {
   const utc_days = Math.floor(serial - 25569);
@@ -33,7 +39,7 @@ function excelDateToStr(serial) {
   return `${y}-${m}-${day}`;
 }
 
-// ============ 1. 读取 xlsx ============
+// ============ 1. 读取 xlsx（大盘数据整体全量剔除 0-1K 价格段） ============
 function loadData(filePath) {
   const wb = XLSX.readFile(filePath, { type: 'file' });
   const sheetName = wb.SheetNames[0];
@@ -47,7 +53,7 @@ function loadData(filePath) {
     销量: Number(r[3]) || 0,
     销售额: Number(r[4]) || 0,
   }));
-  rows = rows.filter((r) => r.价格段 !== '0-1k');
+  rows = rows.filter((r) => !isPriceSegment01k(r.价格段)); // 大盘整体剔除 0-1K（含 0-1k/0-1K），后续所有维度均基于此
   return { header, rows };
 }
 
@@ -98,7 +104,7 @@ function dimension2_priceRange(rows) {
       : 0,
   }));
   return {
-    说明: '各价格段销量、销售额、占比、销量占比与销售额占比差异',
+    说明: '各价格段销量、销售额、占比（已剔除0-1k）',
     全盘销量合计: totalSales,
     全盘销售额合计: totalAmount,
     按价格段: list,
@@ -118,20 +124,24 @@ function dimension3_timeTrend(rows) {
   const list = dates.map((d, i) => {
     const curr = byDate[d];
     const prev = i > 0 ? byDate[dates[i - 1]] : null;
-    const sameMonthLastYear = dates.find((x) => {
-      const [y] = x.split('-');
-      const [cy] = d.split('-');
-      return x !== d && x.slice(5) === d.slice(5) && parseInt(y, 10) === parseInt(cy, 10) - 1;
+    const [cy, cm] = d.split('-');
+    const targetYear = parseInt(cy, 10) - 1;
+    const lastYearSum = { 销量: 0, 销售额: 0 };
+    dates.forEach((x) => {
+      const [yx, mx] = x.split('-');
+      if (parseInt(yx, 10) === targetYear && mx === cm) {
+        lastYearSum.销量 += byDate[x].销量;
+        lastYearSum.销售额 += byDate[x].销售额;
+      }
     });
-    const lastYear = sameMonthLastYear ? byDate[sameMonthLastYear] : null;
     return {
       日期: d,
       销量: curr.销量,
       销售额: curr.销售额,
       销量环比: prev && prev.销量 ? curr.销量 / prev.销量 - 1 : null,
       销售额环比: prev && prev.销售额 ? curr.销售额 / prev.销售额 - 1 : null,
-      销量同比: lastYear && lastYear.销量 ? curr.销量 / lastYear.销量 - 1 : null,
-      销售额同比: lastYear && lastYear.销售额 ? curr.销售额 / lastYear.销售额 - 1 : null,
+      销量同比: lastYearSum.销量 ? curr.销量 / lastYearSum.销量 - 1 : null,
+      销售额同比: lastYearSum.销售额 ? curr.销售额 / lastYearSum.销售额 - 1 : null,
     };
   });
   return {
@@ -409,7 +419,7 @@ function loadDataBrand(filePath) {
     销量: Number(r[4]) || 0,
     销售额: Number(r[5]) || 0,
   }));
-  rows = rows.filter((r) => r.价格段 !== '0-1k');
+  rows = rows.filter((r) => !isPriceSegment01k(r.价格段));
   return { header, rows };
 }
 

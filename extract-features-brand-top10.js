@@ -41,6 +41,12 @@ function excelDateToStr(serial) {
   return `${y}-${m}-${day}`;
 }
 
+// 判定是否为 0-1K 价格段（不区分大小写、trim），用于全量剔除
+function isPriceSegment01k(seg) {
+  const s = String(seg == null ? '' : seg).trim().toLowerCase();
+  return s === '0-1k';
+}
+
 // 品牌名称清洗：SEEWO/希沃 与 seewo/希沃 视为同一品牌，统一为 SEEWO/希沃
 function normalizeBrand(name) {
   const s = String(name || '').trim();
@@ -67,7 +73,7 @@ function loadDataBrand(filePath) {
     销量: Number(r[col.销量]) || 0,
     销售额: Number(r[col.销售额]) || 0,
   }));
-  rows = rows.filter((r) => r.价格段 !== '0-1k');
+  rows = rows.filter((r) => !isPriceSegment01k(r.价格段)); // 品牌数据整体剔除 0-1K（含 0-1k/0-1K）
   return { header, rows };
 }
 
