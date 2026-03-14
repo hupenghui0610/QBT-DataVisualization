@@ -2,6 +2,7 @@ node_modules/
 .env
 *.log
 .DS_Store
-features-output.json
+dist/
+/features-output.json
 read_excel.js
 read_excel.py

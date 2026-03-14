@@ -8,18 +8,11 @@
 
 ## 部署到 Cloudflare Pages（跨电脑访问）
 
-1. **推送代码到 GitHub**
-   - 在 GitHub 新建仓库（如 `QBT-DataVisualization`），不要勾选 README。
-   - 在本项目目录执行：
-   ```bash
-   git remote add origin https://github.com/你的用户名/QBT-DataVisualization.git
-   git branch -M main
-   git push -u origin main
-   ```
+代码已推送到：**https://github.com/hupenghui0610/QBT-DataVisualization**
 
-2. **在 Cloudflare 绑定 Git 并发布**
+1. **在 Cloudflare 绑定 Git 并发布**
    - 登录 [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**。
-   - 选择 **GitHub**，授权后选择刚推送的仓库 `QBT-DataVisualization`。
+   - 选择 **GitHub**，授权后选择仓库 **hupenghui0610/QBT-DataVisualization**。
    - **Build settings**：
      - Framework preset: **None**
      - Build command: 留空

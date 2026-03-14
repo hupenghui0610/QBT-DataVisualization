@@ -39,7 +39,7 @@ function loadData(filePath) {
   const sheetName = wb.SheetNames[0];
   const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 });
   const header = raw[0];
-  const rows = raw.slice(1).map((r) => ({
+  let rows = raw.slice(1).map((r) => ({
     渠道: r[0],
     价格段: r[1],
     日期: r[2],
@@ -47,42 +47,30 @@ function loadData(filePath) {
     销量: Number(r[3]) || 0,
     销售额: Number(r[4]) || 0,
   }));
+  rows = rows.filter((r) => r.价格段 !== '0-1k');
   return { header, rows };
 }
-
-// 客单价计算时排除 0-1k 价格段（全项目统一）
-const EXCLUDE_PRICE_FOR_AVG = '0-1k';
 
 // ============ 2. 维度一：渠道维度 ============
 function dimension1_channel(rows) {
   const totalSales = rows.reduce((s, r) => s + r.销量, 0);
   const totalAmount = rows.reduce((s, r) => s + r.销售额, 0);
   const byChannel = {};
-  const byChannelExclude01k = {};
   rows.forEach((r) => {
     if (!byChannel[r.渠道]) byChannel[r.渠道] = { 销量: 0, 销售额: 0 };
     byChannel[r.渠道].销量 += r.销量;
     byChannel[r.渠道].销售额 += r.销售额;
-    if (r.价格段 !== EXCLUDE_PRICE_FOR_AVG) {
-      if (!byChannelExclude01k[r.渠道]) byChannelExclude01k[r.渠道] = { 销量: 0, 销售额: 0 };
-      byChannelExclude01k[r.渠道].销量 += r.销量;
-      byChannelExclude01k[r.渠道].销售额 += r.销售额;
-    }
   });
-  const list = Object.entries(byChannel).map(([渠道, v]) => {
-    const ex = byChannelExclude01k[渠道] || { 销量: 0, 销售额: 0 };
-    const 客单价 = ex.销量 ? ex.销售额 / ex.销量 : 0;
-    return {
-      渠道,
-      销量: v.销量,
-      销售额: v.销售额,
-      销量占比: totalSales ? v.销量 / totalSales : 0,
-      销售额占比: totalAmount ? v.销售额 / totalAmount : 0,
-      客单价,
-    };
-  });
+  const list = Object.entries(byChannel).map(([渠道, v]) => ({
+    渠道,
+    销量: v.销量,
+    销售额: v.销售额,
+    销量占比: totalSales ? v.销量 / totalSales : 0,
+    销售额占比: totalAmount ? v.销售额 / totalAmount : 0,
+    客单价: v.销量 ? v.销售额 / v.销量 : 0,
+  }));
   return {
-    说明: '各渠道销量合计、销售额合计、占比、客单价（客单价已排除0-1k）',
+    说明: '各渠道销量合计、销售额合计、占比、客单价（已剔除0-1k）',
     全盘销量合计: totalSales,
     全盘销售额合计: totalAmount,
     按渠道: list,
@@ -221,17 +209,14 @@ function dimension6_channelPrice(rows) {
     byKey[key].销量 += r.销量;
     byKey[key].销售额 += r.销售额;
   });
-  const list = Object.values(byKey).map((v) => {
-    const 客单价 = v.价格段 === EXCLUDE_PRICE_FOR_AVG ? null : (v.销量 ? v.销售额 / v.销量 : 0);
-    return {
-      ...v,
-      客单价,
-      渠道内销量占比: byChannel[v.渠道] ? v.销量 / byChannel[v.渠道] : 0,
-      渠道内销售额占比: byChannelAmount[v.渠道] ? v.销售额 / byChannelAmount[v.渠道] : 0,
-    };
-  });
+  const list = Object.values(byKey).map((v) => ({
+    ...v,
+    客单价: v.销量 ? v.销售额 / v.销量 : 0,
+    渠道内销量占比: byChannel[v.渠道] ? v.销量 / byChannel[v.渠道] : 0,
+    渠道内销售额占比: byChannelAmount[v.渠道] ? v.销售额 / byChannelAmount[v.渠道] : 0,
+  }));
   return {
-    说明: '各渠道在各价格段的销量、销售额、客单价（0-1k不参与客单价）、渠道内占比',
+    说明: '各渠道在各价格段的销量、销售额、客单价、渠道内占比（已剔除0-1k）',
     按渠道与价格段: list,
   };
 }
@@ -262,14 +247,13 @@ function dimension7_channelPriceTime(rows) {
   };
 }
 
-// ============ 9. 维度八：客单价衍生（汇总各层级，均排除0-1k） ============
+// ============ 9. 维度八：客单价衍生（已剔除0-1k，全量即无0-1k） ============
 function dimension8_avgPrice(rows) {
   const d1 = dimension1_channel(rows);
   const d2 = dimension2_priceRange(rows);
   const d6 = dimension6_channelPrice(rows);
   const byDate = {};
   rows.forEach((r) => {
-    if (r.价格段 === EXCLUDE_PRICE_FOR_AVG) return;
     if (!byDate[r.日期_str]) byDate[r.日期_str] = { 销量: 0, 销售额: 0 };
     byDate[r.日期_str].销量 += r.销量;
     byDate[r.日期_str].销售额 += r.销售额;
@@ -282,17 +266,11 @@ function dimension8_avgPrice(rows) {
       销售额: v.销售额,
       客单价: v.销量 ? v.销售额 / v.销量 : 0,
     }));
-  const 按价格段列表 = d2.按价格段
-    .filter((x) => x.价格段 !== EXCLUDE_PRICE_FOR_AVG)
-    .map((x) => ({ 价格段: x.价格段, 客单价: x.销量 ? x.销售额 / x.销量 : 0 }));
-  const 按渠道与价格段列表 = d6.按渠道与价格段
-    .filter((x) => x.价格段 !== EXCLUDE_PRICE_FOR_AVG)
-    .map((x) => ({ 渠道: x.渠道, 价格段: x.价格段, 客单价: x.客单价 }));
   return {
-    说明: '各维度下客单价（全部已排除0-1k）',
+    说明: '各维度下客单价（已剔除0-1k）',
     按渠道: d1.按渠道.map((x) => ({ 渠道: x.渠道, 客单价: x.客单价 })),
-    按价格段: 按价格段列表,
-    按渠道与价格段: 按渠道与价格段列表,
+    按价格段: d2.按价格段.map((x) => ({ 价格段: x.价格段, 客单价: x.销量 ? x.销售额 / x.销量 : 0 })),
+    按渠道与价格段: d6.按渠道与价格段.map((x) => ({ 渠道: x.渠道, 价格段: x.价格段, 客单价: x.客单价 })),
     按时间: 按时间客单价,
   };
 }
@@ -409,11 +387,174 @@ function dimension10_ranking(rows) {
   };
 }
 
+// 品牌名称清洗：SEEWO/希沃 与 seewo/希沃 视为同一品牌，统一为 SEEWO/希沃
+function normalizeBrand(name) {
+  const s = String(name || '').trim();
+  if (s.toLowerCase() === 'seewo/希沃') return 'SEEWO/希沃';
+  return s;
+}
+
+// ============ 表2：三站分品牌分价格 读取 ============
+function loadDataBrand(filePath) {
+  const wb = XLSX.readFile(filePath, { type: 'file' });
+  const sheetName = wb.SheetNames[0];
+  const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 });
+  const header = raw[0];
+  let rows = raw.slice(1).map((r) => ({
+    渠道: r[0],
+    品牌: normalizeBrand(r[1]),
+    价格段: r[2],
+    日期: r[3],
+    日期_str: typeof r[3] === 'number' ? excelDateToStr(r[3]) : String(r[3] || '').slice(0, 10),
+    销量: Number(r[4]) || 0,
+    销售额: Number(r[5]) || 0,
+  }));
+  rows = rows.filter((r) => r.价格段 !== '0-1k');
+  return { header, rows };
+}
+
+// ============ 分品牌维度：品牌汇总 ============
+function brandSummary(rows) {
+  const totalSales = rows.reduce((s, r) => s + r.销量, 0);
+  const totalAmount = rows.reduce((s, r) => s + r.销售额, 0);
+  const byBrand = {};
+  rows.forEach((r) => {
+    if (!byBrand[r.品牌]) byBrand[r.品牌] = { 销量: 0, 销售额: 0 };
+    byBrand[r.品牌].销量 += r.销量;
+    byBrand[r.品牌].销售额 += r.销售额;
+  });
+  const list = Object.entries(byBrand).map(([品牌, v]) => ({
+    品牌,
+    销量: v.销量,
+    销售额: v.销售额,
+    销量占比: totalSales ? v.销量 / totalSales : 0,
+    销售额占比: totalAmount ? v.销售额 / totalAmount : 0,
+    客单价: v.销量 ? v.销售额 / v.销量 : 0,
+  }));
+  return { 说明: '各品牌销量、销售额、占比、客单价', 全盘销量合计: totalSales, 全盘销售额合计: totalAmount, 按品牌: list };
+}
+
+// ============ 分品牌维度：品牌×渠道 ============
+function brandChannel(rows) {
+  const byBrand = {};
+  rows.forEach((r) => { byBrand[r.品牌] = (byBrand[r.品牌] || 0) + r.销量; });
+  const byBrandAmount = {};
+  rows.forEach((r) => { byBrandAmount[r.品牌] = (byBrandAmount[r.品牌] || 0) + r.销售额; });
+  const byKey = {};
+  rows.forEach((r) => {
+    const key = `${r.品牌}\t${r.渠道}`;
+    if (!byKey[key]) byKey[key] = { 品牌: r.品牌, 渠道: r.渠道, 销量: 0, 销售额: 0 };
+    byKey[key].销量 += r.销量;
+    byKey[key].销售额 += r.销售额;
+  });
+  const list = Object.values(byKey).map((v) => ({
+    ...v,
+    客单价: v.销量 ? v.销售额 / v.销量 : 0,
+    品牌内销量占比: byBrand[v.品牌] ? v.销量 / byBrand[v.品牌] : 0,
+    品牌内销售额占比: byBrandAmount[v.品牌] ? v.销售额 / byBrandAmount[v.品牌] : 0,
+  }));
+  return { 说明: '各品牌在各渠道的销量、销售额', 按品牌与渠道: list };
+}
+
+// ============ 分品牌维度：品牌×价格段 ============
+function brandPrice(rows) {
+  const byBrand = {};
+  rows.forEach((r) => { byBrand[r.品牌] = (byBrand[r.品牌] || 0) + r.销量; });
+  const byKey = {};
+  rows.forEach((r) => {
+    const key = `${r.品牌}\t${r.价格段}`;
+    if (!byKey[key]) byKey[key] = { 品牌: r.品牌, 价格段: r.价格段, 销量: 0, 销售额: 0 };
+    byKey[key].销量 += r.销量;
+    byKey[key].销售额 += r.销售额;
+  });
+  const list = Object.values(byKey).map((v) => ({
+    ...v,
+    客单价: v.销量 ? v.销售额 / v.销量 : 0,
+    品牌内销量占比: byBrand[v.品牌] ? v.销量 / byBrand[v.品牌] : 0,
+  }));
+  return { 说明: '各品牌在各价格段的销量、销售额', 按品牌与价格段: list };
+}
+
+// ============ 分品牌维度：品牌×时间 ============
+function brandTime(rows) {
+  const byKey = {};
+  const byDateTotal = {};
+  rows.forEach((r) => {
+    const key = `${r.品牌}\t${r.日期_str}`;
+    if (!byKey[key]) byKey[key] = { 品牌: r.品牌, 日期: r.日期_str, 销量: 0, 销售额: 0 };
+    byKey[key].销量 += r.销量;
+    byKey[key].销售额 += r.销售额;
+    byDateTotal[r.日期_str] = (byDateTotal[r.日期_str] || 0) + r.销量;
+  });
+  const list = Object.values(byKey).map((v) => ({
+    ...v,
+    当月销量占比: byDateTotal[v.日期] ? v.销量 / byDateTotal[v.日期] : 0,
+  }));
+  return { 说明: '各品牌按月销量、销售额及当月占比', 按品牌与日期: list };
+}
+
+// ============ 分品牌维度：渠道×品牌×时间（按月） ============
+function channelBrandTime(rows) {
+  const byDateTotal = {};
+  rows.forEach((r) => { byDateTotal[r.日期_str] = (byDateTotal[r.日期_str] || 0) + r.销量; });
+  const byKey = {};
+  rows.forEach((r) => {
+    const key = `${r.渠道}\t${r.品牌}\t${r.日期_str}`;
+    if (!byKey[key]) byKey[key] = { 渠道: r.渠道, 品牌: r.品牌, 日期: r.日期_str, 销量: 0, 销售额: 0 };
+    byKey[key].销量 += r.销量;
+    byKey[key].销售额 += r.销售额;
+  });
+  const list = Object.values(byKey).map((v) => ({
+    ...v,
+    当月销量占比: byDateTotal[v.日期] ? v.销量 / byDateTotal[v.日期] : 0,
+  }));
+  return { 说明: '各渠道×品牌×日期的月度销量、销售额', 按渠道与品牌与日期: list };
+}
+
+// ============ 分品牌维度：品牌排名与集中度 ============
+function brandRanking(rows) {
+  const d = brandSummary(rows);
+  const byBrand = d.按品牌.slice().sort((a, b) => b.销量 - a.销量);
+  const totalSales = d.全盘销量合计;
+  const totalAmount = d.全盘销售额合计;
+  let sumS = 0, sumA = 0;
+  const 品牌按销量排名 = byBrand.map((x, i) => {
+    sumS += x.销量;
+    sumA += x.销售额;
+    return {
+      排名: i + 1,
+      品牌: x.品牌,
+      销量: x.销量,
+      销售额: x.销售额,
+      销量占比: x.销量占比,
+      CRn_销量: totalSales ? sumS / totalSales : 0,
+      CRn_销售额: totalAmount ? sumA / totalAmount : 0,
+    };
+  });
+  const cr1 = 品牌按销量排名[0];
+  const cr2 = 品牌按销量排名[1];
+  const cr3 = 品牌按销量排名[2];
+  return {
+    说明: '品牌销量与销售额排名、CR1/CR2/CR3',
+    品牌按销量排名,
+    品牌按销售额排名: d.按品牌.slice().sort((a, b) => b.销售额 - a.销售额).map((x, i) => ({ 排名: i + 1, 品牌: x.品牌, 销售额: x.销售额, 销量: x.销量 })),
+    品牌集中度: {
+      CR1_销量: cr1 ? cr1.CRn_销量 : 0,
+      CR2_销量: cr2 ? 品牌按销量排名[1].CRn_销量 : 0,
+      CR3_销量: cr3 ? 品牌按销量排名[2].CRn_销量 : 0,
+      CR1_销售额: cr1 ? cr1.CRn_销售额 : 0,
+      CR2_销售额: cr2 ? 品牌按销量排名[1].CRn_销售额 : 0,
+      CR3_销售额: cr3 ? 品牌按销量排名[2].CRn_销售额 : 0,
+    },
+  };
+}
+
 // ============ 主流程 ============
 function main() {
-  console.log('读取文件:', inputPath);
+  const brandPath = process.argv[4] || null;
+  console.log('读取大盘文件:', inputPath);
   const { rows } = loadData(inputPath);
-  console.log('数据行数:', rows.length);
+  console.log('大盘数据行数:', rows.length, '(已剔除0-1k)');
 
   const result = {
     数据说明: {
@@ -432,6 +573,21 @@ function main() {
     维度九_增长与占比: dimension9_shareGrowth(rows),
     维度十_集中度与排名: dimension10_ranking(rows),
   };
+
+  if (brandPath && fs.existsSync(brandPath)) {
+    console.log('读取分品牌文件:', brandPath);
+    const { rows: rowsBrand } = loadDataBrand(brandPath);
+    console.log('分品牌数据行数:', rowsBrand.length, '(已剔除0-1k)');
+    result.分品牌 = {
+      数据说明: { 数据源: brandPath, 原始行数: rowsBrand.length },
+      品牌汇总: brandSummary(rowsBrand),
+      品牌与渠道: brandChannel(rowsBrand),
+      品牌与价格段: brandPrice(rowsBrand),
+      品牌与时间: brandTime(rowsBrand),
+      渠道与品牌与时间: channelBrandTime(rowsBrand),
+      品牌排名与集中度: brandRanking(rowsBrand),
+    };
+  }
 
   const jsonStr = JSON.stringify(result, null, 2);
   fs.writeFileSync(outputPath, jsonStr, 'utf8');
