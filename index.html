@@ -71,7 +71,7 @@
   <div style="position:relative;z-index:1">
   <div class="page-header">
     <h1>学习机品类 - 电商数据可视化</h1>
-    <div class="subtitle">数据更新至2026年2月，版本号20260314-v1</div>
+    <div class="subtitle">数据更新至2026年2月，发布时间20260314</div>
   </div>
   <div class="section-block">
   <div class="section-title">大盘数据</div>
@@ -987,6 +987,7 @@
       }
 
       // 维度二：价格段 - 饼图（销量占比），支持时间范围
+      var orderPriceSegment = ['1-2k', '2-3k', '3-4k', '4-6k', '6k以上'];
       function render2() {
         var startVal = document.getElementById('dim2Start') && document.getElementById('dim2Start').value;
         var endVal = document.getElementById('dim2End') && document.getElementById('dim2End').value;
@@ -1012,6 +1013,13 @@
             return { name: r.价格段, value: r.销量 };
           });
         }
+        list = list.slice().sort(function (a, b) {
+          var i = orderPriceSegment.indexOf(a.name);
+          var j = orderPriceSegment.indexOf(b.name);
+          if (i === -1) i = 999;
+          if (j === -1) j = 999;
+          return i - j;
+        });
         var opt = {
           tooltip: { trigger: 'item', formatter: function (params) { return params.name + ': ' + params.value + ' (' + Number(params.percent).toFixed(2) + '%)'; } },
           legend: { orient: 'vertical', right: 8, top: 'center' },
