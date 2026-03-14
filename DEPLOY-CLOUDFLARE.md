@@ -16,7 +16,7 @@
    或手动：
    ```bash
    node scripts/prepare-dist.js
-   npx wrangler pages deploy dist --project-name=QBT-DataVisualization
+   npx wrangler pages deploy dist --project-name=qbt-datavisualization
    ```
 
 3. **首次部署**  
