@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>学习机品类 - 电商数据可视化</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="data/default-data.js"></script>
@@ -21,7 +21,16 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 16px; }
     .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 12px; }
     .card h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px 0; font-size: 14px; color: #2d3436; }
-    .card h3 .chart-title-icon { color: #4a69bd; font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+    .card h3 .chart-title-icon { color: #4a69bd; font-size: 15px; width: 20px; min-width: 1em; text-align: center; flex-shrink: 0; }
+    .card h3 i.chart-title-icon.fa {
+      font-family: FontAwesome !important;
+      font-style: normal !important;
+      font-weight: normal !important;
+      display: inline-block;
+      line-height: 1;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
     .card .chart { width: 100%; height: 320px; }
     .card.wide { grid-column: 1 / -1; }
     .card.wide .chart { height: 380px; }
@@ -54,6 +63,25 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     #global-loading .loading-text { font-size: 14px; color: #64748b; }
     body.loading-active { overflow: hidden; }
+    #ai-assistant-wrap { display: none; /* 暂时隐藏 AI 助手；恢复时删除本行 display:none */ position: fixed; right: 20px; bottom: 20px; z-index: 9999; font-family: inherit; }
+    #ai-assistant-btn { width: 52px; height: 52px; border-radius: 50%; background: #4a69bd; color: #fff; border: none; box-shadow: 0 4px 12px rgba(74,105,189,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    #ai-assistant-btn:hover { background: #3d5aa0; }
+    #ai-assistant-panel { display: none; position: absolute; right: 0; bottom: 60px; width: 380px; max-height: 520px; background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); flex-direction: column; overflow: hidden; }
+    #ai-assistant-panel.show { display: flex; }
+    #ai-assistant-panel .ai-assistant-header { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1a1a2e; font-size: 14px; }
+    #ai-assistant-panel .ai-assistant-scope { padding: 10px 14px; border-bottom: 1px solid #eee; font-size: 12px; color: #555; }
+    #ai-assistant-panel .ai-assistant-scope label { margin-right: 14px; cursor: pointer; }
+    #ai-assistant-panel .ai-assistant-messages { flex: 1; min-height: 200px; max-height: 280px; overflow-y: auto; padding: 12px; font-size: 13px; line-height: 1.5; color: #333; }
+    #ai-assistant-panel .ai-assistant-msg { margin-bottom: 12px; }
+    #ai-assistant-panel .ai-assistant-msg.user { text-align: right; color: #1a1a2e; }
+    #ai-assistant-panel .ai-assistant-msg.assistant { text-align: left; white-space: pre-wrap; word-break: break-word; }
+    #ai-assistant-panel .ai-assistant-loading { color: #64748b; font-size: 12px; }
+    #ai-assistant-panel .ai-assistant-error { color: #c0392b; font-size: 12px; }
+    #ai-assistant-panel .ai-assistant-input-row { padding: 10px 14px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center; }
+    #ai-assistant-panel #ai-assistant-input { flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; }
+    #ai-assistant-panel #ai-assistant-send { padding: 8px 16px; background: #4a69bd; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; }
+    #ai-assistant-panel #ai-assistant-send:hover { background: #3d5aa0; }
+    #ai-assistant-panel #ai-assistant-send:disabled { opacity: 0.6; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -94,6 +122,7 @@
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span></h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select></div><div id="chartB3" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌价格段销量</span></h3><div class="load-bar" style="margin-bottom:8px"><select id="brandTop10Select"><option value="">选择品牌</option></select><span style="margin-left:8px">起始：<select id="dimB6Start"></select> 结束：<select id="dimB6End"></select></span></div><div id="chartB6" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-money"></i><span>客单价对比</span></h3><div class="date-range">起始：<select id="dimB5Start"></select> 结束：<select id="dimB5End"></select></div><div id="chartB5" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌客单价趋势</span></h3><div class="date-range">起始：<select id="dimB7Start"></select> 结束：<select id="dimB7End"></select></div><div id="chartB7" class="chart"></div></div>
   </div>
   </div>
   <div class="upload-area">
@@ -111,6 +140,22 @@
   <div class="page-footer">
     <hr class="footer-divider" />
     <p class="footer-note">暂未开放实时更新数据功能，如需更新或发现数据错误请联系胡鹏辉</p>
+  </div>
+  <div id="ai-assistant-wrap">
+    <button type="button" id="ai-assistant-btn" title="AI 助手"><i class="fa fa-comments-o"></i></button>
+    <div id="ai-assistant-panel">
+      <div class="ai-assistant-header">AI 助手（仅根据当前报表数据回答）</div>
+      <div class="ai-assistant-scope">
+        <label><input type="radio" name="ai-scope" value="both" checked /> 两者</label>
+        <label><input type="radio" name="ai-scope" value="dapan" /> 仅大盘</label>
+        <label><input type="radio" name="ai-scope" value="brand" /> 仅品牌</label>
+      </div>
+      <div class="ai-assistant-messages" id="ai-assistant-messages"></div>
+      <div class="ai-assistant-input-row">
+        <input type="text" id="ai-assistant-input" placeholder="输入问题…" />
+        <button type="button" id="ai-assistant-send">发送</button>
+      </div>
+    </div>
   </div>
   </div>
   </div>
@@ -160,9 +205,97 @@
 
       var charts = {};
       var dataSource = null;
+      // 部署 Worker 后在此填写，例如 https://qbt-ai-assistant.xxx.workers.dev
+      var AI_ASSISTANT_WORKER_URL = '';
 
       function getDaPan() { if (!dataSource) return null; if (dataSource.分品牌 !== undefined) return dataSource.大盘 || {}; return dataSource; }
       function getFenPinPai() { return dataSource && dataSource.分品牌; }
+
+      function buildDataContext(scope) {
+        var MAX_LEN = 38000;
+        function append(out, title, text) {
+          if (!text) return out;
+          var block = (title ? title + '\n' + text : text) + '\n\n';
+          if (out.length + block.length > MAX_LEN) return out + block.slice(0, MAX_LEN - out.length);
+          return out + block;
+        }
+        function table(arr, keys) {
+          if (!Array.isArray(arr) || !arr.length) return '';
+          var header = (keys || Object.keys(arr[0])).join('\t');
+          var rows = arr.map(function (r) { return (keys || Object.keys(arr[0])).map(function (k) { return r[k] != null ? String(r[k]) : ''; }).join('\t'); }).join('\n');
+          return header + '\n' + rows;
+        }
+        var out = '';
+        var dp = scope === 'brand' ? null : getDaPan();
+        var fp = scope === 'dapan' ? null : getFenPinPai();
+        if (dp) {
+          out = append(out, '【大盘数据说明】', dp.数据说明 ? JSON.stringify(dp.数据说明) : '');
+          var d1 = dp.维度一_渠道维度;
+          if (d1) { out = append(out, '【大盘-维度一 按渠道】', d1.说明 || ''); if (d1.按渠道) out = append(out, '', table(d1.按渠道, ['渠道','销量','销售额','销量占比','销售额占比','客单价'])); }
+          var d2 = dp.维度二_价格段维度;
+          if (d2) { out = append(out, '【大盘-维度二 按价格段】', d2.说明 || ''); if (d2.按价格段) out = append(out, '', table(d2.按价格段, ['价格段','销量','销售额','销量占比','销售额占比','客单价'])); }
+          var d3 = dp.维度三_时间趋势;
+          if (d3 && d3.按日期) {
+            var arr = d3.按日期; if (arr.length > 36) arr = arr.slice(-36);
+            out = append(out, '【大盘-维度三 按日期】', table(arr, ['日期','销量','销售额','销量同比','销量环比']));
+          }
+          var d4 = dp.维度四_渠道与时间;
+          if (d4 && d4.按渠道与日期) {
+            var a4 = d4.按渠道与日期; if (a4.length > 200) a4 = a4.slice(-200);
+            out = append(out, '【大盘-维度四 渠道与日期】', table(a4, ['渠道','日期','销量','销售额']));
+          }
+          var d5 = dp.维度五_价格段与时间;
+          if (d5 && d5.按价格段与日期) {
+            var a5 = d5.按价格段与日期; if (a5.length > 200) a5 = a5.slice(-200);
+            out = append(out, '【大盘-维度五 价格段与日期】', table(a5, ['价格段','日期','销量','销售额','销量占比']));
+          }
+          var d6 = dp.维度六_渠道与价格段;
+          if (d6 && d6.按渠道与价格段) out = append(out, '【大盘-维度六 渠道与价格段】', table(d6.按渠道与价格段, ['渠道','价格段','销量','销售额','销量占比']));
+          var d7 = dp.维度七_渠道与价格段与时间;
+          if (d7 && d7.按渠道与价格段与日期) {
+            var a7 = d7.按渠道与价格段与日期; if (a7.length > 300) a7 = a7.slice(-300);
+            out = append(out, '【大盘-维度七 渠道与价格段与日期】', table(a7, ['渠道','价格段','日期','销量','销售额']));
+          }
+          var d8 = dp.维度八_客单价衍生;
+          if (d8) {
+            if (d8.按渠道) out = append(out, '【大盘-维度八 客单价按渠道】', table(d8.按渠道, ['渠道','销量','销售额','客单价']));
+            if (d8.按价格段) out = append(out, '【大盘-维度八 客单价按价格段】', table(d8.按价格段, ['价格段','销量','销售额','客单价']));
+          }
+          var d9 = dp.维度九_增长与占比;
+          if (d9 && d9.价格段销量占比随时间) {
+            var a9 = d9.价格段销量占比随时间; if (a9.length > 150) a9 = a9.slice(-150);
+            out = append(out, '【大盘-维度九 价格段销量占比随时间】', table(a9, ['价格段','日期','销量占比']));
+          }
+          var d10 = dp.维度十_集中度与排名;
+          if (d10) {
+            if (d10.渠道按销量排名) out = append(out, '【大盘-维度十 渠道按销量排名】', table(d10.渠道按销量排名, ['渠道','销量','销售额','排名']));
+            if (d10.价格段按销量排名) out = append(out, '【大盘-维度十 价格段按销量排名】', table(d10.价格段按销量排名, ['价格段','销量','销售额','排名','CRn_销量']));
+          }
+        }
+        if (fp) {
+          out = append(out, '【分品牌数据说明】', fp.数据说明 ? JSON.stringify(fp.数据说明) : '');
+          var b1 = fp['品牌销量/销额'];
+          if (b1 && b1.按品牌) out = append(out, '【分品牌-品牌销量销额】', table(b1.按品牌, ['品牌','销量','销售额','销量占比','销售额占比']));
+          var b2 = fp['品牌渠道占比'];
+          if (b2 && b2.按品牌与渠道) out = append(out, '【分品牌-品牌渠道占比】', table(b2.按品牌与渠道, ['品牌','渠道','销量','销售额','品牌内销量占比','品牌内销售额占比']));
+          var b3 = fp['品牌市占率'];
+          if (b3 && b3.按日期) {
+            var a3 = b3.按日期; if (a3.length > 120) a3 = a3.slice(-120);
+            var cols = Object.keys(a3[0] || {}); out = append(out, '【分品牌-品牌市占率按日期】', table(a3, cols));
+          }
+          var b5 = fp['品牌客单价'];
+          if (b5 && b5.按品牌) out = append(out, '【分品牌-品牌客单价】', table(b5.按品牌, ['品牌','销量','销售额','客单价']));
+          var b6 = fp['品牌价格段分布'];
+          if (b6 && b6.按品牌) {
+            var byBrand = b6.按品牌;
+            for (var br in byBrand) {
+              var item = byBrand[br]; var arr = item.按价格段与日期; if (Array.isArray(arr) && arr.length > 50) arr = arr.slice(-50);
+              if (arr && arr.length) out = append(out, '【分品牌-价格段分布 ' + br + '】', table(arr, ['价格段','日期','销量','销售额']));
+            }
+          }
+        }
+        return out || '（当前无数据）';
+      }
 
       // ========== Excel 解析与特征提取（与 extract-features.js 一致） ==========
       function excelDateToStr(serial) {
@@ -930,7 +1063,8 @@
           if (typeof renderBrand3 === 'function') renderBrand3();
           if (typeof renderBrand5 === 'function') renderBrand5();
           if (typeof renderBrand6 === 'function') renderBrand6();
-          ['chartB1','chartB2','chartB3','chartB5','chartB6'].forEach(function (id) { if (charts[id] && charts[id].resize) charts[id].resize(); });
+          if (typeof renderBrand7 === 'function') renderBrand7();
+          ['chartB1','chartB2','chartB3','chartB5','chartB6','chartB7'].forEach(function (id) { if (charts[id] && charts[id].resize) charts[id].resize(); });
         }
       }
 
@@ -1330,7 +1464,7 @@
         var html = '<option value="">全量</option>' + opts.join('');
         var defaultStart = defaultStartDateBrand(dates);
         var defaultEnd = dates.length ? dates[dates.length - 1] : '';
-        var ids = ['dimB1Start','dimB1End','dimB2Start','dimB2End','dimB3Start','dimB3End','dimB5Start','dimB5End','dimB6Start','dimB6End'];
+        var ids = ['dimB1Start','dimB1End','dimB2Start','dimB2End','dimB3Start','dimB3End','dimB5Start','dimB5End','dimB6Start','dimB6End','dimB7Start','dimB7End'];
         for (var i = 0; i < ids.length; i++) {
           var el = document.getElementById(ids[i]);
           if (!el) continue;
@@ -1345,11 +1479,13 @@
         function onB3() { renderBrand3(); }
         function onB5() { renderBrand5(); }
         function onB6() { renderBrand6(); }
+        function onB7() { renderBrand7(); }
         ['dimB1Start','dimB1End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB1; });
         ['dimB2Start','dimB2End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB2; });
         ['dimB3Start','dimB3End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB3; });
         ['dimB5Start','dimB5End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB5; });
         ['dimB6Start','dimB6End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB6; });
+        ['dimB7Start','dimB7End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB7; });
       }
       function renderBrandAll() {
         var fp = getFenPinPai();
@@ -1368,6 +1504,7 @@
         renderBrand3();
         renderBrand5();
         renderBrand6();
+        renderBrand7();
       }
       function renderBrand1() {
         var fp = getFenPinPai();
@@ -1615,6 +1752,71 @@
         if (!charts.chartB6) charts.chartB6 = echarts.init(document.getElementById('chartB6'));
         charts.chartB6.setOption(opt, true);
       }
+      function renderBrand7() {
+        var fp = getFenPinPai();
+        var topBrands = (fp && fp.数据说明 && fp.数据说明.前十大品牌) || [];
+        var el = document.getElementById('chartB7');
+        if (!el) return;
+        if (!fp || !fp.品牌与日期 || !fp.品牌与日期.length || !topBrands.length) {
+          if (!charts.chartB7) charts.chartB7 = echarts.init(el);
+          charts.chartB7.setOption({ title: { text: '暂无品牌与日期明细', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
+          return;
+        }
+        var startVal = document.getElementById('dimB7Start') && document.getElementById('dimB7Start').value;
+        var endVal = document.getElementById('dimB7End') && document.getElementById('dimB7End').value;
+        var raw = fp.品牌与日期;
+        if (startVal && endVal && startVal <= endVal) {
+          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+        }
+        var seen = {};
+        raw.forEach(function (r) { if (r.日期) seen[r.日期] = true; });
+        var dates = Object.keys(seen);
+        dates.sort();
+        if (!dates.length) {
+          if (!charts.chartB7) charts.chartB7 = echarts.init(el);
+          charts.chartB7.setOption({ title: { text: '所选时间范围内无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
+          return;
+        }
+        var byBrandDate = {};
+        raw.forEach(function (r) {
+          var k = r.品牌 + '\t' + r.日期;
+          var v = r.销量 ? Math.round(r.销售额 / r.销量) : null;
+          byBrandDate[k] = v;
+        });
+        var xInterval = dates.length > 10 ? Math.max(1, Math.floor(dates.length / 10)) : 0;
+        var series = topBrands.map(function (b) {
+          return {
+            name: b,
+            type: 'line',
+            smooth: true,
+            data: dates.map(function (dt) {
+              var k = b + '\t' + dt;
+              return byBrandDate[k] != null ? byBrandDate[k] : null;
+            })
+          };
+        });
+        var opt = {
+          tooltip: {
+            trigger: 'axis',
+            formatter: function (params) {
+              if (!params || !params.length) return '';
+              var s = (params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>';
+              params.forEach(function (p) {
+                var v = p.value;
+                s += p.marker + p.seriesName + ': ' + (v != null && typeof v === 'number' ? String(Math.round(v)) : '-') + '<br/>';
+              });
+              return s;
+            }
+          },
+          legend: { data: topBrands, top: 6, left: 'center', type: 'scroll' },
+          grid: { left: 56, right: 24, top: 48, bottom: 92 },
+          xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, interval: xInterval, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          yAxis: { type: 'value', name: '客单价', min: 1000, axisLabel: { formatter: function (v) { return String(Math.round(Number(v))); } } },
+          series: series
+        };
+        if (!charts.chartB7) charts.chartB7 = echarts.init(el);
+        charts.chartB7.setOption(opt, true);
+      }
 
       function strip01kFromDaPan(dp) {
         if (!dp) return;
@@ -1767,6 +1969,60 @@
         });
       };
       window.addEventListener('resize', window.resizeCharts);
+
+      (function aiAssistant() {
+        var panel = document.getElementById('ai-assistant-panel');
+        var btn = document.getElementById('ai-assistant-btn');
+        var messagesEl = document.getElementById('ai-assistant-messages');
+        var inputEl = document.getElementById('ai-assistant-input');
+        var sendBtn = document.getElementById('ai-assistant-send');
+        if (!panel || !btn || !messagesEl || !inputEl || !sendBtn) return;
+        btn.addEventListener('click', function () { panel.classList.toggle('show'); });
+        function getScope() {
+          var r = document.querySelector('input[name="ai-scope"]:checked');
+          return (r && r.value) || 'both';
+        }
+        function appendMsg(role, text, isError) {
+          var div = document.createElement('div');
+          div.className = 'ai-assistant-msg ' + role + (isError ? ' ai-assistant-error' : '');
+          div.textContent = text;
+          messagesEl.appendChild(div);
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+        sendBtn.addEventListener('click', function () {
+          var question = (inputEl.value || '').trim();
+          if (!question) return;
+          var scope = getScope();
+          var dp = getDaPan();
+          var fp = getFenPinPai();
+          if (scope === 'dapan' && !dp) { appendMsg('assistant', '请先加载大盘数据。', true); return; }
+          if (scope === 'brand' && !fp) { appendMsg('assistant', '请先加载分品牌数据。', true); return; }
+          if (scope === 'both' && !dp && !fp) { appendMsg('assistant', '请先加载大盘或分品牌数据。', true); return; }
+          if (!AI_ASSISTANT_WORKER_URL) { appendMsg('assistant', '请先配置 AI_ASSISTANT_WORKER_URL（部署 Worker 后填写）。', true); return; }
+          appendMsg('user', question);
+          inputEl.value = '';
+          var loadingDiv = document.createElement('div');
+          loadingDiv.className = 'ai-assistant-msg assistant ai-assistant-loading';
+          loadingDiv.textContent = '正在回答…';
+          messagesEl.appendChild(loadingDiv);
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+          sendBtn.disabled = true;
+          var context = buildDataContext(scope);
+          fetch(AI_ASSISTANT_WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: question, context: context })
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            loadingDiv.remove();
+            var reply = (data && data.reply) ? String(data.reply) : (data && data.error ? '错误: ' + data.error : '未返回内容');
+            appendMsg('assistant', reply, !!data.error);
+          }).catch(function (err) {
+            loadingDiv.remove();
+            appendMsg('assistant', '请求失败: ' + (err.message || err), true);
+          }).then(function () { sendBtn.disabled = false; });
+        });
+        inputEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendBtn.click(); });
+      })();
     })();
   </script>
 </body>

@@ -1,0 +1,5 @@
+name = "qbt-ai-assistant"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# API Key 通过 wrangler secret put DASHSCOPE_API_KEY 设置，不要写在此文件中
