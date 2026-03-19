@@ -36,16 +36,44 @@
     .load-bar span { font-size: 13px; color: #666; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 16px; }
     .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 12px; }
-    .card h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px 0; font-size: 16px; color: #2d3436; }
-    .card h3 .chart-title-icon { color: #4a69bd; font-size: 16px; width: 22px; min-width: 1em; text-align: center; flex-shrink: 0; }
+    .card h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      line-height: 1.35;
+      color: #2d3436;
+    }
+    .card h3 .chart-title-icon {
+      color: #4a69bd;
+      font-size: 16px;
+      width: 1.25em;
+      min-width: 1.25em;
+      height: 1.25em;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      text-align: center;
+    }
     .card h3 i.chart-title-icon.fa {
       font-family: FontAwesome !important;
       font-style: normal !important;
       font-weight: normal !important;
-      display: inline-block;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
       line-height: 1;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+    }
+    .card h3 i.chart-title-icon.fa:before {
+      line-height: 1;
+    }
+    .card h3 > span:last-child {
+      line-height: 1.35;
     }
     .card .chart { width: 100%; height: 320px; }
     .card.wide { grid-column: 1 / -1; }
@@ -122,7 +150,8 @@
     html.mobile-client .card {
       min-width: 0;
       max-width: 100%;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: visible;
       padding: 10px;
     }
     html.mobile-client .card .chart {
@@ -156,6 +185,27 @@
       font-size: 16px;
       flex-wrap: wrap;
       line-height: 1.4;
+      align-items: center;
+    }
+    html.mobile-client .card h3 .chart-title-icon {
+      display: inline-block !important;
+      width: 22px !important;
+      min-width: 22px !important;
+      height: 22px !important;
+      line-height: 22px !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+      font-size: 16px !important;
+    }
+    html.mobile-client .card h3 i.chart-title-icon.fa {
+      display: inline-block !important;
+      width: 22px !important;
+      min-width: 22px !important;
+      height: 22px !important;
+      line-height: 22px !important;
+      font-size: 16px !important;
+      align-items: unset;
+      justify-content: unset;
     }
     html.mobile-client .card h3 > span:last-child {
       word-break: break-word;
@@ -333,6 +383,23 @@
       }
 
       var charts = {};
+
+      function applyMobileChartOption(opt) {
+        if (!opt || !document.documentElement.classList.contains('mobile-client')) return opt;
+        if (opt.legend == null || opt.legend === false || opt.legend.show === false) return opt;
+        if (opt.legend.orient === 'vertical') return opt;
+        if (!opt.legend.type) opt.legend.type = 'scroll';
+        if (!opt.legend.textStyle) opt.legend.textStyle = {};
+        if (opt.legend.textStyle.fontSize == null) opt.legend.textStyle.fontSize = 10;
+        if (opt.grid) {
+          var gt = opt.grid.top;
+          var base = typeof gt === 'number' ? gt : 40;
+          var extra = 52;
+          if (opt.title && opt.title.text != null && String(opt.title.text) !== '' && opt.title.show !== false) extra += 16;
+          opt.grid.top = base + extra;
+        }
+        return opt;
+      }
       var dataSource = null;
       // 部署 Worker 后在此填写，例如 https://qbt-ai-assistant.xxx.workers.dev
       var AI_ASSISTANT_WORKER_URL = '';
@@ -1266,7 +1333,7 @@
           ]
         };
         if (!charts.chart1) charts.chart1 = echarts.init(document.getElementById('chart1'));
-        charts.chart1.setOption(opt, true);
+        charts.chart1.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度二：价格段 - 饼图（销量占比），支持时间范围
@@ -1309,7 +1376,7 @@
           series: [{ type: 'pie', radius: ['40%', '70%'], data: list, emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' } } }]
         };
         if (!charts.chart2) charts.chart2 = echarts.init(document.getElementById('chart2'));
-        charts.chart2.setOption(opt, true);
+        charts.chart2.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度三：时间趋势 - 折线（销量 + 销量同比% 副坐标）
@@ -1355,7 +1422,7 @@
           ]
         };
         if (!charts.chart3) charts.chart3 = echarts.init(document.getElementById('chart3'));
-        charts.chart3.setOption(opt, true);
+        charts.chart3.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度四：渠道×时间 - 多系列折线（各渠道销量）
@@ -1390,7 +1457,7 @@
           series: series
         };
         if (!charts.chart4) charts.chart4 = echarts.init(document.getElementById('chart4'));
-        charts.chart4.setOption(opt, true);
+        charts.chart4.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度五：价格段×时间 - 堆叠面积（各价格段销量占比）
@@ -1435,7 +1502,7 @@
           series: series
         };
         if (!charts.chart5) charts.chart5 = echarts.init(document.getElementById('chart5'));
-        charts.chart5.setOption(opt, true);
+        charts.chart5.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度六：渠道×价格段 - 热力图
@@ -1467,7 +1534,7 @@
           series: [{ type: 'heatmap', data: data, label: { show: false }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } } }]
         };
         if (!charts.chart6) charts.chart6 = echarts.init(document.getElementById('chart6'));
-        charts.chart6.setOption(opt, true);
+        charts.chart6.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度七：渠道×价格段×时间 - 选择月份后该月热力图
@@ -1515,7 +1582,7 @@
           series: [{ type: 'heatmap', data: data, label: { show: false }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } } }]
         };
         if (!charts.chart7) charts.chart7 = echarts.init(document.getElementById('chart7'));
-        charts.chart7.setOption(opt, true);
+        charts.chart7.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度八：客单价 - 柱状（渠道 + 价格段，已排除 0-1k）
@@ -1534,7 +1601,7 @@
           series: [{ type: 'bar', data: val, itemStyle: { color: function (p) { return p.data == null ? 'transparent' : (p.dataIndex < ch.length ? '#5470c6' : '#91cc75'); } } }]
         };
         if (!charts.chart8) charts.chart8 = echarts.init(document.getElementById('chart8'));
-        charts.chart8.setOption(opt, true);
+        charts.chart8.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度六：各渠道销量占比随时间（原维度九）
@@ -1570,7 +1637,7 @@
           series: series
         };
         if (!charts.chart9) charts.chart9 = echarts.init(document.getElementById('chart9'));
-        charts.chart9.setOption(opt, true);
+        charts.chart9.setOption(applyMobileChartOption(opt), true);
       }
 
       // 维度十：渠道排名条形 + 集中度
@@ -1590,7 +1657,7 @@
           title: { text: 'CR1: ' + ((cr.CR1_销量 || 0) * 100).toFixed(2) + '%  CR2: ' + ((cr.CR2_销量 || 0) * 100).toFixed(2) + '%  CR3: ' + ((cr.CR3_销量 || 0) * 100).toFixed(2) + '%', left: 'center', bottom: 4, textStyle: { fontSize: 12, fontWeight: 'normal' } }
         };
         if (!charts.chart10) charts.chart10 = echarts.init(document.getElementById('chart10'));
-        charts.chart10.setOption(opt, true);
+        charts.chart10.setOption(applyMobileChartOption(opt), true);
       }
 
       function getBrandDateList() {
@@ -1701,7 +1768,7 @@
           ]
         };
         if (!charts.chartB1) charts.chartB1 = echarts.init(document.getElementById('chartB1'));
-        charts.chartB1.setOption(opt, true);
+        charts.chartB1.setOption(applyMobileChartOption(opt), true);
       }
       function renderBrand2() {
         var fp = getFenPinPai();
@@ -1759,7 +1826,7 @@
           series: series
         };
         if (!charts.chartB2) charts.chartB2 = echarts.init(document.getElementById('chartB2'));
-        charts.chartB2.setOption(opt, true);
+        charts.chartB2.setOption(applyMobileChartOption(opt), true);
       }
       function renderBrand3() {
         var d = getFenPinPai() && getFenPinPai()['品牌市占率'];
@@ -1802,7 +1869,7 @@
           series: series
         };
         if (!charts.chartB3) charts.chartB3 = echarts.init(document.getElementById('chartB3'));
-        charts.chartB3.setOption(opt, true);
+        charts.chartB3.setOption(applyMobileChartOption(opt), true);
       }
       function renderBrand5() {
         var fp = getFenPinPai();
@@ -1838,7 +1905,7 @@
           series: [{ type: 'bar', data: val, itemStyle: { color: function (params) { return brandColors[params.dataIndex % brandColors.length]; } }, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? String(Math.round(p.value)) : ''; } } }]
         };
         if (!charts.chartB5) charts.chartB5 = echarts.init(document.getElementById('chartB5'));
-        charts.chartB5.setOption(opt, true);
+        charts.chartB5.setOption(applyMobileChartOption(opt), true);
       }
       function renderBrand6() {
         var d = getFenPinPai() && getFenPinPai()['品牌价格段分布'];
@@ -1907,7 +1974,7 @@
           series: series
         };
         if (!charts.chartB6) charts.chartB6 = echarts.init(document.getElementById('chartB6'));
-        charts.chartB6.setOption(opt, true);
+        charts.chartB6.setOption(applyMobileChartOption(opt), true);
       }
       function renderBrand7() {
         var fp = getFenPinPai();
@@ -1972,7 +2039,7 @@
           series: series
         };
         if (!charts.chartB7) charts.chartB7 = echarts.init(el);
-        charts.chartB7.setOption(opt, true);
+        charts.chartB7.setOption(applyMobileChartOption(opt), true);
       }
 
       function strip01kFromDaPan(dp) {
