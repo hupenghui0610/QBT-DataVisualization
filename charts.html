@@ -684,6 +684,15 @@
         if (s.toLowerCase() === 'seewo/希沃') return 'SEEWO/希沃';
         return s;
       }
+      /** 图表/下拉框展示用；不参与汇总与键名，数据层仍用内部品牌名 */
+      function brandDisplayName(internalName) {
+        if (internalName == null || internalName === '') return internalName;
+        var s = String(internalName);
+        if (s === 'BBK/步步高') return '步步高';
+        if (s === 'SEEWO/希沃') return '希沃';
+        if (s === 'BOE/京东方') return 'BOE';
+        return s;
+      }
       function parseExcelRowsBrand(raw) {
         if (!raw || raw.length < 2) return [];
         var header = (raw[0] || []).map(function (h) { return String(h || '').trim(); });
@@ -1495,7 +1504,7 @@
         bindBrandDateRangeChange();
         var sel = document.getElementById('brandTop10Select');
         if (sel) {
-          sel.innerHTML = '<option value="">选择品牌</option>' + topBrands.map(function (b) { return '<option value="' + b + '">' + b + '</option>'; }).join('');
+          sel.innerHTML = '<option value="">选择品牌</option>' + topBrands.map(function (b) { return '<option value="' + b + '">' + brandDisplayName(b) + '</option>'; }).join('');
           if (topBrands.length) sel.value = topBrands[0];
           sel.onchange = function () { renderBrand6(); };
         }
@@ -1529,7 +1538,7 @@
           if (!d || !d.按品牌 || !d.按品牌.length) return;
           list = d.按品牌;
         }
-        var x = list.map(function (r) { return r.品牌; });
+        var x = list.map(function (r) { return brandDisplayName(r.品牌); });
         var opt = {
           tooltip: { trigger: 'axis', formatter: function (params) { var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { if (p.seriesName === '销量') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e4).toFixed(2) + '万' : '-'); else if (p.seriesName === '销售额') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : '-'); }); return s; } },
           legend: { data: ['销量', '销售额'], top: 6, left: 'center' },
@@ -1598,7 +1607,7 @@
           tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { if (!params || !params.length) return ''; var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-'); }); return s; } },
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
-          xAxis: { type: 'category', data: topBrands, axisLabel: { rotate: 45, interval: 0, fontSize: 11 } },
+          xAxis: { type: 'category', data: topBrands.map(brandDisplayName), axisLabel: { rotate: 45, interval: 0, fontSize: 11 } },
           yAxis: { type: 'value', name: '占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
           series: series
         };
@@ -1629,7 +1638,7 @@
         var colors = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc','#c4b25e'];
         var series = brands.map(function (b, i) {
           return {
-            name: b,
+            name: brandDisplayName(b),
             type: 'line',
             stack: 'total',
             areaStyle: { color: colors[i % colors.length] },
@@ -1639,7 +1648,7 @@
         var xInterval = dates.length > 8 ? Math.max(1, Math.floor(dates.length / 8)) : 0;
         var opt = {
           tooltip: { trigger: 'axis', formatter: function (params) { if (!params || !params.length) return ''; var s = (params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>'; params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-') + '<br/>'; }); return s; } },
-          legend: { data: brands, top: 6, left: 'center', type: 'scroll' },
+          legend: { data: brands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { rotate: 45, interval: xInterval, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '市占率%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
@@ -1671,7 +1680,7 @@
           if (!d || !d.按品牌 || !d.按品牌.length) return;
           list = d.按品牌;
         }
-        var x = list.map(function (r) { return r.品牌; });
+        var x = list.map(function (r) { return brandDisplayName(r.品牌); });
         var val = list.map(function (r) { return r.客单价; });
         var brandColors = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc','#c4b25e'];
         var opt = {
@@ -1737,14 +1746,15 @@
         });
         var xInterval6 = dates.length > 8 ? Math.max(1, Math.floor(dates.length / 8)) : 0;
         var opt = {
+          title: { text: brandDisplayName(brand), left: 'center', top: 4, textStyle: { fontSize: 12, fontWeight: 600, color: '#2d3436' } },
           tooltip: { trigger: 'axis', formatter: function (params) {
             if (!params || !params.length) return '';
             var s = (params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>';
             params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-') + '<br/>'; });
             return s;
           } },
-          legend: { data: 价格段列表, top: 6, left: 'center' },
-          grid: { left: 56, right: 24, top: 40, bottom: 92 },
+          legend: { data: 价格段列表, top: 32, left: 'center' },
+          grid: { left: 56, right: 24, top: 64, bottom: 92 },
           xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { rotate: 45, interval: xInterval6, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return (Number(v)).toFixed(2) + '%'; } } },
           series: series
@@ -1786,7 +1796,7 @@
         var xInterval = dates.length > 10 ? Math.max(1, Math.floor(dates.length / 10)) : 0;
         var series = topBrands.map(function (b) {
           return {
-            name: b,
+            name: brandDisplayName(b),
             type: 'line',
             smooth: true,
             data: dates.map(function (dt) {
@@ -1808,7 +1818,7 @@
               return s;
             }
           },
-          legend: { data: topBrands, top: 6, left: 'center', type: 'scroll' },
+          legend: { data: topBrands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 48, bottom: 92 },
           xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, interval: xInterval, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '客单价', min: 1000, axisLabel: { formatter: function (v) { return String(Math.round(Number(v))); } } },
