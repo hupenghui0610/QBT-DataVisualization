@@ -2,7 +2,23 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <script>
+    (function () {
+      function isMobilePhoneClient() {
+        try {
+          if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean')
+            return navigator.userAgentData.mobile === true;
+        } catch (e) {}
+        var ua = navigator.userAgent || '';
+        if (/iPad\b/.test(ua)) return false;
+        if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return false;
+        return /iPhone|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+          || (/Android/i.test(ua) && /Mobile/i.test(ua));
+      }
+      if (isMobilePhoneClient()) document.documentElement.classList.add('mobile-client');
+    })();
+  </script>
   <title>学习机品类 - 电商数据可视化</title>
   <link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
@@ -20,8 +36,8 @@
     .load-bar span { font-size: 13px; color: #666; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 16px; }
     .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 12px; }
-    .card h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px 0; font-size: 14px; color: #2d3436; }
-    .card h3 .chart-title-icon { color: #4a69bd; font-size: 15px; width: 20px; min-width: 1em; text-align: center; flex-shrink: 0; }
+    .card h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px 0; font-size: 16px; color: #2d3436; }
+    .card h3 .chart-title-icon { color: #4a69bd; font-size: 16px; width: 22px; min-width: 1em; text-align: center; flex-shrink: 0; }
     /* 避免继承 body 字体导致图标不显示；本地 vendor 字体与 CDN 无关 */
     .card h3 i.chart-title-icon.fa {
       font-family: FontAwesome !important;
@@ -83,6 +99,119 @@
     #ai-assistant-panel #ai-assistant-send { padding: 8px 16px; background: #4a69bd; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; }
     #ai-assistant-panel #ai-assistant-send:hover { background: #3d5aa0; }
     #ai-assistant-panel #ai-assistant-send:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* PC：图表卡内「标题↔筛选」「筛选↔图表」间距各 +6px（手机不加此类选择器，保持移动适配不变） */
+    html:not(.mobile-client) .card > h3 { margin-bottom: 14px; }
+    html:not(.mobile-client) .card > .date-range { margin-bottom: 14px; }
+    html:not(.mobile-client) .card > .load-bar { margin-bottom: 14px !important; }
+
+    /* ========== 仅手机端（html.mobile-client）；PC 无此类名，布局与原先一致 ========== */
+    html.mobile-client { -webkit-text-size-adjust: 100%; }
+    html.mobile-client body {
+      padding: 8px;
+      padding-left: max(8px, env(safe-area-inset-left, 0px));
+      padding-right: max(8px, env(safe-area-inset-right, 0px));
+      padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+      overflow-x: hidden;
+      max-width: 100%;
+    }
+    html.mobile-client .grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      min-width: 0;
+    }
+    html.mobile-client .card {
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      padding: 10px;
+    }
+    html.mobile-client .card .chart {
+      height: 260px;
+      min-height: 220px;
+    }
+    html.mobile-client .card.wide .chart {
+      height: 300px;
+      min-height: 260px;
+    }
+    html.mobile-client .section-title {
+      font-size: 1.12rem;
+      padding: 6px 12px;
+      margin-bottom: 10px;
+    }
+    html.mobile-client .section-block.section-brand {
+      margin-top: 20px;
+      padding-top: 20px;
+    }
+    html.mobile-client .page-header { margin-bottom: 14px; }
+    html.mobile-client .page-header h1 {
+      font-size: 1.12rem;
+      line-height: 1.35;
+    }
+    html.mobile-client .page-header .subtitle {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      padding: 0 4px;
+    }
+    html.mobile-client .card h3 {
+      font-size: 16px;
+      flex-wrap: wrap;
+      line-height: 1.4;
+    }
+    html.mobile-client .card h3 > span:last-child {
+      word-break: break-word;
+      flex: 1;
+      min-width: 0;
+    }
+    html.mobile-client .date-range {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      font-size: 12px;
+    }
+    html.mobile-client .date-range select {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+    html.mobile-client .load-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    html.mobile-client .load-bar span {
+      margin-left: 0 !important;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    html.mobile-client .load-bar label { text-align: center; }
+    html.mobile-client #auth-gate .auth-box {
+      min-width: auto;
+      width: calc(100vw - 32px);
+      max-width: 400px;
+      margin: 16px;
+      padding: 24px 20px;
+      box-sizing: border-box;
+    }
+    html.mobile-client #auth-gate .auth-title { font-size: 1.25rem; }
+    html.mobile-client .tabs { flex-wrap: wrap; }
+    html.mobile-client .tabs .tab {
+      padding: 8px 14px;
+      font-size: 13px;
+      flex: 1 1 auto;
+      text-align: center;
+    }
+    html.mobile-client .page-footer .footer-note {
+      font-size: 11px;
+      padding: 0 4px;
+    }
+    html.mobile-client #ai-assistant-wrap {
+      right: max(12px, env(safe-area-inset-right, 0px));
+      bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    }
+    html.mobile-client #ai-assistant-panel {
+      width: calc(100vw - 24px);
+      max-width: 360px;
+    }
   </style>
 </head>
 <body>
@@ -102,7 +231,7 @@
   <div style="position:relative;z-index:1">
   <div class="page-header">
     <h1>学习机品类 - 电商数据可视化</h1>
-    <div class="subtitle">数据更新至2026年2月，发布时间20260314</div>
+    <div class="subtitle">数据更新 202602，版本发布 20260320</div>
   </div>
   <div class="section-block">
   <div class="section-title">大盘数据</div>
@@ -1076,6 +1205,15 @@
           if (typeof renderBrand7 === 'function') renderBrand7();
           ['chartB1','chartB2','chartB3','chartB5','chartB6','chartB7'].forEach(function (id) { if (charts[id] && charts[id].resize) charts[id].resize(); });
         }
+        if (document.documentElement.classList.contains('mobile-client')) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              Object.keys(charts).forEach(function (id) {
+                if (charts[id] && charts[id].resize) charts[id].resize();
+              });
+            });
+          });
+        }
       }
 
       // 维度一：渠道 - 柱状图（销量、销售额）+ 右轴客单价，支持时间范围
@@ -1515,6 +1653,15 @@
         renderBrand5();
         renderBrand6();
         renderBrand7();
+        if (document.documentElement.classList.contains('mobile-client')) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              Object.keys(charts).forEach(function (id) {
+                if (charts[id] && charts[id].resize) charts[id].resize();
+              });
+            });
+          });
+        }
       }
       function renderBrand1() {
         var fp = getFenPinPai();
@@ -1897,7 +2044,16 @@
               statusBrandEl.textContent = '未加载默认分品牌数据，请上传「三站分品牌分价格销量销售额」Excel 或 JSON。';
             }
           });
-        Promise.all([p1, p2]).then(function () { if (typeof done === 'function') done(); });
+        Promise.all([p1, p2]).then(function () {
+          if (typeof done === 'function') done();
+          if (document.documentElement.classList.contains('mobile-client')) {
+            requestAnimationFrame(function () {
+              requestAnimationFrame(function () {
+                if (typeof window.resizeCharts === 'function') window.resizeCharts();
+              });
+            });
+          }
+        });
       }
 
       document.getElementById('dataFile').addEventListener('change', function (e) {
@@ -1980,6 +2136,11 @@
         });
       };
       window.addEventListener('resize', window.resizeCharts);
+      window.addEventListener('orientationchange', function () {
+        setTimeout(function () {
+          if (typeof window.resizeCharts === 'function') window.resizeCharts();
+        }, 350);
+      });
 
       (function aiAssistant() {
         var panel = document.getElementById('ai-assistant-panel');
