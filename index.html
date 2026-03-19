@@ -1118,7 +1118,7 @@
           tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { if (p.seriesName === '销量') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e4).toFixed(2) + '万' : '-'); else if (p.seriesName === '销售额') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : '-'); }); return s; } },
           legend: { data: ['销量', '销售额'], top: 6, left: 'center' },
           grid: { left: 60, right: 56, top: 40, bottom: 44 },
-          xAxis: { type: 'category', data: x },
+          xAxis: { type: 'category', data: x, axisLabel: { margin: 14 } },
           yAxis: [
             { type: 'value', name: '销量(万)', position: 'left', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e4).toFixed(0) + '万'; } } },
             { type: 'value', name: '销售额(亿)', position: 'right', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e8).toFixed(2) + '亿'; } } }
@@ -1205,7 +1205,7 @@
           },
           legend: { data: ['销量', '同比增长率'], top: 6, left: 'center' },
           grid: { left: 56, right: 56, top: 40, bottom: 72 },
-          xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: [
             { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
             { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return (typeof v === 'number' ? v.toFixed(2) : v) + '%'; } }, splitLine: { show: false } }
@@ -1248,7 +1248,7 @@
           tooltip: { trigger: 'axis' },
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 72 },
-          xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          xAxis: { type: 'category', data: dates, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
           series: series
         };
@@ -1293,7 +1293,7 @@
           tooltip: { trigger: 'axis', formatter: function (params) { var s = (params[0] && params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>'; params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-') + '<br/>'; }); return s; } },
           legend: { data: priceRanges, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 72 },
-          xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          xAxis: { type: 'category', data: dates, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
           series: series
         };
@@ -1324,7 +1324,7 @@
         var opt = {
           tooltip: { position: 'top', formatter: function (params) { return prices[params.data[0]] + ' / ' + channels[params.data[1]] + ': ' + formatNum(params.data[2]); } },
           grid: { left: 80, right: 120, top: 24, bottom: 48 },
-          xAxis: { type: 'category', data: prices, splitArea: { show: false } },
+          xAxis: { type: 'category', data: prices, splitArea: { show: false }, axisLabel: { margin: 14 } },
           yAxis: { type: 'category', data: channels, splitArea: { show: false } },
           visualMap: { min: 0, max: Math.max.apply(null, data.map(function (x) { return x[2]; })), calculable: true, orient: 'horizontal', left: 'center', bottom: 8, inRange: { color: ['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] } },
           series: [{ type: 'heatmap', data: data, label: { show: false }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } } }]
@@ -1372,7 +1372,7 @@
         var opt = {
           tooltip: { position: 'top', formatter: function (params) { return prices[params.data[0]] + ' / ' + channels[params.data[1]] + ': ' + formatNum(params.data[2]); } },
           grid: { left: 80, right: 120, top: 24, bottom: 48 },
-          xAxis: { type: 'category', data: prices, splitArea: { show: false } },
+          xAxis: { type: 'category', data: prices, splitArea: { show: false }, axisLabel: { margin: 14 } },
           yAxis: { type: 'category', data: channels, splitArea: { show: false } },
           visualMap: { min: 0, max: maxVal, calculable: true, orient: 'horizontal', left: 'center', bottom: 8, inRange: { color: ['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] } },
           series: [{ type: 'heatmap', data: data, label: { show: false }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } } }]
@@ -1392,7 +1392,7 @@
         var opt = {
           tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { var p = params[0]; if (p.data != null) return p.name + ': ' + formatNum(p.data); return ''; } },
           grid: { left: 56, right: 24, top: 36, bottom: 68 },
-          xAxis: { type: 'category', data: x, axisLabel: { rotate: 28, interval: 0 } },
+          xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 28, interval: 0 } },
           yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } },
           series: [{ type: 'bar', data: val, itemStyle: { color: function (p) { return p.data == null ? 'transparent' : (p.dataIndex < ch.length ? '#5470c6' : '#91cc75'); } } }]
         };
@@ -1428,7 +1428,7 @@
           tooltip: { trigger: 'axis', formatter: function (params) { var s = (params[0] && params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>'; params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-') + '<br/>'; }); return s; } },
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 72 },
-          xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          xAxis: { type: 'category', data: dates, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
           series: series
         };
@@ -1447,7 +1447,7 @@
         var opt = {
           tooltip: { trigger: 'axis', formatter: function (params) { var i = params[0].dataIndex; var r = list[list.length - 1 - i]; return r.渠道 + '<br/>销量: ' + formatNum(r.销量) + '<br/>CRn销量: ' + ((r.CRn_销量 || 0) * 100).toFixed(2) + '%'; } },
           grid: { left: 72, right: 80, top: 36, bottom: 52 },
-          xAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
+          xAxis: { type: 'value', name: '销量', axisLabel: { margin: 14, formatter: formatNum } },
           yAxis: { type: 'category', data: y },
           series: [{ type: 'bar', data: val, itemStyle: { color: '#5470c6' }, label: { show: true, position: 'right', formatter: function (p) { return formatNum(p.value); } } }],
           title: { text: 'CR1: ' + ((cr.CR1_销量 || 0) * 100).toFixed(2) + '%  CR2: ' + ((cr.CR2_销量 || 0) * 100).toFixed(2) + '%  CR3: ' + ((cr.CR3_销量 || 0) * 100).toFixed(2) + '%', left: 'center', bottom: 4, textStyle: { fontSize: 12, fontWeight: 'normal' } }
@@ -1544,7 +1544,7 @@
           tooltip: { trigger: 'axis', formatter: function (params) { var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { if (p.seriesName === '销量') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e4).toFixed(2) + '万' : '-'); else if (p.seriesName === '销售额') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : '-'); }); return s; } },
           legend: { data: ['销量', '销售额'], top: 6, left: 'center' },
           grid: { left: 64, right: 64, top: 40, bottom: 92 },
-          xAxis: { type: 'category', data: x, axisLabel: { rotate: 45, interval: 0, fontSize: 11 } },
+          xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
           yAxis: [
             { type: 'value', name: '销量(万)', position: 'left', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e4).toFixed(0) + '万'; } } },
             { type: 'value', name: '销售额(亿)', position: 'right', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e8).toFixed(2) + '亿'; } } }
@@ -1608,7 +1608,7 @@
           tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { if (!params || !params.length) return ''; var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-'); }); return s; } },
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
-          xAxis: { type: 'category', data: topBrands.map(brandDisplayName), axisLabel: { rotate: 45, interval: 0, fontSize: 11 } },
+          xAxis: { type: 'category', data: topBrands.map(brandDisplayName), axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
           yAxis: { type: 'value', name: '占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
           series: series
         };
@@ -1651,7 +1651,7 @@
           tooltip: { trigger: 'axis', formatter: function (params) { if (!params || !params.length) return ''; var s = (params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>'; params.forEach(function (p) { s += p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-') + '<br/>'; }); return s; } },
           legend: { data: brands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
-          xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { rotate: 45, interval: xInterval, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { margin: 14, rotate: 45, interval: xInterval, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '市占率%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
           series: series
         };
@@ -1687,7 +1687,7 @@
         var opt = {
           tooltip: { trigger: 'axis' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
-          xAxis: { type: 'category', data: x, axisLabel: { rotate: 45, interval: 0, fontSize: 11 } },
+          xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
           yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } },
           series: [{ type: 'bar', data: val, itemStyle: { color: function (params) { return brandColors[params.dataIndex % brandColors.length]; } }, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? String(Math.round(p.value)) : ''; } } }]
         };
@@ -1756,7 +1756,7 @@
           } },
           legend: { data: 价格段列表, top: 32, left: 'center' },
           grid: { left: 56, right: 24, top: 64, bottom: 92 },
-          xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { rotate: 45, interval: xInterval6, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { margin: 14, rotate: 45, interval: xInterval6, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return (Number(v)).toFixed(2) + '%'; } } },
           series: series
         };
@@ -1821,7 +1821,7 @@
           },
           legend: { data: topBrands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 48, bottom: 92 },
-          xAxis: { type: 'category', data: dates, axisLabel: { rotate: 35, interval: xInterval, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
+          xAxis: { type: 'category', data: dates, axisLabel: { margin: 14, rotate: 35, interval: xInterval, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: { type: 'value', name: '客单价', min: 1000, axisLabel: { formatter: function (v) { return String(Math.round(Number(v))); } } },
           series: series
         };
