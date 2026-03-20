@@ -299,6 +299,8 @@
   <div class="section-title">品牌数据</div>
   <div class="grid" id="chartGridBrand">
     <div class="card wide"><h3><i class="chart-title-icon fa fa-bar-chart"></i><span>品牌销量/销额对比</span></h3><div class="date-range">起始：<select id="dimB1Start"></select> 结束：<select id="dimB1End"></select></div><div id="chartB1" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销量</span></h3><div class="date-range">起始：<select id="dimB8Start"></select> 结束：<select id="dimB8End"></select></div><div id="chartB8" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销量同比</span></h3><div class="date-range">起始：<select id="dimB9Start"></select> 结束：<select id="dimB9End"></select></div><div id="chartB9" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌渠道占比</span></h3><div class="date-range">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select></div><div id="chartB2" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span></h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select></div><div id="chartB3" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌价格段销量</span></h3><div class="load-bar" style="margin-bottom:8px"><select id="brandTop10Select"><option value="">选择品牌</option></select><span style="margin-left:8px">起始：<select id="dimB6Start"></select> 结束：<select id="dimB6End"></select></span></div><div id="chartB6" class="chart"></div></div>
@@ -1272,7 +1274,9 @@
           if (typeof renderBrand5 === 'function') renderBrand5();
           if (typeof renderBrand6 === 'function') renderBrand6();
           if (typeof renderBrand7 === 'function') renderBrand7();
-          ['chartB1','chartB2','chartB3','chartB5','chartB6','chartB7'].forEach(function (id) { if (charts[id] && charts[id].resize) charts[id].resize(); });
+          if (typeof renderBrand8 === 'function') renderBrand8();
+          if (typeof renderBrand9 === 'function') renderBrand9();
+          ['chartB1','chartB2','chartB3','chartB5','chartB6','chartB7','chartB8','chartB9'].forEach(function (id) { if (charts[id] && charts[id].resize) charts[id].resize(); });
         }
         if (document.documentElement.classList.contains('mobile-client')) {
           requestAnimationFrame(function () {
@@ -1392,7 +1396,14 @@
         if (startVal && endVal && startVal <= endVal) list = list.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
         var x = list.map(function (r) { return r.日期; });
         var s1 = list.map(function (r) { return r.销量; });
-        var s3 = list.map(function (r) { return r.销量同比 != null ? (r.销量同比 * 100) : null; });
+        var s3 = list.map(function (r) {
+          var v = r.销量同比 != null ? (r.销量同比 * 100) : null;
+          if (v == null || !isFinite(v)) return { value: null };
+          if (v < 0) {
+            return { value: v, symbol: 'circle', itemStyle: { color: '#ee6666', borderColor: '#ee6666' } };
+          }
+          return { value: v, symbol: 'emptyCircle' };
+        });
         var opt = {
           tooltip: {
             trigger: 'axis',
@@ -1401,8 +1412,9 @@
               var line = (params[0].axisValue ? String(params[0].axisValue).slice(0, 7) : '') + '<br/>';
               params.forEach(function (p) {
                 var val = p.value;
+                if (val != null && typeof val === 'object' && 'value' in val) val = val.value;
                 if (p.seriesName === '同比增长率') {
-                  line += p.marker + p.seriesName + ': ' + (val != null ? (typeof val === 'number' ? val.toFixed(2) : val) + '%' : '-') + '<br/>';
+                  line += p.marker + p.seriesName + ': ' + (val != null && isFinite(val) ? Number(val).toFixed(2) + '%' : '-') + '<br/>';
                 } else {
                   line += p.marker + p.seriesName + ': ' + (val != null ? formatNum(val) : '-') + '<br/>';
                 }
@@ -1415,12 +1427,20 @@
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: [
             { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
-            { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return (typeof v === 'number' ? v.toFixed(2) : v) + '%'; } }, splitLine: { show: false } }
+            { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return (typeof v === 'number' && isFinite(v) ? String(Math.round(v)) : v) + '%'; } }, splitLine: { show: false } }
           ],
           series: [
             { name: '销量', type: 'line', data: s1, smooth: true },
             { name: '同比增长率', type: 'line', yAxisIndex: 1, data: s3, smooth: true,
-              itemStyle: { color: function (params) { var v = params.value; if (v == null) return undefined; return v > 0 ? '#67c23a' : (v < 0 ? '#ee6666' : '#909399'); } },
+              showSymbol: true,
+              symbol: 'emptyCircle',
+              symbolSize: 7,
+              itemStyle: { color: function (params) {
+                var v = params.value;
+                if (v != null && typeof v === 'object' && 'value' in v) v = v.value;
+                if (v == null || !isFinite(v)) return undefined;
+                return v > 0 ? '#67c23a' : (v < 0 ? '#ee6666' : '#909399');
+              } },
               markLine: { silent: true, symbol: 'none', data: [{ yAxis: 0 }], lineStyle: { type: 'dashed', color: '#999' } } }
           ]
         };
@@ -1681,7 +1701,7 @@
         var html = '<option value="">全量</option>' + opts.join('');
         var defaultStart = defaultStartDateBrand(dates);
         var defaultEnd = dates.length ? dates[dates.length - 1] : '';
-        var ids = ['dimB1Start','dimB1End','dimB2Start','dimB2End','dimB3Start','dimB3End','dimB5Start','dimB5End','dimB6Start','dimB6End','dimB7Start','dimB7End'];
+        var ids = ['dimB1Start','dimB1End','dimB8Start','dimB8End','dimB9Start','dimB9End','dimB2Start','dimB2End','dimB3Start','dimB3End','dimB5Start','dimB5End','dimB6Start','dimB6End','dimB7Start','dimB7End'];
         for (var i = 0; i < ids.length; i++) {
           var el = document.getElementById(ids[i]);
           if (!el) continue;
@@ -1697,12 +1717,16 @@
         function onB5() { renderBrand5(); }
         function onB6() { renderBrand6(); }
         function onB7() { renderBrand7(); }
+        function onB8() { renderBrand8(); }
+        function onB9() { renderBrand9(); }
         ['dimB1Start','dimB1End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB1; });
         ['dimB2Start','dimB2End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB2; });
         ['dimB3Start','dimB3End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB3; });
         ['dimB5Start','dimB5End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB5; });
         ['dimB6Start','dimB6End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB6; });
         ['dimB7Start','dimB7End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB7; });
+        ['dimB8Start','dimB8End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB8; });
+        ['dimB9Start','dimB9End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB9; });
       }
       function renderBrandAll() {
         var fp = getFenPinPai();
@@ -1717,6 +1741,8 @@
           sel.onchange = function () { renderBrand6(); };
         }
         renderBrand1();
+        renderBrand8();
+        renderBrand9();
         renderBrand2();
         renderBrand3();
         renderBrand5();
@@ -1901,11 +1927,11 @@
         var val = list.map(function (r) { return r.客单价; });
         var brandColors = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc','#c4b25e'];
         var opt = {
-          tooltip: { trigger: 'axis' },
+          tooltip: { show: false },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
           yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } },
-          series: [{ type: 'bar', data: val, itemStyle: { color: function (params) { return brandColors[params.dataIndex % brandColors.length]; } }, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? String(Math.round(p.value)) : ''; } } }]
+          series: [{ type: 'bar', data: val, emphasis: { disabled: true }, itemStyle: { color: function (params) { return brandColors[params.dataIndex % brandColors.length]; } }, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? String(Math.round(p.value)) : ''; } } }]
         };
         if (!charts.chartB5) charts.chartB5 = echarts.init(document.getElementById('chartB5'));
         charts.chartB5.setOption(applyMobileChartOption(opt), true);
@@ -2043,6 +2069,183 @@
         };
         if (!charts.chartB7) charts.chartB7 = echarts.init(el);
         charts.chartB7.setOption(applyMobileChartOption(opt), true);
+      }
+
+      function renderBrand8() {
+        var fp = getFenPinPai();
+        var topBrands = (fp && fp.数据说明 && fp.数据说明.前十大品牌) || [];
+        var el = document.getElementById('chartB8');
+        if (!el) return;
+        if (!fp || !fp.品牌与日期 || !fp.品牌与日期.length || !topBrands.length) {
+          if (!charts.chartB8) charts.chartB8 = echarts.init(el);
+          charts.chartB8.setOption({ title: { text: '暂无品牌与日期明细', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
+          return;
+        }
+        var startVal = document.getElementById('dimB8Start') && document.getElementById('dimB8Start').value;
+        var endVal = document.getElementById('dimB8End') && document.getElementById('dimB8End').value;
+        var raw = fp.品牌与日期;
+        if (startVal && endVal && startVal <= endVal) {
+          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+        }
+        if (!raw.length) {
+          if (!charts.chartB8) charts.chartB8 = echarts.init(el);
+          charts.chartB8.setOption({ title: { text: '所选时间范围内无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
+          return;
+        }
+        var monthBrand = {};
+        raw.forEach(function (r) {
+          if (!r.日期 || !r.品牌) return;
+          var m = String(r.日期).slice(0, 7);
+          if (!monthBrand[m]) monthBrand[m] = {};
+          var prev = monthBrand[m][r.品牌] || 0;
+          monthBrand[m][r.品牌] = prev + (r.销量 != null ? Number(r.销量) : 0);
+        });
+        var months = Object.keys(monthBrand);
+        months.sort();
+        if (!months.length) {
+          if (!charts.chartB8) charts.chartB8 = echarts.init(el);
+          charts.chartB8.setOption({ title: { text: '所选时间范围内无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
+          return;
+        }
+        var xInterval = months.length > 10 ? Math.max(1, Math.floor(months.length / 10)) : 0;
+        var series = topBrands.map(function (b) {
+          return {
+            name: brandDisplayName(b),
+            type: 'line',
+            smooth: true,
+            data: months.map(function (m) {
+              var v = monthBrand[m] && monthBrand[m][b];
+              return v != null ? v : 0;
+            })
+          };
+        });
+        var opt = {
+          title: { show: false },
+          tooltip: {
+            trigger: 'axis',
+            formatter: function (params) {
+              if (!params || !params.length) return '';
+              var s = (params[0].axisValue ? String(params[0].axisValue) : '') + '<br/>';
+              params.forEach(function (p) {
+                s += p.marker + p.seriesName + ': ' + (p.value != null ? formatNum(p.value) : '-') + '<br/>';
+              });
+              return s;
+            }
+          },
+          legend: { data: topBrands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
+          grid: { left: 56, right: 24, top: 48, bottom: 92 },
+          xAxis: { type: 'category', data: months, boundaryGap: false, axisLabel: { margin: 14, rotate: 35, interval: xInterval, fontSize: 11 } },
+          yAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
+          series: series
+        };
+        if (!charts.chartB8) charts.chartB8 = echarts.init(el);
+        charts.chartB8.setOption(applyMobileChartOption(opt), true);
+      }
+
+      function renderBrand9() {
+        function prevYearMonthStr(ym) {
+          if (!ym || ym.length < 7) return '';
+          var y = parseInt(ym.slice(0, 4), 10);
+          return (y - 1) + ym.slice(4, 7);
+        }
+        function tooltipYoYValue(p) {
+          var v = p.value;
+          if (v != null && typeof v === 'object' && 'value' in v) v = v.value;
+          return v;
+        }
+        var fp = getFenPinPai();
+        var topBrands = (fp && fp.数据说明 && fp.数据说明.前十大品牌) || [];
+        var el = document.getElementById('chartB9');
+        if (!el) return;
+        if (!fp || !fp.品牌与日期 || !fp.品牌与日期.length || !topBrands.length) {
+          if (!charts.chartB9) charts.chartB9 = echarts.init(el);
+          charts.chartB9.setOption({ title: { text: '暂无品牌与日期明细', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
+          return;
+        }
+        var startVal = document.getElementById('dimB9Start') && document.getElementById('dimB9Start').value;
+        var endVal = document.getElementById('dimB9End') && document.getElementById('dimB9End').value;
+        var raw = fp.品牌与日期;
+        if (startVal && endVal && startVal <= endVal) {
+          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+        }
+        if (!raw.length) {
+          if (!charts.chartB9) charts.chartB9 = echarts.init(el);
+          charts.chartB9.setOption({ title: { text: '所选时间范围内无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
+          return;
+        }
+        var monthBrandFull = {};
+        fp.品牌与日期.forEach(function (r) {
+          if (!r.日期 || !r.品牌) return;
+          var m = String(r.日期).slice(0, 7);
+          if (!monthBrandFull[m]) monthBrandFull[m] = {};
+          var prev = monthBrandFull[m][r.品牌] || 0;
+          monthBrandFull[m][r.品牌] = prev + (r.销量 != null ? Number(r.销量) : 0);
+        });
+        var monthBrand = {};
+        raw.forEach(function (r) {
+          if (!r.日期 || !r.品牌) return;
+          var m = String(r.日期).slice(0, 7);
+          if (!monthBrand[m]) monthBrand[m] = {};
+          var prev = monthBrand[m][r.品牌] || 0;
+          monthBrand[m][r.品牌] = prev + (r.销量 != null ? Number(r.销量) : 0);
+        });
+        var months = Object.keys(monthBrand);
+        months.sort();
+        if (!months.length) {
+          if (!charts.chartB9) charts.chartB9 = echarts.init(el);
+          charts.chartB9.setOption({ title: { text: '所选时间范围内无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
+          return;
+        }
+        var xInterval = months.length > 10 ? Math.max(1, Math.floor(months.length / 10)) : 0;
+        var series = topBrands.map(function (b) {
+          return {
+            name: brandDisplayName(b),
+            type: 'line',
+            smooth: true,
+            showSymbol: true,
+            symbol: 'emptyCircle',
+            symbolSize: 7,
+            data: months.map(function (m) {
+              var curr = monthBrand[m] && monthBrand[m][b] != null ? Number(monthBrand[m][b]) : 0;
+              var pm = prevYearMonthStr(m);
+              var prev = monthBrandFull[pm] && monthBrandFull[pm][b] != null ? Number(monthBrandFull[pm][b]) : 0;
+              var pct;
+              if (prev > 0) pct = (curr - prev) / prev * 100;
+              else pct = null;
+              if (pct == null || !isFinite(pct)) return { value: null };
+              if (pct < 0) {
+                return {
+                  value: pct,
+                  symbol: 'circle',
+                  itemStyle: { color: '#ee6666', borderColor: '#ee6666' }
+                };
+              }
+              return { value: pct, symbol: 'emptyCircle' };
+            })
+          };
+        });
+        var opt = {
+          title: { show: false },
+          tooltip: {
+            trigger: 'axis',
+            formatter: function (params) {
+              if (!params || !params.length) return '';
+              var s = (params[0].axisValue ? String(params[0].axisValue) : '') + '<br/>';
+              params.forEach(function (p) {
+                var v = tooltipYoYValue(p);
+                s += p.marker + p.seriesName + ': ' + (v != null && isFinite(v) ? Number(v).toFixed(2) + '%' : '-') + '<br/>';
+              });
+              return s;
+            }
+          },
+          legend: { data: topBrands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
+          grid: { left: 56, right: 24, top: 48, bottom: 92 },
+          xAxis: { type: 'category', data: months, boundaryGap: false, axisLabel: { margin: 14, rotate: 35, interval: xInterval, fontSize: 11 } },
+          yAxis: { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '%'; } } },
+          series: series
+        };
+        if (!charts.chartB9) charts.chartB9 = echarts.init(el);
+        charts.chartB9.setOption(applyMobileChartOption(opt), true);
       }
 
       function strip01kFromDaPan(dp) {
