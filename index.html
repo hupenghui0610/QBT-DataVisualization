@@ -27,9 +27,33 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: "Microsoft YaHei", sans-serif; margin: 0; padding: 12px; background: #f5f6fa; }
-    .page-header { text-align: center; margin-bottom: 20px; }
+    .page-header { position: relative; text-align: center; margin-bottom: 20px; padding-right: 0; }
     .page-header h1 { margin: 0 0 10px 0; font-size: 1.4rem; color: #1a1a2e; }
     .page-header .subtitle { font-size: 0.9rem; color: #666; }
+    .version-log-wrap { position: absolute; top: 0; right: 0; z-index: 5; text-align: right; }
+    .version-log-btn {
+      padding: 6px 12px; font-size: 13px; color: #4a69bd; background: #fff; border: 1px solid #c5cee8;
+      border-radius: 8px; cursor: pointer; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .version-log-btn:hover { background: #f0f3fb; border-color: #4a69bd; }
+    .version-log-panel {
+      display: none; position: absolute; right: 0; top: calc(100% + 6px); width: min(520px, calc(100vw - 24px));
+      max-height: min(70vh, 420px); overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12); text-align: left;
+    }
+    .version-log-wrap.is-open .version-log-panel { display: block; }
+    .version-log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .version-log-table th,
+    .version-log-table td { padding: 10px 12px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+    .version-log-table th { background: #f8fafc; color: #334155; font-weight: 600; text-align: left; position: sticky; top: 0; z-index: 1; }
+    .version-log-table .col-date { white-space: nowrap; width: 7.5em; color: #1e293b; font-variant-numeric: tabular-nums; }
+    .version-log-table th:nth-child(2),
+    .version-log-table .col-type { width: 1%; min-width: 9em; white-space: nowrap; }
+    .version-log-table .col-type .version-type-badge { white-space: nowrap; }
+    .version-log-table .col-desc { color: #475569; line-height: 1.5; word-break: break-word; }
+    .version-type-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .version-type-badge.is-feature { background: #e8f0fe; color: #1a56c4; }
+    .version-type-badge.is-data { background: #ecfdf5; color: #047857; }
     .load-bar { margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .load-bar label { cursor: pointer; padding: 6px 12px; background: #4a69bd; color: #fff; border-radius: 6px; font-size: 14px; }
     .load-bar input[type="file"] { display: none; }
@@ -172,7 +196,10 @@
       margin-top: 20px;
       padding-top: 20px;
     }
-    html.mobile-client .page-header { margin-bottom: 14px; }
+    html.mobile-client .page-header { margin-bottom: 14px; padding-top: 32px; }
+    html.mobile-client .version-log-wrap { top: 0; right: 0; }
+    html.mobile-client .version-log-btn { padding: 5px 10px; font-size: 12px; }
+    html.mobile-client .version-log-panel { width: calc(100vw - 24px); max-width: none; right: 0; left: auto; }
     html.mobile-client .page-header h1 {
       font-size: 1.12rem;
       line-height: 1.35;
@@ -281,8 +308,19 @@
   <div id="main-content" style="display:none">
   <div style="position:relative;z-index:1">
   <div class="page-header">
+    <div class="version-log-wrap">
+      <button type="button" class="version-log-btn" id="versionLogBtn" aria-expanded="false" aria-controls="versionLogPanel">版本记录</button>
+      <div id="versionLogPanel" class="version-log-panel" role="region" aria-label="版本记录" hidden>
+        <table class="version-log-table">
+          <thead>
+            <tr><th scope="col">版本时间</th><th scope="col">发布类型</th><th scope="col">修改内容</th></tr>
+          </thead>
+          <tbody id="versionLogTbody"></tbody>
+        </table>
+      </div>
+    </div>
     <h1>学习机品类 - 电商数据可视化</h1>
-    <div class="subtitle">数据更新 202602，每月10号更新上月剔退货数据  |  版本发布 20260320，手机端已适配</div>
+    <div class="subtitle">仅限于希倍思人员使用，切勿分享至外部！</div>
   </div>
   <div class="section-block">
   <div class="section-title">大盘数据</div>
@@ -1210,6 +1248,25 @@
         if (Math.abs(n) <= 1 && n !== 0) return (n * 100).toFixed(2) + '%';
         return Number(n).toLocaleString();
       }
+      /** Y 轴 / 数值轴刻度：一律整数（万/亿/元） */
+      function formatAxisNumInt(n) {
+        if (n == null || !isFinite(Number(n))) return '-';
+        n = Number(n);
+        if (n >= 1e8) return Math.round(n / 1e8) + '亿';
+        if (n >= 1e4) return Math.round(n / 1e4) + '万';
+        return String(Math.round(n));
+      }
+      function formatAxisPercentInt(v) {
+        var n = Number(v);
+        if (!isFinite(n)) return String(v);
+        return String(Math.round(n)) + '%';
+      }
+      /** 热力图 visualMap 刻度：整数销量 */
+      function formatVisualMapInt(value) {
+        if (value == null || value === '') return '';
+        var n = Number(value);
+        return isFinite(n) ? String(Math.round(n)) : String(value);
+      }
 
       function getDateList() {
         var dp = getDaPan();
@@ -1331,8 +1388,8 @@
           grid: { left: 60, right: 56, top: 40, bottom: 44 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14 } },
           yAxis: [
-            { type: 'value', name: '销量(万)', position: 'left', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e4).toFixed(0) + '万'; } } },
-            { type: 'value', name: '销售额(亿)', position: 'right', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e8).toFixed(2) + '亿'; } } }
+            { type: 'value', name: '销量(万)', position: 'left', splitLine: { show: false }, axisLabel: { formatter: function (v) { return Math.round(Number(v) / 1e4) + '万'; } } },
+            { type: 'value', name: '销售额(亿)', position: 'right', splitLine: { show: false }, axisLabel: { formatter: function (v) { return Math.round(Number(v) / 1e8) + '亿'; } } }
           ],
           series: [
             { name: '销量', type: 'bar', data: s1, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? (p.value / 1e4).toFixed(1) + '万' : ''; } } },
@@ -1426,8 +1483,8 @@
           grid: { left: 56, right: 56, top: 40, bottom: 72 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
           yAxis: [
-            { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
-            { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return (typeof v === 'number' && isFinite(v) ? String(Math.round(v)) : v) + '%'; } }, splitLine: { show: false } }
+            { type: 'value', name: '销量', axisLabel: { formatter: formatAxisNumInt } },
+            { type: 'value', name: '同比%', axisLabel: { formatter: formatAxisPercentInt }, splitLine: { show: false } }
           ],
           series: [
             { name: '销量', type: 'line', data: s1, smooth: true },
@@ -1476,7 +1533,7 @@
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 72 },
           xAxis: { type: 'category', data: dates, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
-          yAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
+          yAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatAxisNumInt } },
           series: series
         };
         if (!charts.chart4) charts.chart4 = echarts.init(document.getElementById('chart4'));
@@ -1521,7 +1578,7 @@
           legend: { data: priceRanges, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 72 },
           xAxis: { type: 'category', data: dates, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
-          yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
+          yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: formatAxisPercentInt } },
           series: series
         };
         if (!charts.chart5) charts.chart5 = echarts.init(document.getElementById('chart5'));
@@ -1553,7 +1610,7 @@
           grid: { left: 80, right: 120, top: 24, bottom: 48 },
           xAxis: { type: 'category', data: prices, splitArea: { show: false }, axisLabel: { margin: 14 } },
           yAxis: { type: 'category', data: channels, splitArea: { show: false } },
-          visualMap: { min: 0, max: Math.max.apply(null, data.map(function (x) { return x[2]; })), calculable: true, orient: 'horizontal', left: 'center', bottom: 8, inRange: { color: ['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] } },
+          visualMap: { min: 0, max: Math.max.apply(null, data.map(function (x) { return x[2]; })), calculable: true, orient: 'horizontal', left: 'center', bottom: 8, formatter: formatVisualMapInt, inRange: { color: ['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] } },
           series: [{ type: 'heatmap', data: data, label: { show: false }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } } }]
         };
         if (!charts.chart6) charts.chart6 = echarts.init(document.getElementById('chart6'));
@@ -1601,7 +1658,7 @@
           grid: { left: 80, right: 120, top: 24, bottom: 48 },
           xAxis: { type: 'category', data: prices, splitArea: { show: false }, axisLabel: { margin: 14 } },
           yAxis: { type: 'category', data: channels, splitArea: { show: false } },
-          visualMap: { min: 0, max: maxVal, calculable: true, orient: 'horizontal', left: 'center', bottom: 8, inRange: { color: ['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] } },
+          visualMap: { min: 0, max: maxVal, calculable: true, orient: 'horizontal', left: 'center', bottom: 8, formatter: formatVisualMapInt, inRange: { color: ['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] } },
           series: [{ type: 'heatmap', data: data, label: { show: false }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } } }]
         };
         if (!charts.chart7) charts.chart7 = echarts.init(document.getElementById('chart7'));
@@ -1620,7 +1677,7 @@
           tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { var p = params[0]; if (p.data != null) return p.name + ': ' + formatNum(p.data); return ''; } },
           grid: { left: 56, right: 24, top: 36, bottom: 68 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 28, interval: 0 } },
-          yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } },
+          yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatAxisNumInt } },
           series: [{ type: 'bar', data: val, itemStyle: { color: function (p) { return p.data == null ? 'transparent' : (p.dataIndex < ch.length ? '#5470c6' : '#91cc75'); } } }]
         };
         if (!charts.chart8) charts.chart8 = echarts.init(document.getElementById('chart8'));
@@ -1656,7 +1713,7 @@
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 72 },
           xAxis: { type: 'category', data: dates, axisLabel: { margin: 14, rotate: 35, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
-          yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
+          yAxis: { type: 'value', name: '销量占比%', min: 0, max: 100, axisLabel: { formatter: formatAxisPercentInt } },
           series: series
         };
         if (!charts.chart9) charts.chart9 = echarts.init(document.getElementById('chart9'));
@@ -1674,7 +1731,7 @@
         var opt = {
           tooltip: { trigger: 'axis', formatter: function (params) { var i = params[0].dataIndex; var r = list[list.length - 1 - i]; return r.渠道 + '<br/>销量: ' + formatNum(r.销量) + '<br/>CRn销量: ' + ((r.CRn_销量 || 0) * 100).toFixed(2) + '%'; } },
           grid: { left: 72, right: 80, top: 36, bottom: 52 },
-          xAxis: { type: 'value', name: '销量', axisLabel: { margin: 14, formatter: formatNum } },
+          xAxis: { type: 'value', name: '销量', axisLabel: { margin: 14, formatter: formatAxisNumInt } },
           yAxis: { type: 'category', data: y },
           series: [{ type: 'bar', data: val, itemStyle: { color: '#5470c6' }, label: { show: true, position: 'right', formatter: function (p) { return formatNum(p.value); } } }],
           title: { text: 'CR1: ' + ((cr.CR1_销量 || 0) * 100).toFixed(2) + '%  CR2: ' + ((cr.CR2_销量 || 0) * 100).toFixed(2) + '%  CR3: ' + ((cr.CR3_销量 || 0) * 100).toFixed(2) + '%', left: 'center', bottom: 4, textStyle: { fontSize: 12, fontWeight: 'normal' } }
@@ -1788,8 +1845,8 @@
           grid: { left: 64, right: 64, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
           yAxis: [
-            { type: 'value', name: '销量(万)', position: 'left', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e4).toFixed(0) + '万'; } } },
-            { type: 'value', name: '销售额(亿)', position: 'right', splitLine: { show: false }, axisLabel: { formatter: function (v) { return (Number(v) / 1e8).toFixed(2) + '亿'; } } }
+            { type: 'value', name: '销量(万)', position: 'left', splitLine: { show: false }, axisLabel: { formatter: function (v) { return Math.round(Number(v) / 1e4) + '万'; } } },
+            { type: 'value', name: '销售额(亿)', position: 'right', splitLine: { show: false }, axisLabel: { formatter: function (v) { return Math.round(Number(v) / 1e8) + '亿'; } } }
           ],
           series: [
             { name: '销量', type: 'bar', data: list.map(function (r) { return r.销量; }), label: { show: true, position: 'top', fontSize: 11, formatter: function (p) { return p.value != null ? (p.value / 1e4).toFixed(1) + '万' : ''; } } },
@@ -1851,7 +1908,7 @@
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: topBrands.map(brandDisplayName), axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
-          yAxis: { type: 'value', name: '占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
+          yAxis: { type: 'value', name: '占比%', min: 0, max: 100, axisLabel: { formatter: formatAxisPercentInt } },
           series: series
         };
         if (!charts.chartB2) charts.chartB2 = echarts.init(document.getElementById('chartB2'));
@@ -1894,7 +1951,7 @@
           legend: { data: brands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { margin: 14, rotate: 45, interval: xInterval, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
-          yAxis: { type: 'value', name: '市占率%', min: 0, max: 100, axisLabel: { formatter: function (v) { return Number(v).toFixed(2) + '%'; } } },
+          yAxis: { type: 'value', name: '市占率%', min: 0, max: 100, axisLabel: { formatter: formatAxisPercentInt } },
           series: series
         };
         if (!charts.chartB3) charts.chartB3 = echarts.init(document.getElementById('chartB3'));
@@ -1930,7 +1987,7 @@
           tooltip: { show: false },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
-          yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatNum } },
+          yAxis: { type: 'value', name: '客单价', axisLabel: { formatter: formatAxisNumInt } },
           series: [{ type: 'bar', data: val, emphasis: { disabled: true }, itemStyle: { color: function (params) { return brandColors[params.dataIndex % brandColors.length]; } }, label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (p) { return p.value != null ? String(Math.round(p.value)) : ''; } } }]
         };
         if (!charts.chartB5) charts.chartB5 = echarts.init(document.getElementById('chartB5'));
@@ -1999,7 +2056,7 @@
           legend: { data: 价格段列表, top: 32, left: 'center' },
           grid: { left: 56, right: 24, top: 64, bottom: 92 },
           xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { margin: 14, rotate: 45, interval: xInterval6, fontSize: 11, formatter: function (v) { return v ? v.slice(0, 7) : v; } } },
-          yAxis: { type: 'value', name: '占比%', min: 0, max: 100, axisLabel: { formatter: function (v) { return (Number(v)).toFixed(2) + '%'; } } },
+          yAxis: { type: 'value', name: '占比%', min: 0, max: 100, axisLabel: { formatter: formatAxisPercentInt } },
           series: series
         };
         if (!charts.chartB6) charts.chartB6 = echarts.init(document.getElementById('chartB6'));
@@ -2135,7 +2192,7 @@
           legend: { data: topBrands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 48, bottom: 92 },
           xAxis: { type: 'category', data: months, boundaryGap: false, axisLabel: { margin: 14, rotate: 35, interval: xInterval, fontSize: 11 } },
-          yAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatNum } },
+          yAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatAxisNumInt } },
           series: series
         };
         if (!charts.chartB8) charts.chartB8 = echarts.init(el);
@@ -2241,7 +2298,7 @@
           legend: { data: topBrands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 48, bottom: 92 },
           xAxis: { type: 'category', data: months, boundaryGap: false, axisLabel: { margin: 14, rotate: 35, interval: xInterval, fontSize: 11 } },
-          yAxis: { type: 'value', name: '同比%', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '%'; } } },
+          yAxis: { type: 'value', name: '同比%', axisLabel: { formatter: formatAxisPercentInt } },
           series: series
         };
         if (!charts.chartB9) charts.chartB9 = echarts.init(el);
@@ -2401,6 +2458,58 @@
       } else {
         window.__runAfterAuth__ = function () { loadDefaultData(hideLoading); };
       }
+
+      /**
+       * 版本记录（仅手动维护）：按时间由早到晚排列，新版本在数组**末尾**追加一行。
+       * date：YYYY.MM.DD；type：仅「功能发布」或「数据更新」；desc：纯文字说明。
+       */
+      (function initVersionLog() {
+        var APP_VERSION_LOG = [
+          { date: '2026.03.14', type: '功能发布', desc: '正式版release，更新至2026年2月数据' },
+          { date: '2026.03.20', type: '功能发布', desc: '增加了手机端适配，并修改了多项表格样式' },
+          { date: '2026.03.23', type: '功能发布', desc: '增加了版本记录功能' }
+        ];
+        var wrap = document.querySelector('.version-log-wrap');
+        var btn = document.getElementById('versionLogBtn');
+        var panel = document.getElementById('versionLogPanel');
+        var tb = document.getElementById('versionLogTbody');
+        if (!wrap || !btn || !panel || !tb) return;
+        APP_VERSION_LOG.forEach(function (row) {
+          var tr = document.createElement('tr');
+          var td1 = document.createElement('td');
+          td1.className = 'col-date';
+          td1.textContent = row.date || '';
+          var td2 = document.createElement('td');
+          td2.className = 'col-type';
+          var span = document.createElement('span');
+          var t = row.type === '数据更新' ? '数据更新' : '功能发布';
+          span.className = 'version-type-badge ' + (t === '数据更新' ? 'is-data' : 'is-feature');
+          span.textContent = t;
+          td2.appendChild(span);
+          var td3 = document.createElement('td');
+          td3.className = 'col-desc';
+          td3.textContent = row.desc || '';
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tb.appendChild(tr);
+        });
+        panel.hidden = true;
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var open = !wrap.classList.contains('is-open');
+          wrap.classList.toggle('is-open', open);
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          panel.hidden = !open;
+        });
+        document.addEventListener('click', function () {
+          if (!wrap.classList.contains('is-open')) return;
+          wrap.classList.remove('is-open');
+          btn.setAttribute('aria-expanded', 'false');
+          panel.hidden = true;
+        });
+        wrap.addEventListener('click', function (e) { e.stopPropagation(); });
+      })();
 
       window.resizeCharts = function () {
         Object.keys(charts).forEach(function (id) {
