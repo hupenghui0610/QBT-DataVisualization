@@ -23,31 +23,6 @@
   <link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script>
-    (function () {
-      var store = { dapan: null, brand: null };
-      try {
-        Object.defineProperty(window, '__QBT_EMB_', {
-          value: store,
-          writable: true,
-          enumerable: false,
-          configurable: true,
-        });
-      } catch (e) {
-        window.__QBT_EMB_ = store;
-      }
-      window.__registerEmbeddedDefaults = function (p) {
-        if (!p) return;
-        if (p.dapan) store.dapan = p.dapan;
-        if (p.brand) store.brand = p.brand;
-        try {
-          delete window.__registerEmbeddedDefaults;
-        } catch (err) {
-          window.__registerEmbeddedDefaults = undefined;
-        }
-      };
-    })();
-  </script>
   <script src="data/default-data.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -147,20 +122,9 @@
     #auth-gate .auth-title { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; margin: 0 0 24px 0; text-align: center; }
     #auth-gate .auth-error { font-size: 13px; color: #c0392b; margin-top: 12px; text-align: center; display: none; }
     #auth-gate .auth-error.show { display: block; }
-    #auth-gate input[type="password"],
-    #auth-gate input[type="email"],
-    #auth-gate input[type="text"] { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 12px; box-sizing: border-box; }
-    #auth-gate .auth-row-code { display: flex; gap: 8px; align-items: stretch; margin-bottom: 12px; }
-    #auth-gate .auth-row-code input { flex: 1; margin-bottom: 0; min-width: 0; }
-    #auth-gate #auth-send-code {
-      flex-shrink: 0; width: auto; min-width: 112px; padding: 12px 10px; margin-bottom: 0;
-      background: #eef2ff; color: #4a69bd; border: 1px solid #c5cee8;
-    }
-    #auth-gate #auth-send-code:hover:not(:disabled) { background: #e0e7ff; }
-    #auth-gate #auth-send-code:disabled { opacity: 0.85; cursor: not-allowed; }
-    #auth-gate button#auth-submit { width: 100%; padding: 12px; background: #4a69bd; color: #fff; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-family: inherit; }
-    #auth-gate button#auth-submit:hover { background: #3d5aa0; }
-    #auth-gate .auth-hint { font-size: 12px; color: #888; margin: 8px 0 0 0; text-align: center; line-height: 1.4; }
+    #auth-gate input[type="password"] { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 16px; box-sizing: border-box; }
+    #auth-gate button { width: 100%; padding: 12px; background: #4a69bd; color: #fff; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-family: inherit; }
+    #auth-gate button:hover { background: #3d5aa0; }
     #global-loading { position: fixed; inset: 0; z-index: 10000; background: rgba(255,255,255,0.92); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; pointer-events: all; overflow: hidden; }
     #global-loading.show { display: flex; }
     #global-loading .spinner { width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: #4a69bd; border-radius: 50%; animation: spin 0.9s linear infinite; }
@@ -330,14 +294,9 @@
   <div id="auth-gate">
     <div class="auth-box">
       <h2 class="auth-title">希倍思内部平台</h2>
-      <input type="email" id="auth-email" placeholder="请输入开通的邮箱" autocomplete="username" />
-      <div class="auth-row-code">
-        <input type="text" id="auth-code" inputmode="numeric" maxlength="8" placeholder="验证码" autocomplete="one-time-code" />
-        <button type="button" id="auth-send-code">获取验证码</button>
-      </div>
-      <button type="button" id="auth-submit">登录</button>
-      <p class="auth-error" id="auth-error">验证失败，如需开通请联系管理员</p>
-      <p class="auth-hint">首次登录需邮箱验证码；本设备登录成功后会记住约 30 天，无需重复收信。</p>
+      <input type="password" id="auth-password" placeholder="请输入密码" autocomplete="off" />
+      <button type="button" id="auth-submit">进入</button>
+      <p class="auth-error" id="auth-error">密码错误，如需使用请联系胡鹏辉</p>
     </div>
   </div>
   <div id="global-loading">
@@ -422,21 +381,8 @@
 
   <script>
     (function () {
-      /**
-       * 部署在 Pages 时用同源 /api/worker 代理；本地 file:// 或 localhost 直连 Worker。
-       */
-      var WORKER_API_URL = (function () {
-        try {
-          var p = location.protocol;
-          var h = location.hostname;
-          if (p && p !== 'file:' && h && h !== 'localhost' && h !== '127.0.0.1') {
-            return location.origin.replace(/\/$/, '') + '/api/worker';
-          }
-        } catch (e) {}
-        return 'https://qbt-ai-assistant.hupenghui1993.workers.dev';
-      })();
-      var AUTH_TOKEN_KEY = 'qbt_auth_token';
-
+      var AUTH_KEY = 'xbs_authed';
+      var AUTH_PWD = 'xbs2026';
       var authGate = document.getElementById('auth-gate');
       var mainContent = document.getElementById('main-content');
       var globalLoading = document.getElementById('global-loading');
@@ -455,143 +401,26 @@
         showLoading();
       }
 
-      function bindAuthGate() {
+      if (sessionStorage.getItem(AUTH_KEY) === '1') {
+        enterApp();
+      } else {
         mainContent.style.display = 'none';
-        var emailEl = document.getElementById('auth-email');
-        var codeEl = document.getElementById('auth-code');
-        var sendBtn = document.getElementById('auth-send-code');
-        var submitBtn = document.getElementById('auth-submit');
-        var errEl = document.getElementById('auth-error');
-        var cooldown = 0;
-        var timer = null;
-        function setSendBtnState() {
-          if (cooldown > 0) {
-            sendBtn.disabled = true;
-            sendBtn.textContent = cooldown + 's';
-          } else {
-            sendBtn.disabled = false;
-            sendBtn.textContent = '获取验证码';
-          }
-        }
-        sendBtn.addEventListener('click', function () {
-          if (!WORKER_API_URL) {
-            errEl.textContent = '未配置 Worker 地址（WORKER_API_URL），请联系管理员';
+        document.getElementById('auth-submit').addEventListener('click', function () {
+          var pwd = (document.getElementById('auth-password').value || '').trim();
+          var errEl = document.getElementById('auth-error');
+          if (pwd !== AUTH_PWD) {
             errEl.classList.add('show');
             return;
           }
-          var email = (emailEl.value || '').trim();
           errEl.classList.remove('show');
-          fetch(WORKER_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'auth_send_code', email: email }),
-          })
-            .then(function (r) {
-              return r.json().then(function (j) {
-                return { r: r, j: j };
-              });
-            })
-            .then(function (o) {
-              if (!o.r.ok) {
-                errEl.textContent = (o.j && o.j.error) || '发送失败';
-                errEl.classList.add('show');
-                return;
-              }
-              if (timer) clearInterval(timer);
-              cooldown = 60;
-              setSendBtnState();
-              timer = setInterval(function () {
-                cooldown--;
-                setSendBtnState();
-                if (cooldown <= 0) {
-                  clearInterval(timer);
-                  timer = null;
-                }
-              }, 1000);
-            })
-            .catch(function () {
-              errEl.textContent = '网络错误，请稍后重试';
-              errEl.classList.add('show');
-            });
+          sessionStorage.setItem(AUTH_KEY, '1');
+          enterApp();
+          window.__runAfterAuth__();
         });
-        submitBtn.addEventListener('click', function () {
-          if (!WORKER_API_URL) {
-            errEl.textContent = '未配置 Worker 地址，请联系管理员';
-            errEl.classList.add('show');
-            return;
-          }
-          var email = (emailEl.value || '').trim();
-          var code = (codeEl.value || '').trim();
-          errEl.classList.remove('show');
-          fetch(WORKER_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'auth_verify', email: email, code: code }),
-          })
-            .then(function (r) {
-              return r.json().then(function (j) {
-                return { r: r, j: j };
-              });
-            })
-            .then(function (o) {
-              if (!o.r.ok || !o.j || !o.j.token) {
-                errEl.textContent = (o.j && o.j.error) || '登录失败';
-                errEl.classList.add('show');
-                return;
-              }
-              try {
-                localStorage.setItem(AUTH_TOKEN_KEY, o.j.token);
-              } catch (e) {}
-              enterApp();
-              if (typeof window.__runAfterAuth__ === 'function') window.__runAfterAuth__();
-            })
-            .catch(function () {
-              errEl.textContent = '网络错误，请稍后重试';
-              errEl.classList.add('show');
-            });
-        });
-        codeEl.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter') submitBtn.click();
-        });
-        emailEl.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter') submitBtn.click();
+        document.getElementById('auth-password').addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') document.getElementById('auth-submit').click();
         });
       }
-
-      var authCheckPromise = (async function () {
-        if (!WORKER_API_URL) return false;
-        var t = localStorage.getItem(AUTH_TOKEN_KEY);
-        if (!t) return false;
-        try {
-          var r = await fetch(WORKER_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'auth_validate', token: t }),
-          });
-          var j = await r.json();
-          if (r.ok && j && j.ok) return true;
-          localStorage.removeItem(AUTH_TOKEN_KEY);
-        } catch (e) {
-          try {
-            localStorage.removeItem(AUTH_TOKEN_KEY);
-          } catch (e2) {}
-        }
-        return false;
-      })();
-
-      authCheckPromise.then(function (skipGate) {
-        if (skipGate) enterApp();
-        else bindAuthGate();
-        return skipGate;
-      }).then(function (skipGate) {
-        if (skipGate) {
-          if (typeof loadDefaultData === 'function') loadDefaultData(hideLoading);
-        } else {
-          window.__runAfterAuth__ = function () {
-            loadDefaultData(hideLoading);
-          };
-        }
-      });
 
       var charts = {};
 
@@ -612,6 +441,8 @@
         return opt;
       }
       var dataSource = null;
+      // 部署 Worker 后在此填写，例如 https://qbt-ai-assistant.xxx.workers.dev
+      var AI_ASSISTANT_WORKER_URL = '';
 
       function getDaPan() { if (!dataSource) return null; if (dataSource.分品牌 !== undefined) return dataSource.大盘 || {}; return dataSource; }
       function getFenPinPai() { return dataSource && dataSource.分品牌; }
@@ -2527,7 +2358,7 @@
           .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('未找到')); })
           .then(function (obj) { tryDapan(obj); })
           .catch(function () {
-            if (!tryDapan(typeof window !== 'undefined' && window.__QBT_EMB_ && window.__QBT_EMB_.dapan)) {
+            if (!tryDapan(typeof window !== 'undefined' && window.__DEFAULT_FEATURES_OUTPUT__)) {
               statusEl.textContent = '未加载默认大盘数据，请上传「电商大盘及竞争数据-情报通」Excel 或 JSON。';
             }
           });
@@ -2535,7 +2366,7 @@
           .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('未找到')); })
           .then(function (obj) { tryBrand(obj); })
           .catch(function () {
-            if (!tryBrand(typeof window !== 'undefined' && window.__QBT_EMB_ && window.__QBT_EMB_.brand)) {
+            if (!tryBrand(typeof window !== 'undefined' && window.__DEFAULT_FEATURES_BRAND__)) {
               statusBrandEl.textContent = '未加载默认分品牌数据，请上传「三站分品牌分价格销量销售额」Excel 或 JSON。';
             }
           });
@@ -2619,6 +2450,11 @@
         }
       });
 
+      if (sessionStorage.getItem(AUTH_KEY) === '1') {
+        loadDefaultData(hideLoading);
+      } else {
+        window.__runAfterAuth__ = function () { loadDefaultData(hideLoading); };
+      }
 
       /**
        * 版本记录（仅手动维护）：按时间由早到晚排列，新版本在数组**末尾**追加一行。
@@ -2626,7 +2462,6 @@
        */
       (function initVersionLog() {
         var APP_VERSION_LOG = [
-          { date: '2026.03.11', type: '功能发布', desc: '登录改为邮箱验证码（Worker+Resend），本设备记住约30天；与AI共用同一Worker地址' },
           { date: '2026.03.14', type: '功能发布', desc: '正式版release，更新至2026年2月数据' },
           { date: '2026.03.20', type: '功能发布', desc: '增加了手机端适配，并修改了多项表格样式' },
           { date: '2026.03.23', type: '功能发布', desc: '增加了版本记录功能' }
@@ -2713,7 +2548,7 @@
           if (scope === 'dapan' && !dp) { appendMsg('assistant', '请先加载大盘数据。', true); return; }
           if (scope === 'brand' && !fp) { appendMsg('assistant', '请先加载分品牌数据。', true); return; }
           if (scope === 'both' && !dp && !fp) { appendMsg('assistant', '请先加载大盘或分品牌数据。', true); return; }
-          if (!WORKER_API_URL) { appendMsg('assistant', '请先配置 WORKER_API_URL（与邮箱登录共用同一 Worker 地址）。', true); return; }
+          if (!AI_ASSISTANT_WORKER_URL) { appendMsg('assistant', '请先配置 AI_ASSISTANT_WORKER_URL（部署 Worker 后填写）。', true); return; }
           appendMsg('user', question);
           inputEl.value = '';
           var loadingDiv = document.createElement('div');
@@ -2723,7 +2558,7 @@
           messagesEl.scrollTop = messagesEl.scrollHeight;
           sendBtn.disabled = true;
           var context = buildDataContext(scope);
-          fetch(WORKER_API_URL, {
+          fetch(AI_ASSISTANT_WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question: question, context: context })
