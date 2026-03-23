@@ -480,6 +480,7 @@
       <h3>修改密码</h3>
       <input type="password" id="changePwdOld" placeholder="原密码" autocomplete="current-password" />
       <input type="password" id="changePwdNew" placeholder="新密码（至少 6 位）" autocomplete="new-password" />
+      <input type="password" id="changePwdNew2" placeholder="确认新密码" autocomplete="new-password" />
       <p class="xbs-modal-error" id="changePwdErr"></p>
       <div class="xbs-modal-actions">
         <button type="button" class="primary" id="changePwdSubmit">确定</button>
@@ -580,6 +581,7 @@
           m.setAttribute('aria-hidden', 'false');
           document.getElementById('changePwdOld').value = '';
           document.getElementById('changePwdNew').value = '';
+          document.getElementById('changePwdNew2').value = '';
           document.getElementById('changePwdErr').textContent = '';
         });
         document.getElementById('changePwdCancel').addEventListener('click', function () {
@@ -592,10 +594,15 @@
         document.getElementById('changePwdSubmit').addEventListener('click', function () {
           var oldP = document.getElementById('changePwdOld').value || '';
           var newP = document.getElementById('changePwdNew').value || '';
+          var newP2 = document.getElementById('changePwdNew2').value || '';
           var errEl = document.getElementById('changePwdErr');
           errEl.textContent = '';
           if (newP.length < 6) {
             errEl.textContent = '新密码至少 6 位';
+            return;
+          }
+          if (newP !== newP2) {
+            errEl.textContent = '两次输入的新密码不一致';
             return;
           }
           XbsAuth.changePassword(oldP, newP)
