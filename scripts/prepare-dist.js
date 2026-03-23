@@ -7,6 +7,12 @@ const dataDir = path.join(root, 'data');
 const distData = path.join(dist, 'data');
 
 if (!fs.existsSync(dist)) fs.mkdirSync(dist, { recursive: true });
+// 微信 / 域名根目录验证文件（须可从 https://你的域名/文件名.txt 访问）
+var wechatVerifyName = 'c21ee759ec581077f679ce2033a5a2c0.txt';
+var wechatVerifySrc = path.join(root, wechatVerifyName);
+if (fs.existsSync(wechatVerifySrc)) {
+  fs.copyFileSync(wechatVerifySrc, path.join(dist, wechatVerifyName));
+}
 fs.copyFileSync(path.join(root, 'index.html'), path.join(dist, 'index.html'));
 fs.copyFileSync(path.join(root, 'charts.html'), path.join(dist, 'charts.html'));
 const jsDir = path.join(root, 'js');
