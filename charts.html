@@ -118,12 +118,98 @@
     .tab-pane { display: none; padding: 16px 0 0 0; }
     .tab-pane.active { display: block; }
     #auth-gate { position: fixed; inset: 0; z-index: 10001; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); display: flex; align-items: center; justify-content: center; }
-    #auth-gate .auth-box { background: #fff; border-radius: 12px; padding: 32px 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); min-width: 320px; }
-    #auth-gate .auth-title { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; margin: 0 0 24px 0; text-align: center; }
+    #auth-gate .auth-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 50%;
+      max-width: 240px;
+      min-width: 160px;
+      box-sizing: border-box;
+    }
+    #auth-gate .auth-title { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; margin: 0 0 12px 0; text-align: center; }
+    #auth-gate .auth-hint {
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+      margin: 0 0 12px 0;
+      line-height: 1.45;
+    }
     #auth-gate .auth-error { font-size: 13px; color: #c0392b; margin-top: 12px; text-align: center; display: none; }
     #auth-gate .auth-error.show { display: block; }
-    #auth-gate input[type="password"] { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 16px; box-sizing: border-box; }
-    #auth-gate button { width: 100%; padding: 12px; background: #4a69bd; color: #fff; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-family: inherit; }
+    #auth-gate input[type="password"],
+    #auth-gate input[type="tel"] {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
+    #auth-gate input[type="password"] { margin-bottom: 10px; }
+    .user-session-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 6;
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      font-size: 13px;
+      color: #334155;
+      max-width: calc(100% - 130px);
+      text-align: left;
+    }
+    .user-session-bar .user-display-name { font-weight: 600; color: #1a1a2e; }
+    .user-session-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #4a69bd;
+      background: #fff;
+      border: 1px solid #c5cee8;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .user-session-btn:hover { background: #f0f3fb; }
+    .xbs-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10002;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .xbs-modal.show { display: flex; }
+    .xbs-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+    .xbs-modal-box {
+      position: relative;
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      min-width: 280px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .xbs-modal-box h3 { margin: 0 0 16px 0; font-size: 1.1rem; color: #1a1a2e; }
+    .xbs-modal-box input[type="password"] {
+      width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;
+    }
+    .xbs-modal-error { font-size: 13px; color: #c0392b; margin: 0 0 10px 0; min-height: 1.2em; }
+    .xbs-modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .xbs-modal-actions button { padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; font-family: inherit; border: none; }
+    .xbs-modal-actions .primary { background: #4a69bd; color: #fff; }
+    .xbs-modal-actions .secondary { background: #e2e8f0; color: #334155; }
+    .admin-logs-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .admin-logs-table th, .admin-logs-table td { padding: 8px; border-bottom: 1px solid #eef2f7; text-align: left; vertical-align: top; }
+    .admin-logs-wrap { max-height: min(60vh, 400px); overflow: auto; margin-top: 12px; }
+    #auth-gate button { width: 100%; padding: 6px 10px; background: #4a69bd; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-family: inherit; }
     #auth-gate button:hover { background: #3d5aa0; }
     #global-loading { position: fixed; inset: 0; z-index: 10000; background: rgba(255,255,255,0.92); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; pointer-events: all; overflow: hidden; }
     #global-loading.show { display: flex; }
@@ -196,6 +282,7 @@
       padding-top: 20px;
     }
     html.mobile-client .page-header { margin-bottom: 14px; padding-top: 32px; }
+    html.mobile-client .user-session-bar { max-width: 72%; font-size: 11px; gap: 6px; }
     html.mobile-client .version-log-wrap { top: 0; right: 0; }
     html.mobile-client .version-log-btn { padding: 5px 10px; font-size: 12px; }
     html.mobile-client .version-log-panel { width: calc(100vw - 24px); max-width: none; right: 0; left: auto; }
@@ -262,10 +349,10 @@
     html.mobile-client .load-bar label { text-align: center; }
     html.mobile-client #auth-gate .auth-box {
       min-width: auto;
-      width: calc(100vw - 32px);
-      max-width: 400px;
+      width: 50%;
+      max-width: 240px;
       margin: 16px;
-      padding: 24px 20px;
+      padding: 16px 14px;
       box-sizing: border-box;
     }
     html.mobile-client #auth-gate .auth-title { font-size: 1.25rem; }
@@ -294,9 +381,11 @@
   <div id="auth-gate">
     <div class="auth-box">
       <h2 class="auth-title">希倍思内部平台</h2>
-      <input type="password" id="auth-password" placeholder="请输入密码" autocomplete="off" />
+      <p class="auth-hint">暂未开放注册，如需使用请联系胡鹏辉</p>
+      <input type="tel" id="auth-phone" placeholder="手机号" autocomplete="username" inputmode="numeric" />
+      <input type="password" id="auth-password" placeholder="密码" autocomplete="current-password" />
       <button type="button" id="auth-submit">进入</button>
-      <p class="auth-error" id="auth-error">密码错误，如需使用请联系胡鹏辉</p>
+      <p class="auth-error" id="auth-error">登录失败，如需开通账号请联系管理员</p>
     </div>
   </div>
   <div id="global-loading">
@@ -306,6 +395,12 @@
   <div id="main-content" style="display:none">
   <div style="position:relative;z-index:1">
   <div class="page-header">
+    <div class="user-session-bar" id="userSessionBar">
+      <span class="user-display-name" id="userDisplayName"></span>
+      <button type="button" class="user-session-btn" id="authChangePwdBtn">修改密码</button>
+      <button type="button" class="user-session-btn" id="authLogoutBtn">退出登录</button>
+      <button type="button" class="user-session-btn" id="adminLogsBtn" style="display:none">访问记录</button>
+    </div>
     <div class="version-log-wrap">
       <button type="button" class="version-log-btn" id="versionLogBtn" aria-expanded="false" aria-controls="versionLogPanel">版本记录</button>
       <div id="versionLogPanel" class="version-log-panel" role="region" aria-label="版本记录" hidden>
@@ -379,13 +474,46 @@
   </div>
   </div>
 
+  <div id="modalChangePwd" class="xbs-modal" aria-hidden="true">
+    <div class="xbs-modal-backdrop"></div>
+    <div class="xbs-modal-box">
+      <h3>修改密码</h3>
+      <input type="password" id="changePwdOld" placeholder="原密码" autocomplete="current-password" />
+      <input type="password" id="changePwdNew" placeholder="新密码（至少 6 位）" autocomplete="new-password" />
+      <p class="xbs-modal-error" id="changePwdErr"></p>
+      <div class="xbs-modal-actions">
+        <button type="button" class="primary" id="changePwdSubmit">确定</button>
+        <button type="button" class="secondary" id="changePwdCancel">取消</button>
+      </div>
+    </div>
+  </div>
+  <div id="modalAdminLogs" class="xbs-modal" aria-hidden="true">
+    <div class="xbs-modal-backdrop"></div>
+    <div class="xbs-modal-box" style="max-width:720px">
+      <h3>访问记录</h3>
+      <p style="margin:0;font-size:13px;color:#64748b">时间与城市由服务端记录（城市为网络解析，仅供参考）</p>
+      <div class="admin-logs-wrap">
+        <table class="admin-logs-table">
+          <thead>
+            <tr><th>姓名</th><th>手机号</th><th>时间</th><th>城市</th><th>IP</th></tr>
+          </thead>
+          <tbody id="adminLogsTbody"></tbody>
+        </table>
+      </div>
+      <div class="xbs-modal-actions" style="margin-top:16px">
+        <button type="button" class="primary" id="adminLogsClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth-client.js"></script>
   <script>
     (function () {
-      var AUTH_KEY = 'xbs_authed';
-      var AUTH_PWD = 'xbs2026';
       var authGate = document.getElementById('auth-gate');
       var mainContent = document.getElementById('main-content');
       var globalLoading = document.getElementById('global-loading');
+      var currentUser = null;
+      var loginFormWired = false;
 
       function showLoading() {
         globalLoading.classList.add('show');
@@ -400,27 +528,222 @@
         mainContent.style.display = 'block';
         showLoading();
       }
-
-      if (sessionStorage.getItem(AUTH_KEY) === '1') {
-        enterApp();
-      } else {
+      function showLoginGate() {
+        authGate.style.display = 'flex';
         mainContent.style.display = 'none';
-        document.getElementById('auth-submit').addEventListener('click', function () {
-          var pwd = (document.getElementById('auth-password').value || '').trim();
-          var errEl = document.getElementById('auth-error');
-          if (pwd !== AUTH_PWD) {
-            errEl.classList.add('show');
+        try {
+          document.getElementById('auth-password').value = '';
+        } catch (e) {}
+      }
+      function updateUserBar() {
+        var bar = document.getElementById('userSessionBar');
+        var nameEl = document.getElementById('userDisplayName');
+        var adminBtn = document.getElementById('adminLogsBtn');
+        if (!bar || !nameEl) return;
+        if (currentUser) {
+          bar.style.display = 'flex';
+          nameEl.textContent = currentUser.name || currentUser.phone || '';
+          if (adminBtn) adminBtn.style.display = currentUser.is_admin ? 'inline-block' : 'none';
+        } else {
+          bar.style.display = 'none';
+          if (adminBtn) adminBtn.style.display = 'none';
+        }
+      }
+      function escapeHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+      }
+      function fmtAccessTime(iso) {
+        if (!iso) return '';
+        try {
+          var d = new Date(iso);
+          if (isNaN(d.getTime())) return iso;
+          return d.toLocaleString('zh-CN', { hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+          return iso;
+        }
+      }
+      function wireSessionButtons() {
+        document.getElementById('authLogoutBtn').addEventListener('click', function () {
+          if (typeof XbsAuth === 'undefined') return;
+          XbsAuth.clearSession();
+          currentUser = null;
+          updateUserBar();
+          showLoginGate();
+          if (!loginFormWired) wireLoginForm();
+        });
+        document.getElementById('authChangePwdBtn').addEventListener('click', function () {
+          var m = document.getElementById('modalChangePwd');
+          if (!m) return;
+          m.classList.add('show');
+          m.setAttribute('aria-hidden', 'false');
+          document.getElementById('changePwdOld').value = '';
+          document.getElementById('changePwdNew').value = '';
+          document.getElementById('changePwdErr').textContent = '';
+        });
+        document.getElementById('changePwdCancel').addEventListener('click', function () {
+          var m = document.getElementById('modalChangePwd');
+          if (m) {
+            m.classList.remove('show');
+            m.setAttribute('aria-hidden', 'true');
+          }
+        });
+        document.getElementById('changePwdSubmit').addEventListener('click', function () {
+          var oldP = document.getElementById('changePwdOld').value || '';
+          var newP = document.getElementById('changePwdNew').value || '';
+          var errEl = document.getElementById('changePwdErr');
+          errEl.textContent = '';
+          if (newP.length < 6) {
+            errEl.textContent = '新密码至少 6 位';
             return;
           }
+          XbsAuth.changePassword(oldP, newP)
+            .then(function (res) {
+              return res.json().then(function (data) {
+                return { res: res, data: data };
+              });
+            })
+            .then(function (o) {
+              if (!o.res.ok) {
+                errEl.textContent = (o.data && o.data.error) || '修改失败';
+                return;
+              }
+              document.getElementById('modalChangePwd').classList.remove('show');
+              document.getElementById('modalChangePwd').setAttribute('aria-hidden', 'true');
+              XbsAuth.clearSession();
+              currentUser = null;
+              updateUserBar();
+              showLoginGate();
+              if (!loginFormWired) wireLoginForm();
+            })
+            .catch(function () {
+              errEl.textContent = '网络错误';
+            });
+        });
+        document.getElementById('adminLogsBtn').addEventListener('click', function () {
+          XbsAuth.fetchAccessLogs()
+            .then(function (r) {
+              return r.json().then(function (data) {
+                return { r: r, data: data };
+              });
+            })
+            .then(function (o) {
+              var panel = document.getElementById('modalAdminLogs');
+              var tb = document.getElementById('adminLogsTbody');
+              if (!panel || !tb) return;
+              if (!o.r.ok) {
+                tb.innerHTML = '<tr><td colspan="5">' + escapeHtml((o.data && o.data.error) || '加载失败') + '</td></tr>';
+              } else {
+                var rows = (o.data && o.data.rows) || [];
+                tb.innerHTML = '';
+                rows.forEach(function (row) {
+                  var tr = document.createElement('tr');
+                  var t = row.accessed_at || '';
+                  tr.innerHTML =
+                    '<td>' +
+                    escapeHtml(row.user_name || '') +
+                    '</td><td>' +
+                    escapeHtml(row.user_phone || '') +
+                    '</td><td>' +
+                    escapeHtml(fmtAccessTime(t)) +
+                    '</td><td>' +
+                    escapeHtml(row.city || '—') +
+                    '</td><td>' +
+                    escapeHtml(row.client_ip || '—') +
+                    '</td>';
+                  tb.appendChild(tr);
+                });
+                if (!rows.length) tb.innerHTML = '<tr><td colspan="5">暂无记录</td></tr>';
+              }
+              panel.classList.add('show');
+              panel.setAttribute('aria-hidden', 'false');
+            });
+        });
+        document.getElementById('adminLogsClose').addEventListener('click', function () {
+          var panel = document.getElementById('modalAdminLogs');
+          if (panel) {
+            panel.classList.remove('show');
+            panel.setAttribute('aria-hidden', 'true');
+          }
+        });
+      }
+      function wireLoginForm() {
+        if (loginFormWired) return;
+        loginFormWired = true;
+        document.getElementById('auth-submit').addEventListener('click', function () {
+          var phone = (document.getElementById('auth-phone').value || '').trim();
+          var pwd = (document.getElementById('auth-password').value || '').trim();
+          var errEl = document.getElementById('auth-error');
           errEl.classList.remove('show');
-          sessionStorage.setItem(AUTH_KEY, '1');
-          enterApp();
-          window.__runAfterAuth__();
+          XbsAuth.login(phone, pwd)
+            .then(function (res) {
+              return res.json().then(function (data) {
+                return { res: res, data: data };
+              });
+            })
+            .then(function (o) {
+              if (!o.res.ok) {
+                errEl.textContent = (o.data && o.data.error) || '登录失败';
+                errEl.classList.add('show');
+                return;
+              }
+              XbsAuth.setToken(o.data.token);
+              currentUser = o.data.user;
+              updateUserBar();
+              enterApp();
+              if (window.__runAfterAuth__) window.__runAfterAuth__();
+            })
+            .catch(function () {
+              errEl.textContent = '无法连接登录服务，请检查网络或稍后重试';
+              errEl.classList.add('show');
+            });
         });
         document.getElementById('auth-password').addEventListener('keydown', function (e) {
           if (e.key === 'Enter') document.getElementById('auth-submit').click();
         });
+        document.getElementById('auth-phone').addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') document.getElementById('auth-password').focus();
+        });
       }
+      function bootstrapAuth() {
+        mainContent.style.display = 'none';
+        if (typeof XbsAuth === 'undefined') {
+          showLoginGate();
+          return;
+        }
+        var tok = XbsAuth.getToken();
+        if (!tok) {
+          showLoginGate();
+          wireLoginForm();
+          return;
+        }
+        XbsAuth.ping()
+          .then(function (res) {
+            return res.json().then(function (data) {
+              return { res: res, data: data };
+            });
+          })
+          .then(function (o) {
+            if (!o.res.ok) {
+              XbsAuth.clearSession();
+              showLoginGate();
+              wireLoginForm();
+              return;
+            }
+            currentUser = o.data.user;
+            updateUserBar();
+            enterApp();
+            if (window.__runAfterAuth__) window.__runAfterAuth__();
+          })
+          .catch(function () {
+            XbsAuth.clearSession();
+            showLoginGate();
+            wireLoginForm();
+          });
+      }
+      wireSessionButtons();
+      bootstrapAuth();
 
       var charts = {};
 
@@ -2450,11 +2773,7 @@
         }
       });
 
-      if (sessionStorage.getItem(AUTH_KEY) === '1') {
-        loadDefaultData(hideLoading);
-      } else {
-        window.__runAfterAuth__ = function () { loadDefaultData(hideLoading); };
-      }
+      window.__runAfterAuth__ = function () { loadDefaultData(hideLoading); };
 
       /**
        * 版本记录（仅手动维护）：按时间由早到晚排列，新版本在数组**末尾**追加一行。
@@ -2464,7 +2783,8 @@
         var APP_VERSION_LOG = [
           { date: '2026.03.14', type: '功能发布', desc: '正式版release，更新至2026年2月数据' },
           { date: '2026.03.20', type: '功能发布', desc: '增加了手机端适配，并修改了多项表格样式' },
-          { date: '2026.03.23', type: '功能发布', desc: '增加了版本记录功能' }
+          { date: '2026.03.23', type: '功能发布', desc: '增加了版本记录功能' },
+          { date: '2026.03.23', type: '功能发布', desc: '登录升级为手机号+密码（服务端 D1），30 天免重复登录、修改密码、管理员可查看访问记录' }
         ];
         var wrap = document.querySelector('.version-log-wrap');
         var btn = document.getElementById('versionLogBtn');
