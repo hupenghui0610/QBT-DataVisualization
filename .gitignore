@@ -1,6 +1,7 @@
 .vscode/
 node_modules/
 .env
+worker/.dev.vars
 *.log
 .DS_Store
 dist/

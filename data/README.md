@@ -11,3 +11,5 @@
 | `default-data.js` | 嵌入用脚本（供本地 file:// 打开） | 生成好上述两个 JSON 后，在项目根目录执行：`node embed-default-data.js` |
 
 将 `features-output.json`、`features-brand-top10.json` 与 `default-data.js` 一并部署即可。若缺少某文件，页面会提示「未加载默认 xxx 数据」，用户仍可通过页面上传 Excel/JSON。
+
+**说明**：`default-data.js` 不再使用 `window.__DEFAULT_FEATURES_*` 全局变量；页面在 `index.html` / `charts.html` 的 head 中通过 `__registerEmbeddedDefaults` 将数据写入不可枚举属性 `window.__QBT_EMB_`（控制台 `Object.keys(window)` 不会列出该名，但仍可通过 `window.__QBT_EMB_` 手动访问，与任何前端方案一样无法对刻意取证者完全隐藏）。

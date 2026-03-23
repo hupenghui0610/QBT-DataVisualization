@@ -2,4 +2,19 @@ name = "qbt-ai-assistant"
 main = "index.js"
 compatibility_date = "2024-01-01"
 
-# API Key 通过 wrangler secret put DASHSCOPE_API_KEY 设置，不要写在此文件中
+# API Key 通过 wrangler secret put 设置，不要写在此文件中：
+#   wrangler secret put DASHSCOPE_API_KEY
+#   wrangler secret put RESEND_API_KEY
+# 白名单邮箱（逗号分隔）与发件人可放在 [vars] 或 secret：
+#   wrangler secret put ALLOWED_EMAILS
+# 内容示例：user1@company.com,user2@company.com
+
+[vars]
+# Resend 发件人；测试可用 onboarding@resend.dev（见 Resend 文档）
+FROM_EMAIL = "onboarding@resend.dev"
+
+# KV 已创建（生产 / 预览）；勿将密钥写入本文件
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "3a729083ee0048ce87a9847a347996cb"
+preview_id = "7bf426d2723f456090b8b03cf722601b"

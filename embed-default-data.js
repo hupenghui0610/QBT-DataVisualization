@@ -27,10 +27,16 @@ try {
   process.exit(1);
 }
 
+// 不挂到 window.__DEFAULT_*，改为调用页面预置的 __registerEmbeddedDefaults，数据写入不可枚举的 __QBT_EMB_
 const js = [
-  '// 由 embed-default-data.js 生成，供本地打开页面时加载默认数据',
-  'window.__DEFAULT_FEATURES_OUTPUT__ = ' + dapan.trim() + ';',
-  'window.__DEFAULT_FEATURES_BRAND__ = ' + brand.trim() + ';',
+    '// 由 embed-default-data.js 生成，供本地打开页面时加载默认数据',
+    '(function () {',
+    '  var d = ' + dapan.trim() + ';',
+    '  var b = ' + brand.trim() + ';',
+    "  if (typeof window !== 'undefined' && typeof window.__registerEmbeddedDefaults === 'function') {",
+    '    window.__registerEmbeddedDefaults({ dapan: d, brand: b });',
+    '  }',
+    '})();',
 ].join('\n');
 
 fs.writeFileSync(outPath, js, 'utf8');

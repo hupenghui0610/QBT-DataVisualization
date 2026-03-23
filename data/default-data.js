@@ -1,5 +1,6 @@
 // 由 embed-default-data.js 生成，供本地打开页面时加载默认数据
-window.__DEFAULT_FEATURES_OUTPUT__ = {
+(function () {
+  var d = {
   "数据说明": {
     "数据源": "c:\\Users\\HuPen\\Downloads\\电商大盘及竞争数据-情报通.xlsx",
     "提取时间": "2026-03-14T14:16:53.158Z",
@@ -14260,7 +14261,7 @@ window.__DEFAULT_FEATURES_OUTPUT__ = {
     }
   }
 };
-window.__DEFAULT_FEATURES_BRAND__ = {
+  var b = {
   "数据说明": {
     "数据源": "c:\\Users\\HuPen\\Downloads\\情报通-三站分品牌分价格销量销售额.xlsx",
     "提取时间": "2026-03-14T14:16:55.312Z",
@@ -41163,3 +41164,7 @@ window.__DEFAULT_FEATURES_BRAND__ = {
     }
   ]
 };
+  if (typeof window !== 'undefined' && typeof window.__registerEmbeddedDefaults === 'function') {
+    window.__registerEmbeddedDefaults({ dapan: d, brand: b });
+  }
+})();
