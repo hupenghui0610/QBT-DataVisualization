@@ -64,5 +64,18 @@
         headers: authHeaders(),
       });
     },
+    fetchAdminUsers: function () {
+      return fetch(getApiBase() + '/api/admin/users', {
+        method: 'GET',
+        headers: authHeaders(),
+      });
+    },
+    createAdminUser: function (payload) {
+      return fetch(getApiBase() + '/api/admin/users', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+    },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

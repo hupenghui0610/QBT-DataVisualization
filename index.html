@@ -199,7 +199,9 @@
       box-shadow: 0 20px 60px rgba(0,0,0,0.25);
     }
     .xbs-modal-box h3 { margin: 0 0 16px 0; font-size: 1.1rem; color: #1a1a2e; }
-    .xbs-modal-box input[type="password"] {
+    .xbs-modal-box input[type="password"],
+    .xbs-modal-box input[type="text"],
+    .xbs-modal-box input[type="tel"] {
       width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;
     }
     .xbs-modal-error { font-size: 13px; color: #c0392b; margin: 0 0 10px 0; min-height: 1.2em; }
@@ -401,6 +403,7 @@
       <span class="user-display-name" id="userDisplayName"></span>
       <button type="button" class="user-session-btn" id="authChangePwdBtn">修改密码</button>
       <button type="button" class="user-session-btn" id="authLogoutBtn">退出登录</button>
+      <button type="button" class="user-session-btn" id="adminUsersBtn" style="display:none">账号管理</button>
       <button type="button" class="user-session-btn" id="adminLogsBtn" style="display:none">访问记录</button>
     </div>
     <div class="version-log-wrap">
@@ -508,6 +511,30 @@
       </div>
     </div>
   </div>
+  <div id="modalAdminUsers" class="xbs-modal" aria-hidden="true">
+    <div class="xbs-modal-backdrop"></div>
+    <div class="xbs-modal-box" style="max-width:560px">
+      <h3>账号管理</h3>
+      <p style="margin:0 0 12px 0;font-size:13px;color:#64748b">已开通账号（仅管理员可见）</p>
+      <div class="admin-logs-wrap">
+        <table class="admin-logs-table">
+          <thead>
+            <tr><th>用户名</th><th>账号（手机号）</th><th>角色</th></tr>
+          </thead>
+          <tbody id="adminUsersTbody"></tbody>
+        </table>
+      </div>
+      <h4 style="margin:16px 0 8px 0;font-size:14px;color:#1a1a2e;font-weight:600">新增用户</h4>
+      <input type="text" id="adminNewName" placeholder="用户名" autocomplete="off" />
+      <input type="tel" id="adminNewPhone" placeholder="账号（11 位手机号）" inputmode="numeric" autocomplete="off" />
+      <input type="password" id="adminNewPwd" placeholder="初始密码（至少 6 位）" autocomplete="new-password" />
+      <p class="xbs-modal-error" id="adminUsersErr"></p>
+      <div class="xbs-modal-actions">
+        <button type="button" class="primary" id="adminUsersCreate">添加用户</button>
+        <button type="button" class="secondary" id="adminUsersClose">关闭</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/auth-client.js"></script>
   <script>
@@ -541,15 +568,19 @@
       function updateUserBar() {
         var bar = document.getElementById('userSessionBar');
         var nameEl = document.getElementById('userDisplayName');
-        var adminBtn = document.getElementById('adminLogsBtn');
+        var adminLogsBtn = document.getElementById('adminLogsBtn');
+        var adminUsersBtn = document.getElementById('adminUsersBtn');
         if (!bar || !nameEl) return;
         if (currentUser) {
           bar.style.display = 'flex';
           nameEl.textContent = currentUser.name || currentUser.phone || '';
-          if (adminBtn) adminBtn.style.display = currentUser.is_admin ? 'inline-block' : 'none';
+          var showAdm = currentUser.is_admin ? 'inline-block' : 'none';
+          if (adminLogsBtn) adminLogsBtn.style.display = showAdm;
+          if (adminUsersBtn) adminUsersBtn.style.display = showAdm;
         } else {
           bar.style.display = 'none';
-          if (adminBtn) adminBtn.style.display = 'none';
+          if (adminLogsBtn) adminLogsBtn.style.display = 'none';
+          if (adminUsersBtn) adminUsersBtn.style.display = 'none';
         }
       }
       function escapeHtml(s) {
@@ -675,6 +706,92 @@
             panel.classList.remove('show');
             panel.setAttribute('aria-hidden', 'true');
           }
+        });
+        function fillAdminUsersTable(users) {
+          var tb = document.getElementById('adminUsersTbody');
+          if (!tb) return;
+          tb.innerHTML = '';
+          (users || []).forEach(function (u) {
+            var tr = document.createElement('tr');
+            var role = u.is_admin ? '管理员' : '用户';
+            tr.innerHTML =
+              '<td>' +
+              escapeHtml(u.name || '') +
+              '</td><td>' +
+              escapeHtml(u.phone || '') +
+              '</td><td>' +
+              escapeHtml(role) +
+              '</td>';
+            tb.appendChild(tr);
+          });
+          if (!users || !users.length) tb.innerHTML = '<tr><td colspan="3">暂无账号</td></tr>';
+        }
+        function loadAdminUsersList() {
+          return XbsAuth.fetchAdminUsers().then(function (r) {
+            return r.json().then(function (data) {
+              return { r: r, data: data };
+            });
+          });
+        }
+        document.getElementById('adminUsersBtn').addEventListener('click', function () {
+          var panel = document.getElementById('modalAdminUsers');
+          var errEl = document.getElementById('adminUsersErr');
+          if (!panel) return;
+          errEl.textContent = '';
+          loadAdminUsersList().then(function (o) {
+            if (!o.r.ok) {
+              fillAdminUsersTable([]);
+              errEl.textContent = (o.data && o.data.error) || '加载失败';
+            } else {
+              fillAdminUsersTable((o.data && o.data.users) || []);
+            }
+            panel.classList.add('show');
+            panel.setAttribute('aria-hidden', 'false');
+          });
+        });
+        document.getElementById('adminUsersClose').addEventListener('click', function () {
+          var panel = document.getElementById('modalAdminUsers');
+          if (panel) {
+            panel.classList.remove('show');
+            panel.setAttribute('aria-hidden', 'true');
+          }
+        });
+        document.getElementById('adminUsersCreate').addEventListener('click', function () {
+          var name = (document.getElementById('adminNewName').value || '').trim();
+          var phone = (document.getElementById('adminNewPhone').value || '').trim();
+          var pwd = document.getElementById('adminNewPwd').value || '';
+          var errEl = document.getElementById('adminUsersErr');
+          errEl.textContent = '';
+          if (!name || !phone || !pwd) {
+            errEl.textContent = '请填写用户名、账号与初始密码';
+            return;
+          }
+          if (pwd.length < 6) {
+            errEl.textContent = '初始密码至少 6 位';
+            return;
+          }
+          XbsAuth.createAdminUser({ name: name, phone: phone, password: pwd })
+            .then(function (res) {
+              return res.json().then(function (data) {
+                return { res: res, data: data };
+              });
+            })
+            .then(function (o) {
+              if (!o.res.ok) {
+                errEl.textContent = (o.data && o.data.error) || '添加失败';
+                return;
+              }
+              document.getElementById('adminNewName').value = '';
+              document.getElementById('adminNewPhone').value = '';
+              document.getElementById('adminNewPwd').value = '';
+              errEl.textContent = '';
+              return loadAdminUsersList().then(function (o2) {
+                if (o2.r.ok) fillAdminUsersTable((o2.data && o2.data.users) || []);
+              });
+            })
+            .catch(function () {
+              errEl.textContent = '网络错误';
+            });
         });
       }
       function wireLoginForm() {
