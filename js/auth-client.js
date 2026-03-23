@@ -58,11 +58,16 @@
         body: JSON.stringify({ oldPassword: oldPassword, newPassword: newPassword }),
       });
     },
-    fetchAccessLogs: function () {
-      return fetch(getApiBase() + '/api/admin/access-logs?limit=500&offset=0', {
-        method: 'GET',
-        headers: authHeaders(),
-      });
+    fetchAccessLogs: function (limit, offset) {
+      var l = limit != null ? limit : 20;
+      var o = offset != null ? offset : 0;
+      return fetch(
+        getApiBase() + '/api/admin/access-logs?limit=' + encodeURIComponent(l) + '&offset=' + encodeURIComponent(o),
+        {
+          method: 'GET',
+          headers: authHeaders(),
+        }
+      );
     },
     fetchAdminUsers: function () {
       return fetch(getApiBase() + '/api/admin/users', {
@@ -70,11 +75,11 @@
         headers: authHeaders(),
       });
     },
-    createAdminUser: function (payload) {
+    createAdminUser: function (name, phone, password) {
       return fetch(getApiBase() + '/api/admin/users', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ name: name, phone: phone, password: password }),
       });
     },
   };

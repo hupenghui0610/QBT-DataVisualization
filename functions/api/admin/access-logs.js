@@ -16,6 +16,12 @@ export async function onRequestGet(context) {
   var limit = Math.min(parseInt(url.searchParams.get('limit') || '200', 10) || 200, 500);
   var offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
 
+  var countRow = await env.DB.prepare('SELECT COUNT(*) AS n FROM access_logs').first();
+  var total = 0;
+  if (countRow && countRow.n != null) {
+    total = typeof countRow.n === 'number' ? countRow.n : parseInt(String(countRow.n), 10) || 0;
+  }
+
   var rows = await env.DB.prepare(
     `SELECT a.id, a.user_id, a.accessed_at, a.city, a.country, a.client_ip,
             u.name AS user_name, u.phone AS user_phone
@@ -27,7 +33,7 @@ export async function onRequestGet(context) {
     .bind(limit, offset)
     .all();
 
-  return jsonResponse({ rows: rows.results || [] }, 200, origin);
+  return jsonResponse({ rows: rows.results || [], total: total }, 200, origin);
 }
 
 export async function onRequestOptions(context) {
