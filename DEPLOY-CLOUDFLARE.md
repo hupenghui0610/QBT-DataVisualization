@@ -44,3 +44,53 @@
 ---
 
 若部署时报错「Unable to resolve Cloudflare's API hostname」，说明本机访问 Cloudflare API 被限制，请用 **方式二** 在浏览器里连接 Git 部署。
+
+---
+
+## 登录功能（D1 + Pages Functions）
+
+本仓库根目录包含 `functions/`（`/api/auth/*`）与 `migrations/`，需 **D1 数据库** 与 **`JWT_SECRET`** 环境变量。
+
+### 1. 创建 D1 并执行迁移
+
+```bash
+npx wrangler d1 create qbt-auth
+```
+
+将输出的 `database_id` 填入根目录 [`wrangler.toml`](wrangler.toml) 中的 `database_id = "..."`。
+
+```bash
+npx wrangler d1 execute qbt-auth --remote --file=./migrations/0001_init.sql
+```
+
+（亦可用 `wrangler d1 migrations apply` 管理迁移；首次建表用 `execute --file` 最直观。）
+
+**插入用户（示例）**：用 Node 生成密码哈希后写入 D1（勿将明文密码提交到仓库）：
+
+```bash
+node scripts/hash-password.mjs "初始密码"
+```
+
+将输出的哈希用于 `INSERT INTO users (name, phone, password_hash, token_version, is_admin) VALUES (...);`，管理员账号设置 `is_admin = 1`。
+
+### 2. 绑定 D1 与密钥（Pages）
+
+在 Cloudflare 控制台打开 **Workers & Pages** → 你的 Pages 项目 → **Settings** → **Functions**：
+
+- **D1 database bindings**：Variable name 填 **`DB`**，选择数据库 `qbt-auth`。
+- **Environment variables**（Production）：添加 **`JWT_SECRET`**，值为足够长的随机字符串（仅保存在控制台，勿写入仓库）。
+
+或使用 Wrangler：
+
+```bash
+npx wrangler pages secret put JWT_SECRET --project-name=qbt-datavisualization
+```
+
+### 3. 部署时注意 Functions 与静态资源
+
+- 命令行部署：在仓库根目录执行 `npm run deploy`（会先 `prepare-dist.js`，把 `js/` 打进 `dist/`）。**需在含 `functions/` 与 `wrangler.toml` 的根目录执行**，以便 Pages 带上 Functions。
+- Git 连接部署：建议 **Build command** 填 `node scripts/prepare-dist.js`，**Build output directory** 填 **`dist`**，这样线上入口与本地 CLI 一致，且 `functions/` 仍在仓库根目录可被 Cloudflare 识别。
+
+### 4. 新增账号
+
+通过 Cursor 对话生成哈希与 `INSERT` SQL，在本机执行 `wrangler d1 execute --remote` 写入；勿使用已废弃的源码内明文密码。

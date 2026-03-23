@@ -9,6 +9,15 @@ const distData = path.join(dist, 'data');
 if (!fs.existsSync(dist)) fs.mkdirSync(dist, { recursive: true });
 fs.copyFileSync(path.join(root, 'index.html'), path.join(dist, 'index.html'));
 fs.copyFileSync(path.join(root, 'charts.html'), path.join(dist, 'charts.html'));
+const jsDir = path.join(root, 'js');
+const distJs = path.join(dist, 'js');
+if (fs.existsSync(jsDir)) {
+  if (!fs.existsSync(distJs)) fs.mkdirSync(distJs, { recursive: true });
+  for (const name of fs.readdirSync(jsDir)) {
+    const src = path.join(jsDir, name);
+    if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(distJs, name));
+  }
+}
 // 页面引用 vendor/font-awesome（图表标题图标等），必须一并打包进 dist，否则线上图标不显示
 const vendorDir = path.join(root, 'vendor');
 const distVendor = path.join(dist, 'vendor');
