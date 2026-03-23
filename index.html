@@ -351,10 +351,10 @@
     html.mobile-client .load-bar label { text-align: center; }
     html.mobile-client #auth-gate .auth-box {
       min-width: auto;
-      width: 50%;
-      max-width: 360px;
+      width: calc(100vw - 32px);
+      max-width: min(420px, 100vw - 32px);
       margin: 16px;
-      padding: 24px 21px;
+      padding: 24px 22px;
       box-sizing: border-box;
     }
     html.mobile-client #auth-gate .auth-title { font-size: 1.25rem; }
