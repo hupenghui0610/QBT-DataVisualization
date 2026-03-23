@@ -422,8 +422,19 @@
 
   <script>
     (function () {
-      /** 与 AI 助手共用同一 Worker（与 worker/wrangler.toml 部署地址一致） */
-      var WORKER_API_URL = 'https://qbt-ai-assistant.hupenghui1993.workers.dev';
+      /**
+       * 部署在 Pages 时用同源 /api/worker 代理；本地 file:// 或 localhost 直连 Worker。
+       */
+      var WORKER_API_URL = (function () {
+        try {
+          var p = location.protocol;
+          var h = location.hostname;
+          if (p && p !== 'file:' && h && h !== 'localhost' && h !== '127.0.0.1') {
+            return location.origin.replace(/\/$/, '') + '/api/worker';
+          }
+        } catch (e) {}
+        return 'https://qbt-ai-assistant.hupenghui1993.workers.dev';
+      })();
       var AUTH_TOKEN_KEY = 'qbt_auth_token';
 
       var authGate = document.getElementById('auth-gate');

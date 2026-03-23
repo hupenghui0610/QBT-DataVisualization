@@ -66,9 +66,17 @@ npx wrangler kv namespace create "QBT_AUTH"
 - 测试：可用 Resend 的 `onboarding@resend.dev`（以 Resend 当前文档为准）。
 - 正式：在 Resend 验证域名后，改为 `noreply@你的域名`，并 `npx wrangler deploy`。
 
-## 静态页部署
+## 静态页部署（Cloudflare Pages）
 
-根目录执行 `node scripts/prepare-dist.js` 后，将 `dist/` 同步到 EdgeOne / Cloudflare Pages。Worker 地址已写入 HTML，一般无需再改。
+根目录执行 `node scripts/prepare-dist.js` 后：
+
+```bash
+npx wrangler pages deploy dist --project-name=qbt-datavisualization
+```
+
+项目根目录含 **`functions/api/worker.js`**：部署到 Pages 后，前端会请求 **同源 `/api/worker`**，由 Pages Function **转发**到 `*.workers.dev`，避免**中国大陆网络直连 Worker 域名超时**。
+
+可选：在 Pages 项目 **Settings → Environment variables** 中设置 `WORKER_API_URL` 为你的 Worker 地址；未设置时使用 Function 内默认地址。
 
 ## 安全说明
 
