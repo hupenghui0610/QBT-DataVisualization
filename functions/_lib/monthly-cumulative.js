@@ -336,24 +336,24 @@ export function formatMonthlyCumulativeMessage(summaryPayload, statDate) {
     var label = x.label || '';
     return label + '：GMV ' + x.gmvWan + '万｜GSV ' + x.gsvWan + '万｜退款率 ' + Number(x.refundRatePct || 0).toFixed(2) + '%';
   }
+  function formatGeneratedAt(isoString) {
+    var d = new Date(isoString || new Date().toISOString());
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
   return [
     '月度累计达成播报｜' + String(summaryPayload.yearMonth || '').replace(/^(\d{4})-(\d{2})$/, '$1年$2月'),
-    '',
     '统计日期：' + String(statDate || ''),
     '统计口径：当月1日至统计日期累计',
-    '',
-    '汇总',
-    'GMV：' + (((summaryPayload.summary || {}).totalGmvWan) || '0.00') + '万',
-    'GSV：' + (((summaryPayload.summary || {}).totalGsvWan) || '0.00') + '万',
+    '--------------',
+    '总GMV：' + (((summaryPayload.summary || {}).totalGmvWan) || '0.00') + '万',
+    '总GSV：' + (((summaryPayload.summary || {}).totalGsvWan) || '0.00') + '万',
     '退款率：' + Number((((summaryPayload.summary || {}).refundRatePct) || 0)).toFixed(2) + '%',
-    '',
-    '渠道明细',
+    '--------------',
     line('jd'),
     line('tmall'),
     line('dySelf'),
     line('dp'),
     line('daren'),
-    '',
-    '生成时间：' + String(summaryPayload.generatedAt || ''),
+    '生成时间：' + formatGeneratedAt(summaryPayload.generatedAt),
   ].join('\n');
 }
