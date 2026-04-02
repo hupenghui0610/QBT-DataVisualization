@@ -4,22 +4,18 @@
 
 ```text
 月度累计达成播报｜{YYYY年MM月}
-
 统计日期：{YYYY-MM-DD}
 统计口径：当月1日至统计日期累计
-
-汇总
-GMV：{total_gmv_wan}万
-GSV：{total_gsv_wan}万
+--------------
+总GMV：{total_gmv_wan}万
+总GSV：{total_gsv_wan}万
 退款率：{refund_rate_pct}%
-
-渠道明细
+--------------
 京东：GMV {jd_gmv_wan}万｜GSV {jd_gsv_wan}万｜退款率 {jd_refund_rate_pct}%
 天猫：GMV {tmall_gmv_wan}万｜GSV {tmall_gsv_wan}万｜退款率 {tmall_refund_rate_pct}%
 抖音自播：GMV {dy_self_gmv_wan}万｜GSV {dy_self_gsv_wan}万｜退款率 {dy_self_refund_rate_pct}%
 抖音DP：GMV {dp_gmv_wan}万｜GSV {dp_gsv_wan}万｜退款率 {dp_refund_rate_pct}%
 抖音达人：GMV {daren_gmv_wan}万｜GSV {daren_gsv_wan}万｜退款率 {daren_refund_rate_pct}%
-
 生成时间：{generated_at}
 ```
 
@@ -33,6 +29,11 @@ Rules:
 - If the requested month is historical, `统计日期` should be that month's last day
 - If the requested month is the current month, `统计日期` should be today
 - If the requested month has no data, fail instead of generating a zero-value report
+- Use `--------------` as separator lines
+- Use `总GMV` and `总GSV` (not just `GMV`/`GSV`) in summary section
+- `generated_at` format: `YYYY-MM-DD HH:mm` (without seconds)
+- Remove section titles like "汇总" and "渠道明细"
+- Minimize empty lines
 
 ## Month resolution rule
 
