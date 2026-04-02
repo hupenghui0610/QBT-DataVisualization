@@ -12,3 +12,19 @@ pages_build_output_dir = "dist"
 binding = "DB"
 database_name = "qbt-auth"
 database_id = "8e33f508-e226-4040-a4ba-df1754713733"
+
+# Pages Functions 环境变量（非密钥）。与控制台 Environment variables 合并；CLI 部署时随 wrangler.toml 一并上传。
+# 抖音「DP/达人型号分布」接口须从含 C 列（商品名）的宽表读数；与达播趋势默认的 I1:AO 不同，故单独指定。
+# 直播间漏斗默认与抖音 wiki 同源表；代码内亦有 DEFAULT，此处显式写入便于控制台对照。
+[vars]
+FEISHU_DOUYIN_MODEL_ORDER_RANGE = "tuec5U!A2:AO20000"
+FEISHU_LIVESTREAM_FUNNEL_SPREADSHEET_TOKEN = "P1zusUMg2haMGctskH6cydLqn5e"
+# 行业数据（大盘 sheet1 / 品牌 sheet2）使用同一底层 spreadsheet token。
+# 如未显式设置 *_RANGE，接口会自动按工作表顺序取第 1、2 个 sheet。
+# FEISHU_INDUSTRY_SPREADSHEET_TOKEN = "your_spreadsheet_token"
+
+# OpenClaw 月度累计达成报告推送配置（从 Secrets 迁移到明文 Vars，便于 OpenClaw 本地执行）
+OPENCLAW_MONTHLY_API_URL = "https://qbt-datavisualization.pages.dev/api/data/monthly-cumulative-summary"
+OPENCLAW_MONTHLY_API_KEY = "qbt_openclaw_monthly_2026_key"
+OPENCLAW_MONTHLY_API_SECRET = "sk_7a9f3e2d1c8b4a5f6e0d9c2b8a4f7e1d3c6b0a5f9e2d8c1b7a3f6e0d4c9b2a5"
+FEISHU_WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/YOUR_WEBHOOK_TOKEN_HERE"

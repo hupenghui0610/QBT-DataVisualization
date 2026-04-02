@@ -1,4 +1,25 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// 加载 .env 文件（如果存在）
+function loadEnvFile() {
+  try {
+    const envPath = path.join(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf-8');
+      content.split('\n').forEach(line => {
+        const match = line.match(/^([^#=]+)=(.*)$/);
+        if (match && !process.env[match[1].trim()]) {
+          process.env[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, '');
+        }
+      });
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+loadEnvFile();
 
 function currentYearMonth() {
   const d = new Date();
