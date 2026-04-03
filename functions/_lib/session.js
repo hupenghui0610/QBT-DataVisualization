@@ -1,5 +1,5 @@
 import { verifyJwt } from './crypto.js';
-import { getBearer } from './http.js';
+import { getBearer, jsonResponse } from './http.js';
 
 export function publicUser(row) {
   return {
@@ -14,23 +14,24 @@ export function publicUser(row) {
  * @returns {{ user: object, row: object } | { error: Response }}
  */
 export async function authenticateRequest(request, env) {
+  var origin = request.headers.get('Origin') || undefined;
   var secret = env.JWT_SECRET;
   if (!secret) {
-    return { error: new Response(JSON.stringify({ error: '服务器未配置 JWT_SECRET' }), { status: 500, headers: { 'Content-Type': 'application/json' } }) };
+    return { error: jsonResponse({ error: '服务器未配置 JWT_SECRET' }, 500, origin) };
   }
   var token = getBearer(request);
   if (!token) {
-    return { error: new Response(JSON.stringify({ error: '未登录' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
+    return { error: jsonResponse({ error: '未登录' }, 401, origin) };
   }
   var payload;
   try {
     payload = await verifyJwt(token, secret);
   } catch (e) {
-    return { error: new Response(JSON.stringify({ error: '登录已失效，请重新登录' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
+    return { error: jsonResponse({ error: '登录已失效，请重新登录' }, 401, origin) };
   }
   var uid = payload.sub;
   if (uid == null) {
-    return { error: new Response(JSON.stringify({ error: '无效令牌' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
+    return { error: jsonResponse({ error: '无效令牌' }, 401, origin) };
   }
   var row = await env.DB.prepare(
     'SELECT id, name, phone, password_hash, token_version, is_admin, created_at FROM users WHERE id = ?'
@@ -38,11 +39,11 @@ export async function authenticateRequest(request, env) {
     .bind(uid)
     .first();
   if (!row) {
-    return { error: new Response(JSON.stringify({ error: '用户不存在' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
+    return { error: jsonResponse({ error: '用户不存在' }, 401, origin) };
   }
   var tv = payload.tv;
   if (tv !== row.token_version) {
-    return { error: new Response(JSON.stringify({ error: '登录已失效，请重新登录' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
+    return { error: jsonResponse({ error: '登录已失效，请重新登录' }, 401, origin) };
   }
   return { user: publicUser(row), row: row };
 }

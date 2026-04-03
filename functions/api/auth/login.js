@@ -1,6 +1,14 @@
 import { verifyPassword, signJwt, JWT_EXP_SECONDS } from '../../_lib/crypto.js';
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { publicUser } from '../../_lib/session.js';
+import {
+  getCurrentLoginRestrictions,
+  registerFailedLogin,
+  registerSuccessfulLogin,
+  failedLoginDelayMs,
+  sleepMs,
+  recordSecurityEvent,
+} from '../../_lib/login-security.js';
 
 export async function onRequestPost(context) {
   var request = context.request;
@@ -24,6 +32,32 @@ export async function onRequestPost(context) {
     return jsonResponse({ error: '请输入手机号和密码' }, 400, origin);
   }
 
+  var restrictions = await getCurrentLoginRestrictions(env, request, phone);
+  if (restrictions.ipBlock) {
+    await recordSecurityEvent(env, {
+      scopeType: 'ip',
+      scopeKey: restrictions.ip,
+      eventType: 'login_rejected',
+      phone: phone,
+      clientIp: restrictions.ip,
+      createdAt: restrictions.now,
+      meta: { reason: 'ip_blocked' },
+    });
+    return jsonResponse({ error: '尝试次数过多，请稍后再试' }, 429, origin);
+  }
+  if (restrictions.accountBlock) {
+    await recordSecurityEvent(env, {
+      scopeType: 'account',
+      scopeKey: phone,
+      eventType: 'login_rejected',
+      phone: phone,
+      clientIp: restrictions.ip,
+      createdAt: restrictions.now,
+      meta: { reason: 'account_locked' },
+    });
+    return jsonResponse({ error: '尝试次数过多，请稍后再试' }, 429, origin);
+  }
+
   var row = await env.DB.prepare(
     'SELECT id, name, phone, password_hash, token_version, is_admin FROM users WHERE phone = ?'
   )
@@ -31,13 +65,22 @@ export async function onRequestPost(context) {
     .first();
 
   if (!row) {
+    var missingResult = await registerFailedLogin(env, request, phone, null);
+    await sleepMs(failedLoginDelayMs(missingResult.accountShortCount, missingResult.ipCount));
     return jsonResponse({ error: '账号或密码错误' }, 401, origin);
   }
 
   var ok = await verifyPassword(password, row.password_hash);
   if (!ok) {
+    var failedResult = await registerFailedLogin(env, request, row.phone, row.id);
+    await sleepMs(failedLoginDelayMs(failedResult.accountShortCount, failedResult.ipCount));
+    if (failedResult.accountLockedUntil || failedResult.ipBlockedUntil) {
+      return jsonResponse({ error: '尝试次数过多，请稍后再试' }, 429, origin);
+    }
     return jsonResponse({ error: '账号或密码错误' }, 401, origin);
   }
+
+  await registerSuccessfulLogin(env, request, row);
 
   var now = Math.floor(Date.now() / 1000);
   var token = await signJwt(

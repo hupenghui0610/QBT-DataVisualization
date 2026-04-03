@@ -6,15 +6,23 @@ const dist = path.join(root, 'dist');
 const dataDir = path.join(root, 'data');
 const distData = path.join(dist, 'data');
 
-if (!fs.existsSync(dist)) fs.mkdirSync(dist, { recursive: true });
+function copyHtmlToDist(name) {
+  var srcPath = path.join(root, name);
+  var outPath = path.join(dist, name);
+  fs.copyFileSync(srcPath, outPath);
+}
+
+// 每次清空 dist，避免旧版曾拷贝的敏感 JSON 仍留在本地并被 wrangler 再次上传
+if (fs.existsSync(dist)) fs.rmSync(dist, { recursive: true, force: true });
+fs.mkdirSync(dist, { recursive: true });
 // 微信 / 域名根目录验证文件（须可从 https://你的域名/文件名.txt 访问）
 var wechatVerifyName = 'c21ee759ec581077f679ce2033a5a2c0.txt';
 var wechatVerifySrc = path.join(root, wechatVerifyName);
 if (fs.existsSync(wechatVerifySrc)) {
   fs.copyFileSync(wechatVerifySrc, path.join(dist, wechatVerifyName));
 }
-fs.copyFileSync(path.join(root, 'index.html'), path.join(dist, 'index.html'));
-fs.copyFileSync(path.join(root, 'charts.html'), path.join(dist, 'charts.html'));
+copyHtmlToDist('index.html');
+copyHtmlToDist('charts.html');
 const jsDir = path.join(root, 'js');
 const distJs = path.join(dist, 'js');
 if (fs.existsSync(jsDir)) {
@@ -36,7 +44,7 @@ if (fs.existsSync(dataDir)) {
     const src = path.join(dataDir, name);
     if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(distData, name));
   }
-  console.log('dist/ 已准备好（index.html, charts.html, vendor/, data/）');
+  console.log('dist/ 已准备好（index.html, charts.html, js/, vendor/, data/）');
 } else {
   console.log('dist/ 已准备好（index.html, charts.html, vendor/）');
 }

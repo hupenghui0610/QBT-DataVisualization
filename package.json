@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "extract": "node extract-features.js",
-    "deploy": "node scripts/prepare-dist.js && npx wrangler pages deploy dist --project-name=qbt-datavisualization"
+    "deploy": "node scripts/prepare-dist.js && npx wrangler pages deploy dist --project-name=qbt-datavisualization --commit-dirty=true",
+    "deploy:server-only": "node scripts/deploy-pages-keep-remote-ui.js"
   },
   "keywords": [],
   "author": "",

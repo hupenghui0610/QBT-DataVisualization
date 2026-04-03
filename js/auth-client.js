@@ -3,8 +3,41 @@
  */
 (function (global) {
   var TOKEN_KEY = 'xbs_token';
+  /** 本地打开页面时与 /api 不同源，跨域指向正式站（见下方 isLocalPageOrigin） */
+  var REMOTE_API_ORIGIN = 'https://qbt-datavisualization.pages.dev';
+  /** 可选：仅在本地页下生效，覆盖正式 API 根（如预览环境），需在控制台设置 localStorage */
+  var LS_API_ORIGIN_KEY = 'QBT_API_ORIGIN';
+
+  /** 是否应走远程 API：file://、本机回环、常见局域网 IP（Live Server 等） */
+  function isLocalPageOrigin() {
+    try {
+      var loc = typeof location !== 'undefined' ? location : null;
+      if (!loc) return false;
+      if (loc.protocol === 'file:') return true;
+      var h = loc.hostname || '';
+      if (h === 'localhost' || h === '127.0.0.1' || h === '[::1]') return true;
+      if (/^10\./.test(h)) return true;
+      if (/^192\.168\./.test(h)) return true;
+      if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
 
   function getApiBase() {
+    try {
+      if (!isLocalPageOrigin()) return '';
+      var custom = null;
+      try {
+        custom = localStorage.getItem(LS_API_ORIGIN_KEY);
+      } catch (e) {}
+      if (custom && typeof custom === 'string') {
+        var t = custom.trim().replace(/\/$/, '');
+        if (/^https:\/\/.+/i.test(t)) return t;
+      }
+      return REMOTE_API_ORIGIN;
+    } catch (e) {}
     return '';
   }
 
@@ -30,8 +63,36 @@
     return h;
   }
 
+  /**
+   * GET + Bearer，整段请求含「下载并读取响应体」限时。
+   * 注意：若仅用 AbortController+fetch().finally(clearTimeout)，fetch 在收到响应头后即 resolve，
+   * 会提前清掉定时器，导致 r.json() 读大 body 时不再 abort——表现为长时间卡在「加载中」。
+   * 优先 AbortSignal.timeout（规范上在读取 body 期间仍会中止）；否则 AbortController 且不在 fetch resolve 时清定时器。
+   */
+  function fetchGetWithTimeout(path, timeoutMs) {
+    var ms = timeoutMs != null ? timeoutMs : 90000;
+    var url = getApiBase() + path;
+    var opts = { method: 'GET', headers: authHeaders() };
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      try {
+        opts.signal = AbortSignal.timeout(ms);
+        return fetch(url, opts);
+      } catch (e) {}
+    }
+    var ctrl = new AbortController();
+    var tid = setTimeout(function () {
+      try {
+        ctrl.abort();
+      } catch (e) {}
+    }, ms);
+    opts.signal = ctrl.signal;
+    return fetch(url, opts);
+  }
+
   global.XbsAuth = {
     TOKEN_KEY: TOKEN_KEY,
+    /** 调试用：在控制台看当前 API 根，空字符串表示与页面同源（线上） */
+    getApiBase: getApiBase,
     getToken: getToken,
     setToken: setToken,
     clearSession: function () {
@@ -69,6 +130,17 @@
         }
       );
     },
+    fetchLoginSecurityEvents: function (limit, offset) {
+      var l = limit != null ? limit : 20;
+      var o = offset != null ? offset : 0;
+      return fetch(
+        getApiBase() + '/api/admin/login-security-events?limit=' + encodeURIComponent(l) + '&offset=' + encodeURIComponent(o),
+        {
+          method: 'GET',
+          headers: authHeaders(),
+        }
+      );
+    },
     fetchAdminUsers: function () {
       return fetch(getApiBase() + '/api/admin/users', {
         method: 'GET',
@@ -81,6 +153,65 @@
         headers: authHeaders(),
         body: JSON.stringify({ name: name, phone: phone, password: password }),
       });
+    },
+    /** 需登录；默认大盘 JSON（与 data/features-output.json 同源，经 Functions 鉴权） */
+    fetchFeaturesOutput: function () {
+      return fetch(getApiBase() + '/api/data/features-output', {
+        method: 'GET',
+        headers: authHeaders(),
+      });
+    },
+    /** 需登录；默认分品牌 JSON */
+    fetchFeaturesBrandTop10: function () {
+      return fetch(getApiBase() + '/api/data/features-brand-top10', {
+        method: 'GET',
+        headers: authHeaders(),
+      });
+    },
+    /** 需登录；飞书日销在线表格（Pages Functions 代理飞书 API） */
+    fetchFeishuDailySales: function () {
+      return fetchGetWithTimeout('/api/data/feishu-daily-sales', 90000);
+    },
+    /** 需登录；飞书天猫在线表格（Pages Functions 代理飞书 API） */
+    fetchFeishuTmallSales: function () {
+      return fetchGetWithTimeout('/api/data/feishu-tmall-sales', 90000);
+    },
+    /** 需登录；天猫 A:G/H + 京东表第三 sheet A:F（F 列 GMV，服务端合并公式计算值） */
+    fetchFeishuGmvCombined: function () {
+      return fetchGetWithTimeout('/api/data/feishu-gmv-combined', 90000);
+    },
+    /** 需登录；抖音自播 GMV（三张 sheet） */
+    fetchFeishuDouyinSales: function () {
+      return fetchGetWithTimeout('/api/data/feishu-douyin-sales', 90000);
+    },
+    /** 需登录；抖音日度趋势（DP/达人） */
+    fetchFeishuDouyinDailyTrend: function () {
+      return fetchGetWithTimeout('/api/data/feishu-douyin-daily-trend', 90000);
+    },
+    /** 需登录；抖音订单 DP/达人 型号金额分布（sheet3 映射 + 订单宽表） */
+    fetchFeishuDouyinModelDistribution: function (start, end) {
+      var qs = '';
+      if (start && end && String(start) <= String(end)) {
+        qs =
+          '?start=' +
+          encodeURIComponent(String(start)) +
+          '&end=' +
+          encodeURIComponent(String(end));
+      }
+      return fetchGetWithTimeout('/api/data/feishu-douyin-model-distribution' + qs, 120000);
+    },
+    /** 需登录；渠道×日订单支付金额（飞书订单明细+渠道映射聚合） */
+    /** 达播趋势：与页面 CHANNEL_ORDER_TREND_FETCH_TIMEOUT_MS、看门狗一致（当前 600s） */
+    fetchFeishuChannelOrderTrend: function () {
+      return fetchGetWithTimeout('/api/data/feishu-channel-order-trend', 600000);
+    },
+    /** 需登录；新零售四平台GMV/GSV日趋势（DP/直对/服务商分类） */
+    fetchFeishuNewretailDaily: function () {
+      return fetchGetWithTimeout('/api/data/feishu-newretail-daily', 120000);
+    },
+    /** 需登录；直播间转化漏斗（sheet4 B/H/K/X/Y 按主播聚合） */
+    fetchFeishuLivestreamFunnel: function () {
+      return fetchGetWithTimeout('/api/data/feishu-livestream-funnel', 90000);
     },
   };
 })(typeof window !== 'undefined' ? window : globalThis);
