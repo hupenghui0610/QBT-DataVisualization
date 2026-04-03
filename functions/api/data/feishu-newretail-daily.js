@@ -5,32 +5,12 @@ import {
   PLATFORM_CONFIG,
   CHANNEL_MAP_CONFIG,
   buildChannelMaps,
-  classifyOrder,
   processPlatformOrders,
   aggregateByDayAndCategory,
   aggregateByWeek
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
-
-/** 计算周起始（周一） */
-function weekStartFromDateStr(ds) {
-  var m = String(ds).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return '';
-  var d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
-  var wd = d.getDay();
-  var diff = wd === 0 ? 6 : wd - 1;
-  d.setDate(d.getDate() - diff);
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-
-function formatDateYmd(d) {
-  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
-}
 
 function numToColLetter(n) {
   let s = '';
@@ -39,6 +19,14 @@ function numToColLetter(n) {
     n = Math.floor(n / 26) - 1;
   }
   return s || 'A';
+}
+
+async function sha256Hex(s) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  var arr = new Uint8Array(buf);
+  var hex = '';
+  for (var i = 0; i < arr.length; i++) hex += arr[i].toString(16).padStart(2, '0');
+  return hex;
 }
 
 export async function onRequestGet(context) {
@@ -58,11 +46,36 @@ export async function onRequestGet(context) {
   }
 
   var spreadsheetToken = env.FEISHU_NEWRETAIL_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
-  var mode = 'daily'; // daily or weekly
+  var maxRows = parseInt(env.FEISHU_NEWRETAIL_MAX_ROWS || '20000', 10);
+  if (isNaN(maxRows) || maxRows < 1000) maxRows = 20000;
+
+  var cacheTtlSec = parseInt(env.FEISHU_NEWRETAIL_CACHE_TTL_SEC || '120', 10);
+  if (isNaN(cacheTtlSec) || cacheTtlSec < 0) cacheTtlSec = 120;
+
+  // 构建缓存键
+  var cacheRequest = null;
+  if (cacheTtlSec > 0 && auth.user && auth.user.id != null) {
+    var keyPayload = 'nrd:' + auth.user.id + ':' + spreadsheetToken + ':' + maxRows;
+    var hash = await sha256Hex(keyPayload);
+    cacheRequest = new Request('https://feishu-newretail-daily.cache/' + hash);
+    var hit = await caches.default.match(cacheRequest);
+    if (hit) {
+      var body = await hit.text();
+      return new Response(body, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'private, no-store',
+          'X-QBT-Newretail-Cache': 'HIT',
+          ...corsHeaders(origin),
+        },
+      });
+    }
+  }
 
   try {
     // 1. 读取渠道映射表
-    var chRange = (CHANNEL_MAP_CONFIG.sheetId) + '!A1:E2000';
+    var chRange = CHANNEL_MAP_CONFIG.sheetId + '!A1:E2000';
     var chJson = await fetchSheetValuesV2(env, spreadsheetToken, chRange, { valueRenderOption: 'FormattedValue' });
     if (!chJson || chJson.code !== 0) {
       return jsonResponse({ error: chJson?.msg || '渠道映射表读取失败', feishuCode: chJson?.code }, 502, origin);
@@ -70,89 +83,83 @@ export async function onRequestGet(context) {
     var chValues = chJson.data?.valueRange?.values || [];
     var channelMaps = buildChannelMaps(chValues);
 
-    // 2. 读取四平台订单数据
+    // 2. 并行读取四平台订单数据
     var platformKeys = ['douyin', 'xiaohongshu', 'shipinhao', 'kuaishou'];
-    var allOrders = [];
-
-    for (var i = 0; i < platformKeys.length; i++) {
-      var platform = platformKeys[i];
+    var platformPromises = platformKeys.map(function(platform) {
       var cfg = PLATFORM_CONFIG[platform];
-      if (!cfg) continue;
+      if (!cfg) return Promise.resolve({ platform: platform, values: [] });
 
-      // 计算需要的列范围
       var maxCol = Math.max(...Object.values(cfg.cols));
       var colLetter = numToColLetter(maxCol);
-      var range = cfg.sheetId + '!A1:' + colLetter + '50000';
+      var range = cfg.sheetId + '!A1:' + colLetter + maxRows;
 
-      try {
-        var result = await fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'FormattedValue' });
-        if (result && result.code === 0) {
-          var values = result.data?.valueRange?.values || [];
-          var orders = processPlatformOrders(values, platform, channelMaps);
-          allOrders = allOrders.concat(orders);
-        }
-      } catch (e) {
-        console.error('读取 ' + platform + ' 失败:', e.message);
+      return fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'FormattedValue' })
+        .then(function(result) {
+          if (result && result.code === 0) {
+            return { platform: platform, values: result.data?.valueRange?.values || [] };
+          }
+          return { platform: platform, values: [] };
+        })
+        .catch(function(e) {
+          console.error('读取 ' + platform + ' 失败:', e.message);
+          return { platform: platform, values: [] };
+        });
+    });
+
+    var platformResults = await Promise.all(platformPromises);
+
+    // 3. 处理订单数据
+    var allOrders = [];
+    platformResults.forEach(function(result) {
+      if (result.values && result.values.length > 0) {
+        var orders = processPlatformOrders(result.values, result.platform, channelMaps);
+        allOrders = allOrders.concat(orders);
       }
-    }
+    });
 
-    // 3. 按日期和类别汇总
+    // 4. 按日期和类别汇总
     var dailyPoints = aggregateByDayAndCategory(allOrders);
-
-    // 4. 计算周度数据
     var weeklyPoints = aggregateByWeek(dailyPoints);
 
-    // 5. 计算最近30天/4周的汇总
-    var now = new Date();
-    var last30Days = [];
-    var last4Weeks = [];
-
-    for (var j = 0; j < 30; j++) {
-      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - j);
-      last30Days.push(formatDateYmd(d));
-    }
-
-    for (var k = 0; k < 4; k++) {
-      var w = new Date(now.getFullYear(), now.getMonth(), now.getDate() - k * 7);
-      last4Weeks.push(weekStartFromDateStr(formatDateYmd(w)));
-    }
-
-    var summary30d = { dp: 0, zhidui: 0, fuwu: 0, total: 0 };
-    dailyPoints.forEach(function(p) {
-      if (last30Days.includes(p.date)) {
-        summary30d.dp += p.dp;
-        summary30d.zhidui += p.zhidui;
-        summary30d.fuwu += p.fuwu;
-        summary30d.total += p.total;
-      }
-    });
-
-    var summary4w = { dp: 0, zhidui: 0, fuwu: 0, total: 0 };
-    weeklyPoints.forEach(function(p) {
-      if (last4Weeks.includes(p.date)) {
-        summary4w.dp += p.dp;
-        summary4w.zhidui += p.zhidui;
-        summary4w.fuwu += p.fuwu;
-        summary4w.total += p.total;
-      }
-    });
-
     var payload = {
-      mode: mode,
+      mode: 'daily',
       daily: dailyPoints,
       weekly: weeklyPoints,
-      summary: {
-        last30Days: summary30d,
-        last4Weeks: summary4w,
-      },
       meta: {
         spreadsheetToken: spreadsheetToken,
         totalOrders: allOrders.length,
         platforms: platformKeys,
+        cached: false,
       }
     };
 
-    return jsonResponse(payload, 200, origin);
+    var jsonBody = JSON.stringify(payload);
+    var res = new Response(jsonBody, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        'X-QBT-Newretail-Cache': 'MISS',
+        ...corsHeaders(origin),
+      },
+    });
+
+    // 写入缓存
+    if (cacheRequest && cacheTtlSec > 0) {
+      try {
+        await caches.default.put(
+          cacheRequest,
+          new Response(jsonBody, {
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Cache-Control': 'max-age=' + cacheTtlSec,
+            },
+          })
+        );
+      } catch (ePut) {}
+    }
+
+    return res;
   } catch (e) {
     return jsonResponse(
       { error: '新零售数据聚合失败', detail: e?.message || String(e) },
