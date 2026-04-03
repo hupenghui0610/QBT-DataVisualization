@@ -2947,15 +2947,17 @@
           });
       }
       function getDouyinDailyTrendPointsByMode() {
-        var daily = window.douyinDailyTrendPointsDailyCached || [];
+        var raw = window.__QBT_FEISHU_NEWRETAIL_DAILY__;
+        var daily = (raw && raw.daily) || [];
         var mode = window.douyinTrendMode || 'daily';
-        if (mode === 'weekly') return aggregateDouyinTrendByWeek(daily);
+        if (mode === 'weekly') return (raw && raw.weekly) || [];
         return daily;
       }
       function getDouyinDailyGsvTrendPointsByMode() {
-        var daily = window.douyinDailyTrendPointsDailyCached || [];
+        var raw = window.__QBT_FEISHU_NEWRETAIL_DAILY__;
+        var daily = (raw && raw.daily) || [];
         var mode = window.douyinTrendMode || 'daily';
-        if (mode === 'weekly') return aggregateDouyinTrendByWeek(daily);
+        if (mode === 'weekly') return (raw && raw.weekly) || [];
         return daily;
       }
       function syncDouyinTrendModeButtons() {
@@ -2980,8 +2982,8 @@
           syncDouyinTrendModeButtons();
           initDouyinDailyTrendSelects();
           initDouyinDailyTrendGsvSelects();
-          renderDouyinDailyTrend();
-          renderDouyinDailyTrendGsv();
+          renderNewretailDailyTrend();
+          renderNewretailDailyTrendGsv();
         }
         ['douyinDailyTrendModeSwitch', 'douyinDailyTrendGsvModeSwitch'].forEach(function (id) {
           var wrap = document.getElementById(id);
@@ -3037,8 +3039,8 @@
           selE.appendChild(o2);
           selE.value = def.end;
         }
-        selS.onchange = renderDouyinDailyTrend;
-        selE.onchange = renderDouyinDailyTrend;
+        selS.onchange = renderNewretailDailyTrend;
+        selE.onchange = renderNewretailDailyTrend;
       }
       function initDouyinDailyTrendGsvSelects() {
         initDouyinTrendModeSwitches();
@@ -3081,8 +3083,8 @@
           selE.appendChild(o2);
           selE.value = def.end;
         }
-        selS.onchange = renderDouyinDailyTrendGsv;
-        selE.onchange = renderDouyinDailyTrendGsv;
+        selS.onchange = renderNewretailDailyTrendGsv;
+        selE.onchange = renderNewretailDailyTrendGsv;
       }
       function renderDouyinDailyTrend() {
         var el = document.getElementById('chartDouyinDailyTrend');
@@ -3230,34 +3232,22 @@
         charts.chartDouyinDailyTrendGsv.setOption(applyMobileChartOption(opt), true);
       }
       function refreshDouyinDailyTrend() {
-        var st = document.getElementById('douyinDailyTrendStatus');
-        var st2 = document.getElementById('douyinDailyTrendGsvStatus');
-        var raw = window.__QBT_FEISHU_DOUYIN_DAILY_TREND__;
-        var err = window.__QBT_FEISHU_DOUYIN_DAILY_TREND_ERROR__ || '';
-        var values = raw && raw.valueRange && raw.valueRange.values;
-        if (!values || !values.length) {
-          window.douyinDailyTrendPointsDailyCached = [];
-          if (st) st.textContent = err || '暂无抖音趋势数据（登录后拉取）';
-          if (st2) st2.textContent = err || '暂无抖音趋势数据（登录后拉取）';
-          initDouyinDailyTrendSelects();
-          initDouyinDailyTrendGsvSelects();
-          renderDouyinDailyTrend();
-          renderDouyinDailyTrendGsv();
-          refreshAllChannelGmv();
-          refreshAllChannelGsv();
-          refreshAllChannelRefund();
+        // 优先使用新零售四平台数据（DP/直对/服务商）
+        var newretailRaw = window.__QBT_FEISHU_NEWRETAIL_DAILY__;
+        var newretailErr = window.__QBT_FEISHU_NEWRETAIL_DAILY_ERROR__ || '';
+        if (newretailRaw && newretailRaw.daily && newretailRaw.daily.length) {
+          refreshNewretailCharts();
           return;
         }
-        window.douyinDailyTrendPointsDailyCached = parseDouyinDailyTrendFromValues(values);
-        if (st) st.textContent = '';
-        if (st2) st2.textContent = '';
+        // 如果没有新零售数据，显示空状态
+        var st = document.getElementById('douyinDailyTrendStatus');
+        var st2 = document.getElementById('douyinDailyTrendGsvStatus');
+        if (st) st.textContent = newretailErr || '暂无新零售数据（登录后拉取）';
+        if (st2) st2.textContent = newretailErr || '暂无新零售数据（登录后拉取）';
         initDouyinDailyTrendSelects();
         initDouyinDailyTrendGsvSelects();
-        renderDouyinDailyTrend();
-        renderDouyinDailyTrendGsv();
-        refreshAllChannelGmv();
-        refreshAllChannelGsv();
-        refreshAllChannelRefund();
+        renderNewretailDailyTrend();
+        renderNewretailDailyTrendGsv();
       }
       /** 与 js/auth-client.js 中 fetchFeishuChannelOrderTrend 超时毫秒数一致，用于超时文案 */
       var CHANNEL_ORDER_TREND_FETCH_TIMEOUT_MS = 600000;
