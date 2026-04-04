@@ -233,17 +233,27 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
     const amount = parseAmount(row[cfg.cols.amount]);
     if (amount <= 0) continue;
 
-    // 4. 检查订单状态 - GSV：剔除已关闭、交易关闭、已取消
+    // 4. 检查订单状态 - GSV：各平台剔除不同状态
     const status = String(row[cfg.cols.status] || '').trim();
+    let shouldSkip = false;
 
-    const statusLower = status.toLowerCase();
-    if (status.includes('关闭') || status.includes('取消') || status.includes('退款') || status.includes('退货') ||
-        statusLower.includes('close') || statusLower.includes('cancel') || statusLower.includes('refund')) {
+    // 根据平台剔除特定状态
+    if (platform === 'douyin') {
+      // 抖音：剔除已关闭
+      if (status === '已关闭') shouldSkip = true;
+    } else if (platform === 'xiaohongshu') {
+      // 小红书：剔除已取消
+      if (status === '已取消') shouldSkip = true;
+    } else if (platform === 'shipinhao') {
+      // 视频号：剔除交易关闭
+      if (status === '交易关闭') shouldSkip = true;
+    } else if (platform === 'kuaishou') {
+      // 快手：剔除交易关闭、已关闭
+      if (status === '交易关闭' || status === '已关闭') shouldSkip = true;
+    }
+
+    if (shouldSkip) {
       skipCount++;
-      // 调试：记录前10个被跳过的订单
-      if (debugLog.length < 10) {
-        debugLog.push({ row: r, status, amount, day });
-      }
       continue;
     }
 
