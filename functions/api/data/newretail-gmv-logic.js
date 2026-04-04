@@ -245,8 +245,8 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
       // 小红书：剔除已取消
       if (status === '已取消') shouldSkip = true;
     } else if (platform === 'shipinhao') {
-      // 视频号：剔除交易关闭
-      if (status === '交易关闭') shouldSkip = true;
+      // 视频号：剔除已取消
+      if (status === '已取消') shouldSkip = true;
     } else if (platform === 'kuaishou') {
       // 快手：剔除交易关闭、已关闭
       if (status === '交易关闭' || status === '已关闭') shouldSkip = true;
