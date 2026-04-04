@@ -9,7 +9,9 @@ import {
   processPlatformOrdersGsv,
   aggregateByDayAndCategory,
   aggregateByWeek,
-  aggregateByMonth
+  aggregateByMonth,
+  aggregateFuwuByChannel,
+  aggregateFuwuByChannelMonthly
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -153,6 +155,10 @@ export async function onRequestGet(context) {
     var dailyPointsGsv = aggregateByDayAndCategory(allOrdersGsv);
     var monthlyPointsGsv = aggregateByMonth(dailyPointsGsv);
 
+    // 4c. 服务商按渠道汇总
+    var fuwuByChannel = aggregateFuwuByChannel(allOrdersGmv);
+    var fuwuByChannelMonthly = aggregateFuwuByChannelMonthly(fuwuByChannel.data);
+
     var payload = {
       mode: 'daily',
       gmv: {
@@ -162,6 +168,10 @@ export async function onRequestGet(context) {
       gsv: {
         daily: dailyPointsGsv,
         monthly: monthlyPointsGsv,
+      },
+      fuwuGmv: {
+        daily: fuwuByChannel,
+        monthly: fuwuByChannelMonthly
       },
       meta: {
         spreadsheetToken: spreadsheetToken,

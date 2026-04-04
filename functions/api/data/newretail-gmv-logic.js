@@ -413,6 +413,84 @@ function aggregateByDayAndCategory(allOrders) {
   });
 }
 
+/** ==================== 按日期和渠道汇总（服务商订单） ====================
+ * 输出: 每天每条渠道一条记录，用于服务商GMV图表
+ */
+function aggregateFuwuByChannel(allOrders) {
+  const bucket = {};
+  const channels = new Set();
+
+  allOrders.forEach(order => {
+    // 只处理服务商订单
+    if (order.category !== 'fuwu') return;
+
+    const day = order.date;
+    const channel = order.channel || '未知';
+    channels.add(channel);
+
+    if (!bucket[day]) {
+      bucket[day] = {};
+    }
+    if (!bucket[day][channel]) {
+      bucket[day][channel] = 0;
+    }
+    bucket[day][channel] += order.amount;
+  });
+
+  // 转换为数组格式
+  const sortedDays = Object.keys(bucket).sort();
+  const sortedChannels = Array.from(channels).sort();
+
+  return {
+    days: sortedDays,
+    channels: sortedChannels,
+    data: sortedDays.map(day => {
+      const dayData = { date: day };
+      sortedChannels.forEach(channel => {
+        const amount = bucket[day][channel] || 0;
+        dayData[channel] = Number((amount / 10000).toFixed(2));
+      });
+      return dayData;
+    })
+  };
+}
+
+/** ==================== 月度聚合（服务商按渠道） ==================== */
+function aggregateFuwuByChannelMonthly(dailyPoints) {
+  const bucket = {};
+  const channels = new Set();
+
+  dailyPoints.forEach(p => {
+    const month = p.date.substring(0, 7); // YYYY-MM
+    Object.keys(p).forEach(key => {
+      if (key === 'date') return;
+      channels.add(key);
+      if (!bucket[month]) {
+        bucket[month] = {};
+      }
+      if (!bucket[month][key]) {
+        bucket[month][key] = 0;
+      }
+      bucket[month][key] += p[key];
+    });
+  });
+
+  const sortedMonths = Object.keys(bucket).sort();
+  const sortedChannels = Array.from(channels).sort();
+
+  return {
+    days: sortedMonths,
+    channels: sortedChannels,
+    data: sortedMonths.map(month => {
+      const monthData = { date: month };
+      sortedChannels.forEach(channel => {
+        monthData[channel] = Number((bucket[month][channel] || 0).toFixed(2));
+      });
+      return monthData;
+    })
+  };
+}
+
 /** ==================== 周度聚合 ==================== */
 function weekStartFromDateStr(ds) {
   const m = String(ds).match(/^(\d{4})-(\d{2})-(\d{2})$/);
