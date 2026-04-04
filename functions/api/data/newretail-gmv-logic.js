@@ -271,6 +271,11 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
     const classification = classifyOrder(darenId, darenName, platform, channelMaps);
     if (classification.skip) continue;
 
+    // 7. 特殊规则：达人ID 284088526715758 只计算4月1日及之后的订单
+    if (darenId === '284088526715758' && day < '2026-04-01') {
+      continue;
+    }
+
     orders.push({
       date: day,
       platform: platform,
@@ -355,6 +360,11 @@ function processPlatformOrders(values, platform, channelMaps) {
 
     if (!classification.channel || classification.channel === '未知') {
       stats.noChannel++;
+    }
+
+    // 7. 特殊规则：达人ID 284088526715758 只计算4月1日及之后的订单
+    if (darenId === '284088526715758' && day < '2026-04-01') {
+      continue;
     }
 
     orders.push({
