@@ -282,13 +282,14 @@ function processPlatformOrders(values, platform, channelMaps) {
   const orders = [];
   let stats = {
     totalRows: values.length - 1,
-    hasTime: 0,      // 有支付时间
-    hasAmount: 0,    // 有金额
-    hasDate: 0,      // 日期解析成功
-    classified: 0,   // 分类完成
+    hasTime: 0,       // 有支付时间
+    hasAmount: 0,     // 有金额
+    hasDate: 0,       // 日期解析成功
+    closedSkipped: 0, // 已关闭被跳过
+    classified: 0,    // 分类完成
     ziyingSkipped: 0, // 直营被跳过
-    noChannel: 0,    // 未映射出渠道
-    final: 0         // 最终保留
+    noChannel: 0,     // 未映射出渠道
+    final: 0          // 最终保留
   };
 
   for (let r = 1; r < values.length; r++) { // skip header
@@ -317,7 +318,10 @@ function processPlatformOrders(values, platform, channelMaps) {
 
     // 4. 检查订单状态 (剔除已关闭)
     const status = String(row[cfg.cols.status] || '').trim();
-    if (status === '已关闭') continue;
+    if (status === '已关闭') {
+      stats.closedSkipped++;
+      continue;
+    }
 
     // 5. 解析达人ID/昵称
     let darenId = '';
@@ -359,6 +363,7 @@ function processPlatformOrders(values, platform, channelMaps) {
     console.log(`  有支付时间: ${stats.hasTime}`);
     console.log(`  日期解析成功: ${stats.hasDate}`);
     console.log(`  有金额: ${stats.hasAmount}`);
+    console.log(`  状态已关闭被跳过: ${stats.closedSkipped}`);
     console.log(`  分类完成: ${stats.classified}`);
     console.log(`  -> 其中 直营被跳过: ${stats.ziyingSkipped}`);
     console.log(`  -> 其中 未映射出渠道: ${stats.noChannel}`);

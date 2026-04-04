@@ -7826,11 +7826,11 @@
                     console.log('有支付时间:', s.hasTime);
                     console.log('日期解析成功:', s.hasDate);
                     console.log('有金额:', s.hasAmount);
+                    console.log('状态已关闭被跳过:', s.closedSkipped);
                     console.log('分类完成:', s.classified);
                     console.log('-> 直营被跳过:', s.ziyingSkipped);
                     console.log('-> 未映射出渠道(未知):', s.noChannel);
                     console.log('最终保留:', s.final);
-                    console.log('有支付时间但未映射出渠道:', s.classified - s.ziyingSkipped - s.final);
                   }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;
