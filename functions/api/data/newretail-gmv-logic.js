@@ -280,6 +280,7 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
 function processPlatformOrders(values, platform, channelMaps) {
   const cfg = PLATFORM_CONFIG[platform];
   const orders = [];
+  let skipReasons = { noTime: 0, noAmount: 0, noDate: 0, noChannel: 0, ziying: 0 }; // 调试
 
   for (let r = 1; r < values.length; r++) { // skip header
     const row = values[r] || [];
@@ -291,16 +292,23 @@ function processPlatformOrders(values, platform, channelMaps) {
     const timeValue = row[cfg.cols.time];
     if (timeValue == null || timeValue === '' ||
         (typeof timeValue === 'object' && Object.keys(timeValue).length === 0)) {
+      skipReasons.noTime++;
       continue;
     }
 
     // 2. 解析日期 (平台特定规则)
     const day = parseDateFromPlatform(timeValue, platform);
-    if (!day) continue;
+    if (!day) {
+      skipReasons.noDate++;
+      continue;
+    }
 
     // 3. 解析金额
     const amount = parseAmount(row[cfg.cols.amount]);
-    if (amount <= 0) continue;
+    if (amount <= 0) {
+      skipReasons.noAmount++;
+      continue;
+    }
 
     // 4. 检查订单状态 (剔除已关闭)
     const status = String(row[cfg.cols.status] || '').trim();
@@ -318,7 +326,13 @@ function processPlatformOrders(values, platform, channelMaps) {
 
     // 6. 分类
     const classification = classifyOrder(darenId, darenName, platform, channelMaps);
-    if (classification.skip) continue;
+    if (classification.skip) {
+      skipReasons.ziying++;
+      continue;
+    }
+    if (!classification.channel || classification.channel === '未知') {
+      skipReasons.noChannel++;
+    }
 
     orders.push({
       date: day,
@@ -327,6 +341,12 @@ function processPlatformOrders(values, platform, channelMaps) {
       category: classification.category,
       channel: classification.channel
     });
+  }
+
+  // 调试输出
+  if (platform === 'xiaohongshu') {
+    console.log(`[${platform}] GMV处理详情: 总${values.length-1}条, 保留${orders.length}条`);
+    console.log(`  被跳过: 无时间=${skipReasons.noTime}, 无金额=${skipReasons.noAmount}, 无日期=${skipReasons.noDate}, 直营=${skipReasons.ziying}, 无渠道=${skipReasons.noChannel}`);
   }
 
   return orders;
