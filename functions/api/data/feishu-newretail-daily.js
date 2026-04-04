@@ -6,8 +6,10 @@ import {
   CHANNEL_MAP_CONFIG,
   buildChannelMaps,
   processPlatformOrders,
+  processPlatformOrdersGsv,
   aggregateByDayAndCategory,
-  aggregateByWeek
+  aggregateByWeek,
+  aggregateByMonth
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -108,26 +110,58 @@ export async function onRequestGet(context) {
 
     var platformResults = await Promise.all(platformPromises);
 
-    // 3. 处理订单数据
-    var allOrders = [];
+    // 3. 处理订单数据 - GMV（所有订单）
+    var allOrdersGmv = [];
+    var platformStatsGmv = {};
     platformResults.forEach(function(result) {
       if (result.values && result.values.length > 0) {
         var orders = processPlatformOrders(result.values, result.platform, channelMaps);
-        allOrders = allOrders.concat(orders);
+        allOrdersGmv = allOrdersGmv.concat(orders);
+        platformStatsGmv[result.platform] = {
+          totalRows: result.values.length - 1,
+          validOrders: orders.length
+        };
       }
     });
 
-    // 4. 按日期和类别汇总
-    var dailyPoints = aggregateByDayAndCategory(allOrders);
-    var weeklyPoints = aggregateByWeek(dailyPoints);
+    // 3b. 处理订单数据 - GSV（剔除关闭/取消订单）
+    var allOrdersGsv = [];
+    var platformStatsGsv = {};
+    platformResults.forEach(function(result) {
+      if (result.values && result.values.length > 0) {
+        var orders = processPlatformOrdersGsv(result.values, result.platform, channelMaps);
+        allOrdersGsv = allOrdersGsv.concat(orders);
+        platformStatsGsv[result.platform] = {
+          totalRows: result.values.length - 1,
+          validOrders: orders.length
+        };
+      }
+    });
+
+    // 4. 按日期和类别汇总 - GMV
+    var dailyPointsGmv = aggregateByDayAndCategory(allOrdersGmv);
+    var monthlyPointsGmv = aggregateByMonth(dailyPointsGmv);
+
+    // 4b. 按日期和类别汇总 - GSV
+    var dailyPointsGsv = aggregateByDayAndCategory(allOrdersGsv);
+    var monthlyPointsGsv = aggregateByMonth(dailyPointsGsv);
 
     var payload = {
       mode: 'daily',
-      daily: dailyPoints,
-      weekly: weeklyPoints,
+      gmv: {
+        daily: dailyPointsGmv,
+        monthly: monthlyPointsGmv,
+      },
+      gsv: {
+        daily: dailyPointsGsv,
+        monthly: monthlyPointsGsv,
+      },
       meta: {
         spreadsheetToken: spreadsheetToken,
-        totalOrders: allOrders.length,
+        totalOrdersGmv: allOrdersGmv.length,
+        totalOrdersGsv: allOrdersGsv.length,
+        platformStatsGmv: platformStatsGmv,
+        platformStatsGsv: platformStatsGsv,
         platforms: platformKeys,
         cached: false,
       }

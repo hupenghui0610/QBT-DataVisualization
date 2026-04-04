@@ -204,7 +204,80 @@ function classifyOrder(darenId, darenName, platform, channelMaps) {
   return { category: 'fuwu', channel: channelName, skip: false };
 }
 
-/** ==================== 处理单个平台订单 ==================== */
+/** ==================== 处理单个平台订单 - GSV版本（剔除关闭/取消订单） ==================== */
+function processPlatformOrdersGsv(values, platform, channelMaps) {
+  const cfg = PLATFORM_CONFIG[platform];
+  const orders = [];
+  let skipCount = 0;
+  let sampleStatuses = []; // 调试：收集样本状态
+
+  for (let r = 1; r < values.length; r++) { // skip header
+    const row = values[r] || [];
+
+    // 检查必要字段存在
+    if (row.length <= cfg.cols.amount) continue;
+
+    // 1. 剔除支付完成时间为空的订单
+    const timeValue = row[cfg.cols.time];
+    if (timeValue == null || timeValue === '' ||
+        (typeof timeValue === 'object' && Object.keys(timeValue).length === 0)) {
+      continue;
+    }
+
+    // 2. 解析日期 (平台特定规则)
+    const day = parseDateFromPlatform(timeValue, platform);
+    if (!day) continue;
+
+    // 3. 解析金额
+    const amount = parseAmount(row[cfg.cols.amount]);
+    if (amount <= 0) continue;
+
+    // 4. 检查订单状态 - GSV：剔除已关闭、交易关闭、已取消
+    const status = String(row[cfg.cols.status] || '').trim();
+
+    // 调试：收集前10个状态样本
+    if (sampleStatuses.length < 10 && status) {
+      sampleStatuses.push(status);
+    }
+
+    const statusLower = status.toLowerCase();
+    if (status.includes('关闭') || status.includes('取消') || status.includes('退款') || status.includes('退货') ||
+        statusLower.includes('close') || statusLower.includes('cancel') || statusLower.includes('refund')) {
+      skipCount++;
+      continue;
+    }
+
+    // 5. 解析达人ID/昵称
+    let darenId = '';
+    let darenName = '';
+    if (cfg.cols.darenId != null) {
+      darenId = parseDarenId(row[cfg.cols.darenId]);
+    }
+    if (cfg.cols.darenName != null) {
+      darenName = parseDarenId(row[cfg.cols.darenName]);
+    }
+
+    // 6. 分类
+    const classification = classifyOrder(darenId, darenName, platform, channelMaps);
+    if (classification.skip) continue;
+
+    orders.push({
+      date: day,
+      platform: platform,
+      amount: amount,
+      category: classification.category,
+      channel: classification.channel
+    });
+  }
+
+  // 调试输出
+  console.log(`[${platform}] GSV处理: 总${values.length-1}条, 跳过${skipCount}条, 保留${orders.length}条`);
+  console.log(`[${platform}] 状态样本:`, sampleStatuses);
+
+  return orders;
+}
+
+/** ==================== 处理单个平台订单 - GMV版本 ==================== */
 function processPlatformOrders(values, platform, channelMaps) {
   const cfg = PLATFORM_CONFIG[platform];
   const orders = [];
@@ -327,6 +400,41 @@ function aggregateByWeek(dailyPoints) {
   });
 }
 
+/** ==================== 月度聚合 ==================== */
+function monthFromDateStr(ds) {
+  const m = String(ds).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return '';
+  return m[1] + '-' + m[2];
+}
+
+function aggregateByMonth(dailyPoints) {
+  const bucket = {};
+
+  dailyPoints.forEach(p => {
+    const month = monthFromDateStr(p.date);
+    if (!month) return;
+
+    if (!bucket[month]) {
+      bucket[month] = { dp: 0, zhidui: 0, fuwu: 0 };
+    }
+
+    bucket[month].dp += p.dp;
+    bucket[month].zhidui += p.zhidui;
+    bucket[month].fuwu += p.fuwu;
+  });
+
+  return Object.keys(bucket).sort().map(m => {
+    const b = bucket[m];
+    return {
+      date: m,
+      dp: Number(b.dp.toFixed(2)),
+      zhidui: Number(b.zhidui.toFixed(2)),
+      fuwu: Number(b.fuwu.toFixed(2)),
+      total: Number((b.dp + b.zhidui + b.fuwu).toFixed(2))
+    };
+  });
+}
+
 // ==================== 导出 ====================
 export {
   PLATFORM_CONFIG,
@@ -337,7 +445,9 @@ export {
   buildChannelMaps,
   classifyOrder,
   processPlatformOrders,
+  processPlatformOrdersGsv,
   aggregateByDayAndCategory,
   aggregateByWeek,
+  aggregateByMonth,
   parseExcelSerial
 };

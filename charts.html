@@ -21,7 +21,7 @@
   </script>
   <title>希倍思 - 电商数据可视化</title>
   <link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="vendor/echarts.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { font-family: "Microsoft YaHei", sans-serif; margin: 0; padding: 12px; background: #f5f6fa; }
@@ -752,100 +752,44 @@
   </div>
   </div>
   <div id="main-tab-panel-newretail" class="main-tab-panel" role="tabpanel" aria-labelledby="main-tab-btn-newretail">
-  <div class="section-block section-douyin">
-  <div class="section-title">抖音数据</div>
-  <div class="grid" id="chartGridDouyin">
+  <div class="section-block section-newretail">
+  <div class="section-title">新零售数据</div>
+  <div class="grid" id="chartGridNewretail">
+    <div class="card wide">
+      <h3>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>四平台合并GMV（DP/直对/服务商）</span>
+        <span class="chart-view-switch" id="fourPlatformGmvModeSwitch" role="group" aria-label="四平台GMV口径（日度/月度）">
+          <button type="button" class="view-btn active" data-four-platform-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-four-platform-mode="monthly">月度</button>
+        </span>
+      </h3>
+      <span id="fourPlatformGmvStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="fourPlatformGmvStart"></select> 结束：<select id="fourPlatformGmvEnd"></select></div>
+      <div id="chartFourPlatformGmv" class="chart"></div>
+    </div>
     <div class="card wide">
       <h3>
         <i class="chart-title-icon fa fa-line-chart"></i><span>GMV</span>
-        <span class="chart-view-switch" id="douyinDailyTrendModeSwitch" role="group" aria-label="抖音GMV口径（日度/周度）">
-          <button type="button" class="view-btn active" data-douyin-trend-mode="daily">日度</button>
-          <button type="button" class="view-btn" data-douyin-trend-mode="weekly">周度</button>
+        <span class="chart-view-switch" id="newretailDailyTrendModeSwitch" role="group" aria-label="新零售GMV口径（日度/周度）">
+          <button type="button" class="view-btn active" data-newretail-trend-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-newretail-trend-mode="weekly">周度</button>
         </span>
       </h3>
-      <span id="douyinDailyTrendStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="douyinDailyTrendStart"></select> 结束：<select id="douyinDailyTrendEnd"></select></div>
-      <div id="chartDouyinDailyTrend" class="chart"></div>
+      <span id="newretailDailyTrendStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="newretailDailyTrendStart"></select> 结束：<select id="newretailDailyTrendEnd"></select></div>
+      <div id="chartNewretailDailyTrend" class="chart"></div>
     </div>
     <div class="card wide">
       <h3>
         <i class="chart-title-icon fa fa-line-chart"></i><span>GSV</span>
-        <span class="chart-view-switch" id="douyinDailyTrendGsvModeSwitch" role="group" aria-label="抖音GSV口径（日度/周度）">
-          <button type="button" class="view-btn active" data-douyin-trend-mode="daily">日度</button>
-          <button type="button" class="view-btn" data-douyin-trend-mode="weekly">周度</button>
+        <span class="chart-view-switch" id="newretailDailyTrendGsvModeSwitch" role="group" aria-label="新零售GSV口径（日度/周度）">
+          <button type="button" class="view-btn active" data-newretail-trend-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-newretail-trend-mode="weekly">周度</button>
         </span>
       </h3>
-      <span id="douyinDailyTrendGsvStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="douyinDailyTrendGsvStart"></select> 结束：<select id="douyinDailyTrendGsvEnd"></select></div>
-      <div id="chartDouyinDailyTrendGsv" class="chart"></div>
-    </div>
-    <div class="card wide">
-      <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>达播服务商趋势图</span>
-        <span class="chart-view-switch" id="channelOrderTrendMetricSwitch" role="group" aria-label="达播趋势指标（GSV / 开播人数）">
-          <button type="button" class="view-btn active" data-channel-order-metric="gmv">GSV</button>
-          <button type="button" class="view-btn" data-channel-order-metric="daren">开播人数</button>
-        </span>
-      </h3>
-      <span id="channelOrderTrendStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="channelOrderTrendStart"></select> 结束：<select id="channelOrderTrendEnd"></select></div>
-      <div class="chart-wrap chart-wrap--overlay">
-        <div id="chartChannelOrderTrend" class="chart"></div>
-        <div id="channelOrderTrendChartOverlay" class="chart-state-overlay" role="status" aria-live="polite">
-          <div class="chart-state-overlay-inner">
-            <div class="chart-state-spinner" aria-hidden="true"></div>
-            <p class="chart-state-msg"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="card-douyin-model-dist-pair">
-    <div class="card">
-      <h3>
-        <i class="chart-title-icon fa fa-bar-chart"></i><span>DP-型号分布</span>
-        <span class="chart-view-switch" role="group" aria-label="DP 型号分布图类型">
-          <button type="button" id="douyinDpModelDistBarBtn" class="view-btn active">柱状图</button>
-          <button type="button" id="douyinDpModelDistPieBtn" class="view-btn">饼状图</button>
-        </span>
-      </h3>
-      <div id="douyinDpModelDistDebug" style="font-size:12px;color:#64748b;margin:4px 0 6px;line-height:1.5;"></div>
-      <div class="date-range">起始：<select id="douyinDpModelDistStart"></select> 结束：<select id="douyinDpModelDistEnd"></select></div>
-      <div class="chart-wrap chart-wrap--overlay">
-        <div id="chartDouyinDpModelDist" class="chart"></div>
-        <div id="douyinDpModelDistChartOverlay" class="chart-state-overlay" role="status" aria-live="polite">
-          <div class="chart-state-overlay-inner">
-            <div class="chart-state-spinner" aria-hidden="true"></div>
-            <p class="chart-state-msg"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <h3>
-        <i class="chart-title-icon fa fa-bar-chart"></i><span>达人-型号分布</span>
-        <span class="chart-view-switch" role="group" aria-label="达人型号分布图类型">
-          <button type="button" id="douyinDarenModelDistBarBtn" class="view-btn active">柱状图</button>
-          <button type="button" id="douyinDarenModelDistPieBtn" class="view-btn">饼状图</button>
-        </span>
-      </h3>
-      <div id="douyinDarenModelDistDebug" style="font-size:12px;color:#64748b;margin:4px 0 6px;line-height:1.5;"></div>
-      <div class="date-range">起始：<select id="douyinDarenModelDistStart"></select> 结束：<select id="douyinDarenModelDistEnd"></select></div>
-      <div class="chart-wrap chart-wrap--overlay">
-        <div id="chartDouyinDarenModelDist" class="chart"></div>
-        <div id="douyinDarenModelDistChartOverlay" class="chart-state-overlay" role="status" aria-live="polite">
-          <div class="chart-state-overlay-inner">
-            <div class="chart-state-spinner" aria-hidden="true"></div>
-            <p class="chart-state-msg"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-    </div>
-    <div class="card">
-      <h3><i class="chart-title-icon fa fa-filter"></i><span>直播间转化漏斗</span></h3>
-      <span id="livestreamFunnelStatus" class="daily-feishu-status"></span>
-      <div class="date-range">主播：<select id="livestreamFunnelAnchor"><option value="">请选择主播</option></select></div>
-      <div id="chartLivestreamFunnel" class="chart"></div>
+      <span id="newretailDailyTrendGsvStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="newretailDailyTrendGsvStart"></select> 结束：<select id="newretailDailyTrendGsvEnd"></select></div>
+      <div id="chartNewretailDailyTrendGsv" class="chart"></div>
     </div>
   </div>
   </div>
@@ -3246,8 +3190,6 @@
         if (st2) st2.textContent = newretailErr || '暂无新零售数据（登录后拉取）';
         initDouyinDailyTrendSelects();
         initDouyinDailyTrendGsvSelects();
-        renderNewretailDailyTrend();
-        renderNewretailDailyTrendGsv();
       }
       /** 与 js/auth-client.js 中 fetchFeishuChannelOrderTrend 超时毫秒数一致，用于超时文案 */
       var CHANNEL_ORDER_TREND_FETCH_TIMEOUT_MS = 600000;
@@ -7307,9 +7249,152 @@
               refreshLivestreamFunnelFromFeishu();
             });
         }
+        /** ==================== 四平台合并GMV图表（全新独立实现） ==================== */
+        window.__FOUR_PLATFORM_GMV_DATA__ = null;
+        window.__FOUR_PLATFORM_GMV_ERROR__ = '';
+        window.fourPlatformGmvMode = 'daily';
+        function renderFourPlatformGmv() {
+          var el = document.getElementById('chartFourPlatformGmv');
+          if (!el) return;
+          var raw = window.__FOUR_PLATFORM_GMV_DATA__;
+          if (!charts.chartFourPlatformGmv) charts.chartFourPlatformGmv = echarts.init(el);
+          if (!raw || !raw.daily || !raw.daily.length) {
+            var err = window.__FOUR_PLATFORM_GMV_ERROR__ || '';
+            charts.chartFourPlatformGmv.setOption(
+              {
+                title: { text: err || '暂无四平台GMV数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+                series: [],
+              },
+              true
+            );
+            return;
+          }
+          var startVal = document.getElementById('fourPlatformGmvStart') && document.getElementById('fourPlatformGmvStart').value;
+          var endVal = document.getElementById('fourPlatformGmvEnd') && document.getElementById('fourPlatformGmvEnd').value;
+          var daily = raw.daily;
+          var monthly = raw.monthly || [];
+          var isMonthly = (window.fourPlatformGmvMode || 'daily') === 'monthly';
+          var pts = isMonthly ? monthly : daily;
+          var filtered = pts;
+          if (startVal && endVal && startVal <= endVal) {
+            filtered = pts.filter(function (p) {
+              return p.date >= startVal && p.date <= endVal;
+            });
+          }
+          var x = filtered.map(function (p) { return p.date; });
+          var yDp = filtered.map(function (p) { return p.dp != null ? p.dp : null; });
+          var yZhidui = filtered.map(function (p) { return p.zhidui != null ? p.zhidui : null; });
+          var yFuwu = filtered.map(function (p) { return p.fuwu != null ? p.fuwu : null; });
+          var opt = {
+            tooltip: {
+              trigger: 'axis',
+              formatter: function (params) {
+                var p0 = params[0] || {};
+                var html = (p0.axisValue || '') + '<br/>';
+                params.forEach(function (p) {
+                  html += (p.marker || '') + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万<br/>';
+                });
+                return html;
+              },
+            },
+            legend: { data: ['DP', '直对', '服务商'], top: 6, left: 'center' },
+            grid: { left: 56, right: 40, top: 40, bottom: 52 },
+            xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
+            yAxis: { type: 'value', name: 'GMV（万）', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '万'; } } },
+            series: [
+              { name: 'DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
+              { name: '直对', type: 'line', smooth: true, data: yZhidui, showSymbol: x.length <= 40, connectNulls: false },
+              { name: '服务商', type: 'line', smooth: true, data: yFuwu, showSymbol: x.length <= 40, connectNulls: false },
+            ],
+          };
+          charts.chartFourPlatformGmv.setOption(applyMobileChartOption(opt), true);
+        }
+        function initFourPlatformGmvSwitches() {
+          var selStart = document.getElementById('fourPlatformGmvStart');
+          var selEnd = document.getElementById('fourPlatformGmvEnd');
+          var raw = window.__FOUR_PLATFORM_GMV_DATA__;
+          if (!selStart || !selEnd) return;
+          if (!raw || !raw.daily || !raw.daily.length) {
+            selStart.innerHTML = '<option value="">-</option>';
+            selEnd.innerHTML = '<option value="">-</option>';
+            return;
+          }
+          var daily = raw.daily;
+          var dates = daily.map(function (p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+          var curStart = selStart.value || minD;
+          var curEnd = selEnd.value || maxD;
+          var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          selStart.innerHTML = optsHtml;
+          selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          if (!selStart.value) selStart.value = minD;
+          if (!selEnd.value) selEnd.value = maxD;
+          selStart.onchange = renderFourPlatformGmv;
+          selEnd.onchange = renderFourPlatformGmv;
+        }
+        function refreshFourPlatformGmv() {
+          renderFourPlatformGmv();
+          initFourPlatformGmvSwitches();
+        }
+        (function () {
+          if (window.__fourPlatformGmvSwitchBound) return;
+          var sw = document.getElementById('fourPlatformGmvModeSwitch');
+          if (!sw) return;
+          sw.addEventListener('click', function (e) {
+            var btn = e.target.closest && e.target.closest('[data-four-platform-mode]');
+            if (!btn) return;
+            var mode = btn.getAttribute('data-four-platform-mode');
+            if (mode !== 'daily' && mode !== 'monthly') return;
+            window.fourPlatformGmvMode = mode;
+            Array.from(sw.querySelectorAll('[data-four-platform-mode]')).forEach(function (b) {
+              b.classList.toggle('active', b.getAttribute('data-four-platform-mode') === mode);
+            });
+            renderFourPlatformGmv();
+          });
+          window.__fourPlatformGmvSwitchBound = true;
+        })();
+        function fetchFourPlatformGmvData() {
+          var stEl = document.getElementById('fourPlatformGmvStatus');
+          if (typeof XbsAuth === 'undefined' || !XbsAuth.getToken()) {
+            window.__FOUR_PLATFORM_GMV_DATA__ = null;
+            window.__FOUR_PLATFORM_GMV_ERROR__ = '未登录：请先登录后再拉取数据。';
+            if (stEl) stEl.textContent = window.__FOUR_PLATFORM_GMV_ERROR__;
+            refreshFourPlatformGmv();
+            return Promise.resolve();
+          }
+          return XbsAuth.fetchFeishuNewretailDaily()
+            .then(parseJsonRes)
+            .then(function (o) {
+              try {
+                var valid = o.r.ok && o.data && typeof o.data === 'object' && !o.data.error && Array.isArray(o.data.daily);
+                if (valid) {
+                  window.__FOUR_PLATFORM_GMV_DATA__ = o.data;
+                  window.__FOUR_PLATFORM_GMV_ERROR__ = '';
+                } else {
+                  window.__FOUR_PLATFORM_GMV_DATA__ = null;
+                  var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));
+                  window.__FOUR_PLATFORM_GMV_ERROR__ = '拉取失败：' + msg;
+                  if (stEl) stEl.textContent = window.__FOUR_PLATFORM_GMV_ERROR__;
+                }
+                refreshFourPlatformGmv();
+              } catch (e) {
+                window.__FOUR_PLATFORM_GMV_DATA__ = null;
+                window.__FOUR_PLATFORM_GMV_ERROR__ = '数据解析失败：' + (e && e.message ? e.message : String(e));
+                if (stEl) stEl.textContent = window.__FOUR_PLATFORM_GMV_ERROR__;
+                refreshFourPlatformGmv();
+              }
+            })
+            .catch(function (err) {
+              window.__FOUR_PLATFORM_GMV_DATA__ = null;
+              window.__FOUR_PLATFORM_GMV_ERROR__ = '请求失败：' + (err && err.message ? err.message : '网络或跨域错误');
+              if (stEl) stEl.textContent = window.__FOUR_PLATFORM_GMV_ERROR__;
+              refreshFourPlatformGmv();
+            });
+        }
         /** 需登录；新零售四平台GMV/GSV日趋势（DP/直对/服务商分类） */
         function fetchFeishuNewretailDaily() {
-          var stEl = document.getElementById('douyinDailyTrendStatus');
+          var stEl = document.getElementById('newretailDailyTrendStatus');
           if (typeof XbsAuth === 'undefined' || !XbsAuth.getToken()) {
             try {
               window.__QBT_FEISHU_NEWRETAIL_DAILY__ = null;
@@ -7362,15 +7447,17 @@
         function refreshNewretailCharts() {
           renderNewretailDailyTrend();
           renderNewretailDailyTrendGsv();
+          initNewretailDateRangeSwitches();
+          initNewretailDateRangeGsvSwitches();
         }
         function renderNewretailDailyTrend() {
-          var el = document.getElementById('chartDouyinDailyTrend');
+          var el = document.getElementById('chartNewretailDailyTrend');
           if (!el) return;
           var raw = window.__QBT_FEISHU_NEWRETAIL_DAILY__;
-          if (!charts.chartDouyinDailyTrend) charts.chartDouyinDailyTrend = echarts.init(el);
+          if (!charts.chartNewretailDailyTrend) charts.chartNewretailDailyTrend = echarts.init(el);
           if (!raw || !raw.daily || !raw.daily.length) {
             var err = window.__QBT_FEISHU_NEWRETAIL_DAILY_ERROR__ || '';
-            charts.chartDouyinDailyTrend.setOption(
+            charts.chartNewretailDailyTrend.setOption(
               {
                 title: { text: err || '暂无新零售GMV数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
                 series: [],
@@ -7379,11 +7466,11 @@
             );
             return;
           }
-          var startVal = document.getElementById('douyinDailyTrendStart') && document.getElementById('douyinDailyTrendStart').value;
-          var endVal = document.getElementById('douyinDailyTrendEnd') && document.getElementById('douyinDailyTrendEnd').value;
+          var startVal = document.getElementById('newretailDailyTrendStart') && document.getElementById('newretailDailyTrendStart').value;
+          var endVal = document.getElementById('newretailDailyTrendEnd') && document.getElementById('newretailDailyTrendEnd').value;
           var daily = raw.daily;
           var weekly = raw.weekly || [];
-          var isWeekly = (window.douyinTrendMode || 'daily') === 'weekly';
+          var isWeekly = (window.newretailTrendMode || 'daily') === 'weekly';
           var pts = isWeekly ? weekly : daily;
           var filtered = pts;
           if (startVal && endVal && startVal <= endVal) {
@@ -7421,16 +7508,16 @@
               { name: '服务商', type: 'line', smooth: true, data: yFuwu, showSymbol: x.length <= 40, connectNulls: false },
             ],
           };
-          charts.chartDouyinDailyTrend.setOption(applyMobileChartOption(opt), true);
+          charts.chartNewretailDailyTrend.setOption(applyMobileChartOption(opt), true);
         }
         function renderNewretailDailyTrendGsv() {
-          var el = document.getElementById('chartDouyinDailyTrendGsv');
+          var el = document.getElementById('chartNewretailDailyTrendGsv');
           if (!el) return;
           var raw = window.__QBT_FEISHU_NEWRETAIL_DAILY__;
-          if (!charts.chartDouyinDailyTrendGsv) charts.chartDouyinDailyTrendGsv = echarts.init(el);
+          if (!charts.chartNewretailDailyTrendGsv) charts.chartNewretailDailyTrendGsv = echarts.init(el);
           if (!raw || !raw.daily || !raw.daily.length) {
             var err = window.__QBT_FEISHU_NEWRETAIL_DAILY_ERROR__ || '';
-            charts.chartDouyinDailyTrendGsv.setOption(
+            charts.chartNewretailDailyTrendGsv.setOption(
               {
                 title: { text: err || '暂无新零售GSV数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
                 series: [],
@@ -7439,11 +7526,11 @@
             );
             return;
           }
-          var startVal = document.getElementById('douyinDailyTrendGsvStart') && document.getElementById('douyinDailyTrendGsvStart').value;
-          var endVal = document.getElementById('douyinDailyTrendGsvEnd') && document.getElementById('douyinDailyTrendGsvEnd').value;
+          var startVal = document.getElementById('newretailDailyTrendGsvStart') && document.getElementById('newretailDailyTrendGsvStart').value;
+          var endVal = document.getElementById('newretailDailyTrendGsvEnd') && document.getElementById('newretailDailyTrendGsvEnd').value;
           var daily = raw.daily;
           var weekly = raw.weekly || [];
-          var isWeekly = (window.douyinTrendMode || 'daily') === 'weekly';
+          var isWeekly = (window.newretailTrendMode || 'daily') === 'weekly';
           var pts = isWeekly ? weekly : daily;
           var filtered = pts;
           if (startVal && endVal && startVal <= endVal) {
@@ -7481,9 +7568,89 @@
               { name: '服务商', type: 'line', smooth: true, data: yFuwu, showSymbol: x.length <= 40, connectNulls: false },
             ],
           };
-          charts.chartDouyinDailyTrendGsv.setOption(applyMobileChartOption(opt), true);
+          charts.chartNewretailDailyTrendGsv.setOption(applyMobileChartOption(opt), true);
         }
+        function initNewretailDateRangeSwitches() {
+          var selStart = document.getElementById('newretailDailyTrendStart');
+          var selEnd = document.getElementById('newretailDailyTrendEnd');
+          var raw = window.__QBT_FEISHU_NEWRETAIL_DAILY__;
+          if (!selStart || !selEnd) return;
+          if (!raw || !raw.daily || !raw.daily.length) {
+            selStart.innerHTML = '<option value="">-</option>';
+            selEnd.innerHTML = '<option value="">-</option>';
+            return;
+          }
+          var daily = raw.daily;
+          var dates = daily.map(function (p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+          var curStart = selStart.value || minD;
+          var curEnd = selEnd.value || maxD;
+          var opts = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          selStart.innerHTML = opts;
+          selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          if (!selStart.value) selStart.value = minD;
+          if (!selEnd.value) selEnd.value = maxD;
+          selStart.onchange = renderNewretailDailyTrend;
+          selEnd.onchange = renderNewretailDailyTrend;
         }
+        function initNewretailDateRangeGsvSwitches() {
+          var selStart = document.getElementById('newretailDailyTrendGsvStart');
+          var selEnd = document.getElementById('newretailDailyTrendGsvEnd');
+          var raw = window.__QBT_FEISHU_NEWRETAIL_DAILY__;
+          if (!selStart || !selEnd) return;
+          if (!raw || !raw.daily || !raw.daily.length) {
+            selStart.innerHTML = '<option value="">-</option>';
+            selEnd.innerHTML = '<option value="">-</option>';
+            return;
+          }
+          var daily = raw.daily;
+          var dates = daily.map(function (p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+          var curStart = selStart.value || minD;
+          var curEnd = selEnd.value || maxD;
+          selStart.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          if (!selStart.value) selStart.value = minD;
+          if (!selEnd.value) selEnd.value = maxD;
+          selStart.onchange = renderNewretailDailyTrendGsv;
+          selEnd.onchange = renderNewretailDailyTrendGsv;
+        }
+        (function () {
+          if (window.__newretailTrendModeSwitchesBound) return;
+          var sw = document.getElementById('newretailDailyTrendModeSwitch');
+          if (!sw) return;
+          sw.addEventListener('click', function (e) {
+            var btn = e.target.closest && e.target.closest('[data-newretail-trend-mode]');
+            if (!btn) return;
+            var mode = btn.getAttribute('data-newretail-trend-mode');
+            if (mode !== 'daily' && mode !== 'weekly') return;
+            window.newretailTrendMode = mode;
+            Array.from(sw.querySelectorAll('[data-newretail-trend-mode]')).forEach(function (b) {
+              b.classList.toggle('active', b.getAttribute('data-newretail-trend-mode') === mode);
+            });
+            renderNewretailDailyTrend();
+          });
+          window.__newretailTrendModeSwitchesBound = true;
+        })();
+        (function () {
+          if (window.__newretailTrendModeGsvSwitchesBound) return;
+          var sw = document.getElementById('newretailDailyTrendGsvModeSwitch');
+          if (!sw) return;
+          sw.addEventListener('click', function (e) {
+            var btn = e.target.closest && e.target.closest('[data-newretail-trend-mode]');
+            if (!btn) return;
+            var mode = btn.getAttribute('data-newretail-trend-mode');
+            if (mode !== 'daily' && mode !== 'weekly') return;
+            window.newretailTrendMode = mode;
+            Array.from(sw.querySelectorAll('[data-newretail-trend-mode]')).forEach(function (b) {
+              b.classList.toggle('active', b.getAttribute('data-newretail-trend-mode') === mode);
+            });
+            renderNewretailDailyTrendGsv();
+          });
+          window.__newretailTrendModeGsvSwitchesBound = true;
+        })();
         Promise.all([
           fetchDapan(),
           fetchBrand(),
@@ -7497,6 +7664,7 @@
           fetchChannelOrderTrend(),
           fetchFeishuLivestreamFunnel(),
           fetchFeishuNewretailDaily(),
+          fetchFourPlatformGmvData(),
         ]).then(function () {
           initMainTabNav();
           if (typeof done === 'function') done();
@@ -7674,3 +7842,5 @@
 
 
 
+<!-- v1775236985 -->
+<!-- FORCE DEPLOY 1775238961 -->

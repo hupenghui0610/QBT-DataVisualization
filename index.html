@@ -7803,6 +7803,20 @@
                 if (valid) {
                   window.__FOUR_PLATFORM_DATA__ = o.data;
                   window.__FOUR_PLATFORM_ERROR__ = '';
+                  // 输出平台统计信息到控制台
+                  if (o.data.meta && o.data.meta.platformStatsGmv) {
+                    console.log('=== 四平台订单统计 ===');
+                    console.log('GMV统计:', o.data.meta.platformStatsGmv);
+                    console.log('GSV统计:', o.data.meta.platformStatsGsv);
+                    var kuaishouGmv = o.data.meta.platformStatsGmv.kuaishou || {};
+                    var kuaishouGsv = o.data.meta.platformStatsGsv.kuaishou || {};
+                    console.log('快手详情:');
+                    console.log('  - 总订单数(GMV):', kuaishouGmv.totalRows || 0);
+                    console.log('  - 有效订单数(GMV):', kuaishouGmv.validOrders || 0);
+                    console.log('  - 总订单数(GSV):', kuaishouGsv.totalRows || 0);
+                    console.log('  - 有效订单数(GSV):', kuaishouGsv.validOrders || 0);
+                    console.log('  - 被剔除订单数:', (kuaishouGmv.validOrders || 0) - (kuaishouGsv.validOrders || 0));
+                  }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;
                   var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));
