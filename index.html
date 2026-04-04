@@ -7817,6 +7817,17 @@
                     console.log('  - 有效订单数(GSV):', kuaishouGsv.validOrders || 0);
                     console.log('  - 被剔除订单数:', (kuaishouGmv.validOrders || 0) - (kuaishouGsv.validOrders || 0));
                   }
+                  // 输出快手原始数据样本
+                  if (o.data.meta && o.data.meta.debugKuaishou && o.data.meta.debugKuaishou.length > 0) {
+                    console.log('=== 快手原始数据样本 ===');
+                    var samples = o.data.meta.debugKuaishou;
+                    console.log('表头(第1行):', samples[0]);
+                    for (let i = 1; i < samples.length; i++) {
+                      let row = samples[i];
+                      console.log(`第${i+1}行:`, row);
+                      console.log(`  列数=${row.length}, 金额[7]=${row[7]}, 时间[4]=${row[4]}, 状态[6]=${row[6]}`);
+                    }
+                  }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;
                   var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));

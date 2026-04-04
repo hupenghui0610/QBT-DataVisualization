@@ -125,6 +125,14 @@ export async function onRequestGet(context) {
       }
     });
 
+    // 调试：收集快手原始数据样本
+    var debugKuaishouSamples = [];
+    platformResults.forEach(function(result) {
+      if (result.platform === 'kuaishou' && result.values && result.values.length > 0) {
+        debugKuaishouSamples = result.values.slice(0, 6); // 表头+前5行
+      }
+    });
+
     // 3. 处理订单数据 - GMV（所有订单）
     var allOrdersGmv = [];
     var platformStatsGmv = {};
@@ -179,6 +187,7 @@ export async function onRequestGet(context) {
         platformStatsGsv: platformStatsGsv,
         platforms: platformKeys,
         cached: false,
+        debugKuaishou: debugKuaishouSamples
       }
     };
 
