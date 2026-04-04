@@ -7950,6 +7950,11 @@
                       console.log('  - 被剔除订单数:', (gmvStat.validOrders || 0) - (gsvStat.validOrders || 0));
                     });
                   }
+                  // 输出未匹配的达人ID
+                  if (o.data.meta && o.data.meta.debugUnmatchedDarenIds && o.data.meta.debugUnmatchedDarenIds.length > 0) {
+                    console.log('=== 未匹配到渠道的达人ID（前20个）===');
+                    console.log(o.data.meta.debugUnmatchedDarenIds);
+                  }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;
                   var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));
