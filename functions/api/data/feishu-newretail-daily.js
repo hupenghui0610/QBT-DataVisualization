@@ -110,6 +110,21 @@ export async function onRequestGet(context) {
 
     var platformResults = await Promise.all(platformPromises);
 
+    // 调试：输出快手原始数据样本
+    platformResults.forEach(function(result) {
+      if (result.platform === 'kuaishou' && result.values && result.values.length > 0) {
+        console.log('=== 快手原始数据调试 ===');
+        console.log('总行数:', result.values.length);
+        console.log('表头:', result.values[0]);
+        // 输出前5行数据
+        for (let i = 1; i <= Math.min(5, result.values.length - 1); i++) {
+          let row = result.values[i];
+          console.log(`第${i}行:`, row);
+          console.log(`  列数: ${row.length}, 金额列[7]: ${row[7]}, 时间列[4]: ${row[4]}, 状态列[6]: ${row[6]}`);
+        }
+      }
+    });
+
     // 3. 处理订单数据 - GMV（所有订单）
     var allOrdersGmv = [];
     var platformStatsGmv = {};
