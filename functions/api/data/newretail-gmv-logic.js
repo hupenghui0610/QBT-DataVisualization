@@ -210,7 +210,7 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
   const cfg = PLATFORM_CONFIG[platform];
   const orders = [];
   let skipCount = 0;
-  let sampleStatuses = []; // 调试：收集样本状态
+  let debugLog = []; // 调试：记录前10个被跳过的订单
 
   for (let r = 1; r < values.length; r++) { // skip header
     const row = values[r] || [];
@@ -236,14 +236,16 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
     // 4. 检查订单状态 - GSV：剔除已关闭、交易关闭、已取消
     const status = String(row[cfg.cols.status] || '').trim();
 
-    // 调试：收集前10个状态样本
-    if (sampleStatuses.length < 10 && status) {
-      sampleStatuses.push(status);
-    }
-
     const statusLower = status.toLowerCase();
     if (status.includes('关闭') || status.includes('取消') || status.includes('退款') || status.includes('退货') ||
         statusLower.includes('close') || statusLower.includes('cancel') || statusLower.includes('refund')) {
+      skipCount++;
+      // 调试：记录前10个被跳过的订单
+      if (debugLog.length < 10) {
+        debugLog.push({ row: r, status, amount, day });
+      }
+      continue;
+    }
       skipCount++;
       continue;
     }
@@ -273,9 +275,8 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
 
   // 调试输出
   console.log(`[${platform}] GSV处理: 总${values.length-1}条, 跳过${skipCount}条, 保留${orders.length}条`);
-  console.log(`[${platform}] 状态样本:`, sampleStatuses);
 
-  return orders;
+  return { orders, skipCount, debugSkipped: debugLog };
 }
 
 /** ==================== 处理单个平台订单 - GMV版本 ==================== */

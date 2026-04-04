@@ -7841,6 +7841,11 @@
                       }
                     }
                   }
+                  // 输出GSV调试信息
+                  if (o.data.meta && o.data.meta.gsvDebug && o.data.meta.gsvDebug.douyin) {
+                    console.log('=== 抖音GSV被跳过的订单（前10个）===');
+                    console.log(o.data.meta.gsvDebug.douyin);
+                  }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;
                   var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));

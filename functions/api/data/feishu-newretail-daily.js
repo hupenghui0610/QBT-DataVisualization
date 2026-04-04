@@ -150,14 +150,17 @@ export async function onRequestGet(context) {
     // 3b. 处理订单数据 - GSV（剔除关闭/取消订单）
     var allOrdersGsv = [];
     var platformStatsGsv = {};
+    var gsvDebugInfo = {};
     platformResults.forEach(function(result) {
       if (result.values && result.values.length > 0) {
-        var orders = processPlatformOrdersGsv(result.values, result.platform, channelMaps);
-        allOrdersGsv = allOrdersGsv.concat(orders);
+        var gsvResult = processPlatformOrdersGsv(result.values, result.platform, channelMaps);
+        allOrdersGsv = allOrdersGsv.concat(gsvResult.orders);
         platformStatsGsv[result.platform] = {
           totalRows: result.values.length - 1,
-          validOrders: orders.length
+          validOrders: gsvResult.orders.length,
+          skippedCount: gsvResult.skipCount
         };
+        gsvDebugInfo[result.platform] = gsvResult.debugSkipped;
       }
     });
 
@@ -187,7 +190,8 @@ export async function onRequestGet(context) {
         platformStatsGsv: platformStatsGsv,
         platforms: platformKeys,
         cached: false,
-        debugSamples: debugSamples
+        debugSamples: debugSamples,
+        gsvDebug: gsvDebugInfo
       }
     };
 
