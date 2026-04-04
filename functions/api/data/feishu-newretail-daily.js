@@ -145,8 +145,8 @@ export async function onRequestGet(context) {
           totalRows: result.values.length - 1,
           validOrders: gmvResult.orders.length
         };
-        if (result.platform === 'xiaohongshu') {
-          gmvDebugStats.xiaohongshu = gmvResult.stats;
+        if (result.platform === 'xiaohongshu' || result.platform === 'douyin') {
+          gmvDebugStats[result.platform] = gmvResult.stats;
         }
       }
     });

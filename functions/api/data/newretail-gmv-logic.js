@@ -358,13 +358,12 @@ function processPlatformOrders(values, platform, channelMaps) {
   }
 
   // 调试输出
-  if (platform === 'xiaohongshu') {
+  if (platform === 'xiaohongshu' || platform === 'douyin') {
     console.log(`[${platform}] GMV处理详情:`);
     console.log(`  总行数: ${stats.totalRows}`);
     console.log(`  有支付时间: ${stats.hasTime}`);
     console.log(`  日期解析成功: ${stats.hasDate}`);
     console.log(`  有金额: ${stats.hasAmount}`);
-    console.log(`  状态已关闭被跳过: ${stats.closedSkipped}`);
     console.log(`  分类完成: ${stats.classified}`);
     console.log(`  -> 其中 直营被跳过: ${stats.ziyingSkipped}`);
     console.log(`  -> 其中 未映射出渠道: ${stats.noChannel}`);
