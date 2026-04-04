@@ -380,7 +380,6 @@ function processPlatformOrders(values, platform, channelMaps) {
 
     // 5b. 剔除达人ID为"0"或空值的订单
     if (darenId === '0' || darenId === '0.0' || (!darenId && !darenName)) {
-      skipCount++;
       continue;
     }
 
