@@ -365,7 +365,7 @@ function processPlatformOrders(values, platform, channelMaps) {
     console.log(`  最终保留: ${stats.final}`);
   }
 
-  return orders;
+  return { orders, stats };
 }
 
 /** ==================== 按日期和类别汇总 ====================

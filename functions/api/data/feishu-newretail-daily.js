@@ -136,14 +136,18 @@ export async function onRequestGet(context) {
     // 3. 处理订单数据 - GMV（所有订单）
     var allOrdersGmv = [];
     var platformStatsGmv = {};
+    var gmvDebugStats = {};
     platformResults.forEach(function(result) {
       if (result.values && result.values.length > 0) {
-        var orders = processPlatformOrders(result.values, result.platform, channelMaps);
-        allOrdersGmv = allOrdersGmv.concat(orders);
+        var gmvResult = processPlatformOrders(result.values, result.platform, channelMaps);
+        allOrdersGmv = allOrdersGmv.concat(gmvResult.orders);
         platformStatsGmv[result.platform] = {
           totalRows: result.values.length - 1,
-          validOrders: orders.length
+          validOrders: gmvResult.orders.length
         };
+        if (result.platform === 'xiaohongshu') {
+          gmvDebugStats.xiaohongshu = gmvResult.stats;
+        }
       }
     });
 
@@ -191,7 +195,8 @@ export async function onRequestGet(context) {
         platforms: platformKeys,
         cached: false,
         debugSamples: debugSamples,
-        gsvDebug: gsvDebugInfo
+        gsvDebug: gsvDebugInfo,
+        gmvDebugStats: gmvDebugStats
       }
     };
 
