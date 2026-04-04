@@ -5411,6 +5411,11 @@
         if (valRaw == null || !isFinite(Number(valRaw))) return '—';
         return (Number(valRaw) / 1e4).toFixed(2) + '万';
       }
+      // 新零售数据已经是万为单位，不需要再除
+      function formatNewretailPeriodTotal(valRaw) {
+        if (valRaw == null || !isFinite(Number(valRaw))) return '—';
+        return Number(valRaw).toFixed(2) + '万';
+      }
       function sumAllChannelGmvRows(rows) {
         var acc = { jd: 0, tm: 0, dy: 0, dp: 0, dr: 0 };
         (rows || []).forEach(function (p) {
@@ -7671,7 +7676,7 @@
                 '"><div class="all-channel-gmv-period-totals__label">' +
                 it.label +
                 '</div><div class="all-channel-gmv-period-totals__value">' +
-                formatAllChannelGmvPeriodWan(it.val) +
+                formatNewretailPeriodTotal(it.val) +
                 '</div></div>'
               );
             })
@@ -7775,7 +7780,7 @@
                 '"><div class="all-channel-gmv-period-totals__label">' +
                 it.label +
                 '</div><div class="all-channel-gmv-period-totals__value">' +
-                formatAllChannelGmvPeriodWan(it.val) +
+                formatNewretailPeriodTotal(it.val) +
                 '</div></div>'
               );
             })
@@ -7998,7 +8003,7 @@
                 '"><div class="all-channel-gmv-period-totals__label">' +
                 it.label +
                 '</div><div class="all-channel-gmv-period-totals__value">' +
-                formatAllChannelGmvPeriodWan(it.val) +
+                formatNewretailPeriodTotal(it.val) +
                 '</div></div>'
               );
             })
