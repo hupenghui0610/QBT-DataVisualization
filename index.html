@@ -7759,6 +7759,7 @@
             Array.from(sw.querySelectorAll('[data-four-platform-mode]')).forEach(function (b) {
               b.classList.toggle('active', b.getAttribute('data-four-platform-mode') === mode);
             });
+            initFourPlatformGmvSwitches();
             renderFourPlatformGmv();
           });
           window.__fourPlatformGmvSwitchBound = true;
@@ -7777,6 +7778,7 @@
             Array.from(sw.querySelectorAll('[data-four-platform-gsv-mode]')).forEach(function (b) {
               b.classList.toggle('active', b.getAttribute('data-four-platform-gsv-mode') === mode);
             });
+            initFourPlatformGsvSwitches();
             renderFourPlatformGsv();
           });
           window.__fourPlatformGsvSwitchBound = true;
