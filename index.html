@@ -7844,7 +7844,10 @@
                   // 输出GSV调试信息
                   if (o.data.meta && o.data.meta.gsvDebug && o.data.meta.gsvDebug.douyin) {
                     console.log('=== 抖音GSV被跳过的订单（前10个）===');
-                    console.log(o.data.meta.gsvDebug.douyin);
+                    var skipped = o.data.meta.gsvDebug.douyin;
+                    skipped.forEach(function(item, idx) {
+                      console.log('第' + (idx+1) + '个: 行号=' + item.row + ', 状态=' + item.status + ', 金额=' + item.amount + ', 日期=' + item.day);
+                    });
                   }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;

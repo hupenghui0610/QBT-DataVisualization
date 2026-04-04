@@ -246,9 +246,6 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
       }
       continue;
     }
-      skipCount++;
-      continue;
-    }
 
     // 5. 解析达人ID/昵称
     let darenId = '';
