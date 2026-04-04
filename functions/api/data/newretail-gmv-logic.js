@@ -135,6 +135,7 @@ function buildChannelMaps(chValues) {
   const darenIdToChannel = {};
   // 视频号专用: 达人昵称 → 渠道名称
   const shipinhaoNameToChannel = {};
+  const channelList = []; // 调试：记录所有渠道名
 
   for (let r = 1; r < chValues.length; r++) { // skip header
     const row = chValues[r] || [];
@@ -144,6 +145,7 @@ function buildChannelMaps(chValues) {
     const darenId = String(row[4] || '').trim();
 
     if (!channelName) continue;
+    channelList.push(channelName);
 
     // 视频号: 用昵称索引
     if (platform === '视频号' && darenName) {
@@ -154,6 +156,13 @@ function buildChannelMaps(chValues) {
     if (darenId) {
       darenIdToChannel[darenId] = channelName;
     }
+  }
+
+  // 调试：检查上海标竿是否存在
+  const hasShanghaiBiaogan = channelList.some(c => c.includes('上海标竿'));
+  console.log('[渠道映射] 总渠道数:', channelList.length, '包含上海标竿:', hasShanghaiBiaogan);
+  if (hasShanghaiBiaogan) {
+    console.log('[渠道映射] 上海标竿相关渠道:', channelList.filter(c => c.includes('上海标竿')));
   }
 
   return { darenIdToChannel, shipinhaoNameToChannel };
@@ -183,6 +192,15 @@ function classifyOrder(darenId, darenName, platform, channelMaps) {
 
   // 未匹配到渠道 → 算服务商类
   if (!channelName) {
+    // 调试：记录未匹配的达人ID（只记录前20个）
+    if (darenId) {
+      if (typeof globalThis.__unmatchedDarenIds === 'undefined') {
+        globalThis.__unmatchedDarenIds = new Set();
+      }
+      if (globalThis.__unmatchedDarenIds.size < 20) {
+        globalThis.__unmatchedDarenIds.add(`${platform}:${darenId}`);
+      }
+    }
     return { category: 'fuwu', channel: '未知' };
   }
 

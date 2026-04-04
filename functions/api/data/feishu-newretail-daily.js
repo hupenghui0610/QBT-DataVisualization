@@ -181,6 +181,7 @@ export async function onRequestGet(context) {
         platformStatsGsv: platformStatsGsv,
         platforms: platformKeys,
         cached: false,
+        debugUnmatchedDarenIds: globalThis.__unmatchedDarenIds ? Array.from(globalThis.__unmatchedDarenIds) : []
       }
     };
 
