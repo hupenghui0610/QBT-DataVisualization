@@ -125,11 +125,11 @@ export async function onRequestGet(context) {
       }
     });
 
-    // 调试：收集快手原始数据样本（前20行）
-    var debugKuaishouSamples = [];
+    // 调试：收集各平台原始数据样本
+    var debugSamples = {};
     platformResults.forEach(function(result) {
-      if (result.platform === 'kuaishou' && result.values && result.values.length > 0) {
-        debugKuaishouSamples = result.values.slice(0, 21); // 表头+前20行
+      if (result.values && result.values.length > 0) {
+        debugSamples[result.platform] = result.values.slice(0, 6);
       }
     });
 
@@ -187,7 +187,7 @@ export async function onRequestGet(context) {
         platformStatsGsv: platformStatsGsv,
         platforms: platformKeys,
         cached: false,
-        debugKuaishou: debugKuaishouSamples
+        debugSamples: debugSamples
       }
     };
 

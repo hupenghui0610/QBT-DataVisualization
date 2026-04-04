@@ -7818,23 +7818,21 @@
                       console.log('  - 被剔除订单数:', (gmvStat.validOrders || 0) - (gsvStat.validOrders || 0));
                     });
                   }
-                  // 输出快手原始数据样本
-                  if (o.data.meta && o.data.meta.debugKuaishou && o.data.meta.debugKuaishou.length > 0) {
-                    console.log('=== 快手原始数据样本（前20行）===');
-                    var samples = o.data.meta.debugKuaishou;
-                    console.log('表头(第1行):', samples[0]);
-                    console.log('各列索引: 4=支付时间, 6=状态, 7=实付款, 30=渠道, 31=CPS达人ID');
-                    for (let i = 1; i < samples.length; i++) {
-                      let row = samples[i];
-                      let time = row[4];
-                      let amount = row[7];
-                      let status = row[6];
-                      let channel = row[30];
-                      let darenId = row[31];
-                      // 标记有问题的行
-                      let hasIssue = !time || !amount || String(channel).indexOf('自营') === 0 || String(channel).indexOf('直营') === 0;
-                      let marker = hasIssue ? ' [被跳过]' : ' [有效]';
-                      console.log(`第${i+1}行${marker}: 时间=${time}, 金额=${amount}, 状态=${status}, 渠道=${channel}, 达人ID=${darenId}`);
+                  // 输出各平台原始数据样本
+                  if (o.data.meta && o.data.meta.debugSamples) {
+                    console.log('=== 各平台原始数据样本（检查状态列）===');
+                    var samples = o.data.meta.debugSamples;
+                    // 抖音：检查第37列（索引36）状态
+                    if (samples.douyin && samples.douyin.length > 0) {
+                      console.log('抖音表头:', samples.douyin[0].slice(33, 42)); // 时间到状态附近
+                      console.log('抖音第2行:', samples.douyin[1].slice(33, 42));
+                      console.log('  时间[33]=', samples.douyin[1][33], '金额[8]=', samples.douyin[1][8], '状态[36]=', samples.douyin[1][36]);
+                    }
+                    // 小红书：检查第2列（索引1）状态
+                    if (samples.xiaohongshu && samples.xiaohongshu.length > 0) {
+                      console.log('小红书表头:', samples.xiaohongshu[0].slice(0, 5));
+                      console.log('小红书第2行:', samples.xiaohongshu[1].slice(0, 5));
+                      console.log('  状态[1]=', samples.xiaohongshu[1][1], '金额[23]=', samples.xiaohongshu[1][23]);
                     }
                   }
                 } else {
