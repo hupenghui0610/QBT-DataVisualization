@@ -311,7 +311,7 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
       amount: amount,
       category: classification.category,
       channel: classification.channel,
-      darenId: darenId || darenName || '未知'
+      darenId: darenName || darenId || '未知'
     });
   }
 
@@ -408,7 +408,7 @@ function processPlatformOrders(values, platform, channelMaps) {
       amount: amount,
       category: classification.category,
       channel: classification.channel,
-      darenId: darenId || darenName || '未知'
+      darenId: darenName || darenId || '未知'
     });
     stats.final++;
   }
@@ -645,10 +645,10 @@ function aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv) {
   // 合并结果
   const result = [];
   Object.keys(gmvBucket).sort().forEach(key => {
-    const [darenId, month] = key.split(':');
+    const [darenName, month] = key.split(':');
     const info = darenInfo[key] || { channel: '未知', platform: '未知' };
     result.push({
-      darenId: darenId,
+      darenName: darenName,
       channel: info.channel,
       platform: info.platform,
       month: month,
