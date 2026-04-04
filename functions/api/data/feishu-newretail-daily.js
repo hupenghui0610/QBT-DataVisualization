@@ -125,11 +125,11 @@ export async function onRequestGet(context) {
       }
     });
 
-    // 调试：收集快手原始数据样本
+    // 调试：收集快手原始数据样本（前20行）
     var debugKuaishouSamples = [];
     platformResults.forEach(function(result) {
       if (result.platform === 'kuaishou' && result.values && result.values.length > 0) {
-        debugKuaishouSamples = result.values.slice(0, 6); // 表头+前5行
+        debugKuaishouSamples = result.values.slice(0, 21); // 表头+前20行
       }
     });
 

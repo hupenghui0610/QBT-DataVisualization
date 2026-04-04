@@ -7819,13 +7819,21 @@
                   }
                   // 输出快手原始数据样本
                   if (o.data.meta && o.data.meta.debugKuaishou && o.data.meta.debugKuaishou.length > 0) {
-                    console.log('=== 快手原始数据样本 ===');
+                    console.log('=== 快手原始数据样本（前20行）===');
                     var samples = o.data.meta.debugKuaishou;
                     console.log('表头(第1行):', samples[0]);
+                    console.log('各列索引: 4=支付时间, 6=状态, 7=实付款, 30=渠道, 31=CPS达人ID');
                     for (let i = 1; i < samples.length; i++) {
                       let row = samples[i];
-                      console.log(`第${i+1}行:`, row);
-                      console.log(`  列数=${row.length}, 金额[7]=${row[7]}, 时间[4]=${row[4]}, 状态[6]=${row[6]}`);
+                      let time = row[4];
+                      let amount = row[7];
+                      let status = row[6];
+                      let channel = row[30];
+                      let darenId = row[31];
+                      // 标记有问题的行
+                      let hasIssue = !time || !amount || String(channel).indexOf('自营') === 0 || String(channel).indexOf('直营') === 0;
+                      let marker = hasIssue ? ' [被跳过]' : ' [有效]';
+                      console.log(`第${i+1}行${marker}: 时间=${time}, 金额=${amount}, 状态=${status}, 渠道=${channel}, 达人ID=${darenId}`);
                     }
                   }
                 } else {
