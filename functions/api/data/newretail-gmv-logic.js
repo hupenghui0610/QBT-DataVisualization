@@ -310,7 +310,8 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
       platform: platform,
       amount: amount,
       category: classification.category,
-      channel: classification.channel
+      channel: classification.channel,
+      darenId: darenId || darenName || '未知'
     });
   }
 
@@ -406,7 +407,8 @@ function processPlatformOrders(values, platform, channelMaps) {
       platform: platform,
       amount: amount,
       category: classification.category,
-      channel: classification.channel
+      channel: classification.channel,
+      darenId: darenId || darenName || '未知'
     });
     stats.final++;
   }
@@ -600,23 +602,30 @@ function aggregateByMonth(dailyPoints) {
 }
 
 /** ==================== 按达人聚合DP类月度数据 ====================
- * 输出: 每个DP渠道每个月的GMV和GSV
+ * 输出: 每个DP达人每个月的GMV和GSV
  */
-function aggregateDpByChannelMonthly(allOrdersGmv, allOrdersGsv) {
+function aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv) {
   const gmvBucket = {};
   const gsvBucket = {};
+  const darenInfo = {}; // 存储达人ID -> {渠道, 平台}
 
   // 处理GMV数据 - 只统计DP类
   allOrdersGmv.forEach(order => {
     if (order.category !== 'dp') return;
     const month = monthFromDateStr(order.date);
     if (!month) return;
-    const key = (order.channel || '未知') + ':' + month;
+    const darenKey = String(order.darenId || '未知');
+    const key = darenKey + ':' + month;
 
     if (!gmvBucket[key]) {
       gmvBucket[key] = 0;
     }
     gmvBucket[key] += order.amount;
+
+    // 记录达人信息（渠道和平台）
+    if (!darenInfo[key]) {
+      darenInfo[key] = { channel: order.channel || '未知', platform: order.platform };
+    }
   });
 
   // 处理GSV数据 - 只统计DP类
@@ -624,7 +633,8 @@ function aggregateDpByChannelMonthly(allOrdersGmv, allOrdersGsv) {
     if (order.category !== 'dp') return;
     const month = monthFromDateStr(order.date);
     if (!month) return;
-    const key = (order.channel || '未知') + ':' + month;
+    const darenKey = String(order.darenId || '未知');
+    const key = darenKey + ':' + month;
 
     if (!gsvBucket[key]) {
       gsvBucket[key] = 0;
@@ -635,9 +645,12 @@ function aggregateDpByChannelMonthly(allOrdersGmv, allOrdersGsv) {
   // 合并结果
   const result = [];
   Object.keys(gmvBucket).sort().forEach(key => {
-    const [channel, month] = key.split(':');
+    const [darenId, month] = key.split(':');
+    const info = darenInfo[key] || { channel: '未知', platform: '未知' };
     result.push({
-      channel: channel,
+      darenId: darenId,
+      channel: info.channel,
+      platform: info.platform,
       month: month,
       gmv: Number((gmvBucket[key] / 10000).toFixed(2)),
       gsv: Number(((gsvBucket[key] || 0) / 10000).toFixed(2))
@@ -663,6 +676,6 @@ export {
   aggregateByMonth,
   aggregateFuwuByChannel,
   aggregateFuwuByChannelMonthly,
-  aggregateDpByChannelMonthly,
+  aggregateDpByDarenMonthly,
   parseExcelSerial
 };

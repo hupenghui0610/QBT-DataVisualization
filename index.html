@@ -8168,9 +8168,9 @@
                     console.log('=== 未匹配到渠道的达人ID（前20个）===');
                     console.log(o.data.meta.debugUnmatchedDarenIds);
                   }
-                  // 输出DP类每个渠道每个月的GMV和GSV
+                  // 输出DP类每个达人每个月的GMV和GSV
                   if (o.data.dpGmvGsv && o.data.dpGmvGsv.monthly && o.data.dpGmvGsv.monthly.length > 0) {
-                    console.log('=== DP类每个渠道月度GMV/GSV（万）===');
+                    console.log('=== DP类每个达人ID月度GMV/GSV（万）===');
                     console.table(o.data.dpGmvGsv.monthly);
                   }
                 } else {

@@ -12,7 +12,7 @@ import {
   aggregateByMonth,
   aggregateFuwuByChannel,
   aggregateFuwuByChannelMonthly,
-  aggregateDpByChannelMonthly
+  aggregateDpByDarenMonthly
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -161,7 +161,7 @@ export async function onRequestGet(context) {
     var fuwuByChannelMonthly = aggregateFuwuByChannelMonthly(fuwuByChannel.data);
 
     // 4d. DP类按渠道月度汇总
-    var dpByChannelMonthly = aggregateDpByChannelMonthly(allOrdersGmv, allOrdersGsv);
+    var dpByDarenMonthly = aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv);
 
     var payload = {
       mode: 'daily',
@@ -178,7 +178,7 @@ export async function onRequestGet(context) {
         monthly: fuwuByChannelMonthly
       },
       dpGmvGsv: {
-        monthly: dpByChannelMonthly
+        monthly: dpByDarenMonthly
       },
       meta: {
         spreadsheetToken: spreadsheetToken,
