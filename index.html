@@ -786,6 +786,7 @@
       <span id="fourPlatformGsvStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="fourPlatformGsvStart"></select> 结束：<select id="fourPlatformGsvEnd"></select></div>
       <div id="chartFourPlatformGsv" class="chart"></div>
+      <div id="fourPlatformGsvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期GSV合计"></div>
     </div>
     <div class="card wide">
       <h3>
@@ -798,6 +799,7 @@
       <span id="fourPlatformGmvStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="fourPlatformGmvStart"></select> 结束：<select id="fourPlatformGmvEnd"></select></div>
       <div id="chartFourPlatformGmv" class="chart"></div>
+      <div id="fourPlatformGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期GMV合计"></div>
     </div>
 
     <!-- 服务商GMV图表（按渠道拆分） -->
@@ -812,6 +814,7 @@
       <span id="fuwuGmvStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="fuwuGmvStart"></select> 结束：<select id="fuwuGmvEnd"></select></div>
       <div id="chartFuwuGmv" class="chart"></div>
+      <div id="fuwuGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期服务商GMV合计"></div>
     </div>
   </div>
   </div>
@@ -7624,6 +7627,53 @@
             ],
           };
           charts.chartFourPlatformGmv.setOption(applyMobileChartOption(opt), true);
+          renderFourPlatformGmvPeriodTotals(filtered);
+        }
+
+        function renderFourPlatformGmvPeriodTotals(rows) {
+          var wrap = document.getElementById('fourPlatformGmvPeriodTotals');
+          if (!wrap) return;
+          var colors = ['#5470c6', '#91cc75', '#fac858'];
+          var labels = ['DP', '直对', '服务商'];
+          if (!rows || !rows.length) {
+            wrap.innerHTML = labels
+              .map(function (label, i) {
+                return (
+                  '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                  colors[i] +
+                  '"><div class="all-channel-gmv-period-totals__label">' +
+                  label +
+                  '</div><div class="all-channel-gmv-period-totals__value">—</div></div>'
+                );
+              })
+              .join('');
+            return;
+          }
+          var acc = { dp: 0, zhidui: 0, fuwu: 0 };
+          rows.forEach(function (p) {
+            if (!p) return;
+            if (p.dp != null && isFinite(Number(p.dp))) acc.dp += Number(p.dp);
+            if (p.zhidui != null && isFinite(Number(p.zhidui))) acc.zhidui += Number(p.zhidui);
+            if (p.fuwu != null && isFinite(Number(p.fuwu))) acc.fuwu += Number(p.fuwu);
+          });
+          var items = [
+            { label: 'DP', val: acc.dp },
+            { label: '直对', val: acc.zhidui },
+            { label: '服务商', val: acc.fuwu },
+          ];
+          wrap.innerHTML = items
+            .map(function (it, i) {
+              return (
+                '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                colors[i] +
+                '"><div class="all-channel-gmv-period-totals__label">' +
+                it.label +
+                '</div><div class="all-channel-gmv-period-totals__value">' +
+                formatAllChannelGmvPeriodWan(it.val) +
+                '</div></div>'
+              );
+            })
+            .join('');
         }
 
         function renderFourPlatformGsv() {
@@ -7681,6 +7731,53 @@
             ],
           };
           charts.chartFourPlatformGsv.setOption(applyMobileChartOption(opt), true);
+          renderFourPlatformGsvPeriodTotals(filtered);
+        }
+
+        function renderFourPlatformGsvPeriodTotals(rows) {
+          var wrap = document.getElementById('fourPlatformGsvPeriodTotals');
+          if (!wrap) return;
+          var colors = ['#5470c6', '#91cc75', '#fac858'];
+          var labels = ['DP', '直对', '服务商'];
+          if (!rows || !rows.length) {
+            wrap.innerHTML = labels
+              .map(function (label, i) {
+                return (
+                  '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                  colors[i] +
+                  '"><div class="all-channel-gmv-period-totals__label">' +
+                  label +
+                  '</div><div class="all-channel-gmv-period-totals__value">—</div></div>'
+                );
+              })
+              .join('');
+            return;
+          }
+          var acc = { dp: 0, zhidui: 0, fuwu: 0 };
+          rows.forEach(function (p) {
+            if (!p) return;
+            if (p.dp != null && isFinite(Number(p.dp))) acc.dp += Number(p.dp);
+            if (p.zhidui != null && isFinite(Number(p.zhidui))) acc.zhidui += Number(p.zhidui);
+            if (p.fuwu != null && isFinite(Number(p.fuwu))) acc.fuwu += Number(p.fuwu);
+          });
+          var items = [
+            { label: 'DP', val: acc.dp },
+            { label: '直对', val: acc.zhidui },
+            { label: '服务商', val: acc.fuwu },
+          ];
+          wrap.innerHTML = items
+            .map(function (it, i) {
+              return (
+                '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                colors[i] +
+                '"><div class="all-channel-gmv-period-totals__label">' +
+                it.label +
+                '</div><div class="all-channel-gmv-period-totals__value">' +
+                formatAllChannelGmvPeriodWan(it.val) +
+                '</div></div>'
+              );
+            })
+            .join('');
         }
 
         function initFourPlatformGmvSwitches() {
@@ -7862,6 +7959,48 @@
             series: series,
           };
           charts.chartFuwuGmv.setOption(applyMobileChartOption(opt), true);
+          renderFuwuGmvPeriodTotals(filtered, channels);
+        }
+
+        function renderFuwuGmvPeriodTotals(rows, channels) {
+          var wrap = document.getElementById('fuwuGmvPeriodTotals');
+          if (!wrap) return;
+          if (!rows || !rows.length || !channels || !channels.length) {
+            wrap.innerHTML = '<div class="all-channel-gmv-period-totals__cell"><div class="all-channel-gmv-period-totals__label">暂无数据</div><div class="all-channel-gmv-period-totals__value">—</div></div>';
+            return;
+          }
+          // 生成颜色（使用eCharts默认颜色循环）
+          var defaultColors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+          // 计算每个渠道的总计
+          var acc = {};
+          channels.forEach(function (ch) {
+            acc[ch] = 0;
+          });
+          rows.forEach(function (p) {
+            if (!p) return;
+            channels.forEach(function (ch) {
+              if (p[ch] != null && isFinite(Number(p[ch]))) acc[ch] += Number(p[ch]);
+            });
+          });
+          // 按金额排序，取前8个（避免过多）
+          var items = channels.map(function (ch, i) {
+            return { label: ch, val: acc[ch], color: defaultColors[i % defaultColors.length] };
+          }).sort(function (a, b) {
+            return b.val - a.val;
+          }).slice(0, 8);
+          wrap.innerHTML = items
+            .map(function (it) {
+              return (
+                '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                it.color +
+                '"><div class="all-channel-gmv-period-totals__label">' +
+                it.label +
+                '</div><div class="all-channel-gmv-period-totals__value">' +
+                formatAllChannelGmvPeriodWan(it.val) +
+                '</div></div>'
+              );
+            })
+            .join('');
         }
 
         function initFuwuGmvSwitches() {
