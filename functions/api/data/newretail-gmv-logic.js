@@ -280,7 +280,16 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
 function processPlatformOrders(values, platform, channelMaps) {
   const cfg = PLATFORM_CONFIG[platform];
   const orders = [];
-  let skipReasons = { noTime: 0, noAmount: 0, noDate: 0, noChannel: 0, ziying: 0 }; // 调试
+  let stats = {
+    totalRows: values.length - 1,
+    hasTime: 0,      // 有支付时间
+    hasAmount: 0,    // 有金额
+    hasDate: 0,      // 日期解析成功
+    classified: 0,   // 分类完成
+    ziyingSkipped: 0, // 直营被跳过
+    noChannel: 0,    // 未映射出渠道
+    final: 0         // 最终保留
+  };
 
   for (let r = 1; r < values.length; r++) { // skip header
     const row = values[r] || [];
@@ -292,23 +301,19 @@ function processPlatformOrders(values, platform, channelMaps) {
     const timeValue = row[cfg.cols.time];
     if (timeValue == null || timeValue === '' ||
         (typeof timeValue === 'object' && Object.keys(timeValue).length === 0)) {
-      skipReasons.noTime++;
       continue;
     }
+    stats.hasTime++;
 
     // 2. 解析日期 (平台特定规则)
     const day = parseDateFromPlatform(timeValue, platform);
-    if (!day) {
-      skipReasons.noDate++;
-      continue;
-    }
+    if (!day) continue;
+    stats.hasDate++;
 
     // 3. 解析金额
     const amount = parseAmount(row[cfg.cols.amount]);
-    if (amount <= 0) {
-      skipReasons.noAmount++;
-      continue;
-    }
+    if (amount <= 0) continue;
+    stats.hasAmount++;
 
     // 4. 检查订单状态 (剔除已关闭)
     const status = String(row[cfg.cols.status] || '').trim();
@@ -326,12 +331,15 @@ function processPlatformOrders(values, platform, channelMaps) {
 
     // 6. 分类
     const classification = classifyOrder(darenId, darenName, platform, channelMaps);
+    stats.classified++;
+
     if (classification.skip) {
-      skipReasons.ziying++;
+      stats.ziyingSkipped++;
       continue;
     }
+
     if (!classification.channel || classification.channel === '未知') {
-      skipReasons.noChannel++;
+      stats.noChannel++;
     }
 
     orders.push({
@@ -341,12 +349,20 @@ function processPlatformOrders(values, platform, channelMaps) {
       category: classification.category,
       channel: classification.channel
     });
+    stats.final++;
   }
 
   // 调试输出
   if (platform === 'xiaohongshu') {
-    console.log(`[${platform}] GMV处理详情: 总${values.length-1}条, 保留${orders.length}条`);
-    console.log(`  被跳过: 无时间=${skipReasons.noTime}, 无金额=${skipReasons.noAmount}, 无日期=${skipReasons.noDate}, 直营=${skipReasons.ziying}, 无渠道=${skipReasons.noChannel}`);
+    console.log(`[${platform}] GMV处理详情:`);
+    console.log(`  总行数: ${stats.totalRows}`);
+    console.log(`  有支付时间: ${stats.hasTime}`);
+    console.log(`  日期解析成功: ${stats.hasDate}`);
+    console.log(`  有金额: ${stats.hasAmount}`);
+    console.log(`  分类完成: ${stats.classified}`);
+    console.log(`  -> 其中 直营被跳过: ${stats.ziyingSkipped}`);
+    console.log(`  -> 其中 未映射出渠道: ${stats.noChannel}`);
+    console.log(`  最终保留: ${stats.final}`);
   }
 
   return orders;
