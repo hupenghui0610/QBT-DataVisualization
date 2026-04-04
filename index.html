@@ -121,21 +121,23 @@
     .card.wide.card-all-channel-gsv .chart { height: 460px; }
     .all-channel-gmv-period-totals,
     .all-channel-gsv-period-totals {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
       gap: 10px;
       margin-top: 4px;
       padding: 10px 0 0;
       border-top: 1px solid rgba(148, 163, 184, 0.45);
     }
     .all-channel-gmv-period-totals__cell {
+      flex: 0 0 auto;
+      min-width: 100px;
       border-radius: 6px;
       border: 1px solid #e2e8f0;
       border-top: 3px solid #94a3b8;
       padding: 8px 10px;
       background: #f8fafc;
       text-align: center;
-      min-width: 0;
     }
     .all-channel-gmv-period-totals__label {
       font-size: 12px;
@@ -7851,12 +7853,12 @@
         }
 
         function refreshFourPlatformCharts() {
-          renderFourPlatformGmv();
-          renderFourPlatformGsv();
           initFourPlatformGmvSwitches();
           initFourPlatformGsvSwitches();
-          renderFuwuGmv();
           initFuwuGmvSwitches();
+          renderFourPlatformGmv();
+          renderFourPlatformGsv();
+          renderFuwuGmv();
         }
 
         (function () {
