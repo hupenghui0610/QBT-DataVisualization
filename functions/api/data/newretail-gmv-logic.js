@@ -599,6 +599,54 @@ function aggregateByMonth(dailyPoints) {
   });
 }
 
+/** ==================== 按达人聚合DP类月度数据 ====================
+ * 输出: 每个DP渠道每个月的GMV和GSV
+ */
+function aggregateDpByChannelMonthly(allOrdersGmv, allOrdersGsv) {
+  const gmvBucket = {};
+  const gsvBucket = {};
+
+  // 处理GMV数据 - 只统计DP类
+  allOrdersGmv.forEach(order => {
+    if (order.category !== 'dp') return;
+    const month = monthFromDateStr(order.date);
+    if (!month) return;
+    const key = (order.channel || '未知') + ':' + month;
+
+    if (!gmvBucket[key]) {
+      gmvBucket[key] = 0;
+    }
+    gmvBucket[key] += order.amount;
+  });
+
+  // 处理GSV数据 - 只统计DP类
+  allOrdersGsv.forEach(order => {
+    if (order.category !== 'dp') return;
+    const month = monthFromDateStr(order.date);
+    if (!month) return;
+    const key = (order.channel || '未知') + ':' + month;
+
+    if (!gsvBucket[key]) {
+      gsvBucket[key] = 0;
+    }
+    gsvBucket[key] += order.amount;
+  });
+
+  // 合并结果
+  const result = [];
+  Object.keys(gmvBucket).sort().forEach(key => {
+    const [channel, month] = key.split(':');
+    result.push({
+      channel: channel,
+      month: month,
+      gmv: Number((gmvBucket[key] / 10000).toFixed(2)),
+      gsv: Number(((gsvBucket[key] || 0) / 10000).toFixed(2))
+    });
+  });
+
+  return result;
+}
+
 // ==================== 导出 ====================
 export {
   PLATFORM_CONFIG,
@@ -615,5 +663,6 @@ export {
   aggregateByMonth,
   aggregateFuwuByChannel,
   aggregateFuwuByChannelMonthly,
+  aggregateDpByChannelMonthly,
   parseExcelSerial
 };

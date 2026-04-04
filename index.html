@@ -8168,6 +8168,11 @@
                     console.log('=== 未匹配到渠道的达人ID（前20个）===');
                     console.log(o.data.meta.debugUnmatchedDarenIds);
                   }
+                  // 输出DP类每个渠道每个月的GMV和GSV
+                  if (o.data.dpGmvGsv && o.data.dpGmvGsv.monthly && o.data.dpGmvGsv.monthly.length > 0) {
+                    console.log('=== DP类每个渠道月度GMV/GSV（万）===');
+                    console.table(o.data.dpGmvGsv.monthly);
+                  }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;
                   var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));
