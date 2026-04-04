@@ -129,7 +129,7 @@ export async function onRequestGet(context) {
     var debugSamples = {};
     platformResults.forEach(function(result) {
       if (result.values && result.values.length > 0) {
-        debugSamples[result.platform] = result.values.slice(0, 6);
+        debugSamples[result.platform] = result.values.slice(0, 11); // 表头+前10行
       }
     });
 

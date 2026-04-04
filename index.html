@@ -7820,19 +7820,25 @@
                   }
                   // 输出各平台原始数据样本
                   if (o.data.meta && o.data.meta.debugSamples) {
-                    console.log('=== 各平台原始数据样本（检查状态列）===');
+                    console.log('=== 抖音原始数据样本（检查是否有已关闭订单）===');
                     var samples = o.data.meta.debugSamples;
-                    // 抖音：检查第37列（索引36）状态
                     if (samples.douyin && samples.douyin.length > 0) {
-                      console.log('抖音表头:', samples.douyin[0].slice(33, 42)); // 时间到状态附近
-                      console.log('抖音第2行:', samples.douyin[1].slice(33, 42));
-                      console.log('  时间[33]=', samples.douyin[1][33], '金额[8]=', samples.douyin[1][8], '状态[36]=', samples.douyin[1][36]);
+                      console.log('抖音表头[30-40]:', samples.douyin[0].slice(30, 41));
+                      for (let i = 1; i < Math.min(11, samples.douyin.length); i++) {
+                        let row = samples.douyin[i];
+                        let time = row[33];
+                        let amount = row[8];
+                        let status = row[36];
+                        console.log(`抖音第${i+1}行: 时间[33]=${time}, 金额[8]=${amount}, 状态[36]=${status}`);
+                      }
                     }
-                    // 小红书：检查第2列（索引1）状态
+                    console.log('=== 小红书原始数据样本 ===');
                     if (samples.xiaohongshu && samples.xiaohongshu.length > 0) {
-                      console.log('小红书表头:', samples.xiaohongshu[0].slice(0, 5));
-                      console.log('小红书第2行:', samples.xiaohongshu[1].slice(0, 5));
-                      console.log('  状态[1]=', samples.xiaohongshu[1][1], '金额[23]=', samples.xiaohongshu[1][23]);
+                      console.log('小红书表头[0-5]:', samples.xiaohongshu[0].slice(0, 6));
+                      for (let i = 1; i < Math.min(6, samples.xiaohongshu.length); i++) {
+                        let row = samples.xiaohongshu[i];
+                        console.log(`小红书第${i+1}行: 状态[1]=${row[1]}, 金额[23]=${row[23]}`);
+                      }
                     }
                   }
                 } else {
