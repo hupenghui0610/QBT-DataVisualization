@@ -7818,37 +7818,6 @@
                       console.log('  - 被剔除订单数:', (gmvStat.validOrders || 0) - (gsvStat.validOrders || 0));
                     });
                   }
-                  // 输出各平台原始数据样本
-                  if (o.data.meta && o.data.meta.debugSamples) {
-                    console.log('=== 抖音原始数据样本（检查是否有已关闭订单）===');
-                    var samples = o.data.meta.debugSamples;
-                    if (samples.douyin && samples.douyin.length > 0) {
-                      console.log('抖音表头[30-40]:', samples.douyin[0].slice(30, 41));
-                      for (let i = 1; i < Math.min(11, samples.douyin.length); i++) {
-                        let row = samples.douyin[i];
-                        let time = row[33];
-                        let amount = row[8];
-                        let status = row[36];
-                        console.log(`抖音第${i+1}行: 时间[33]=${time}, 金额[8]=${amount}, 状态[36]=${status}`);
-                      }
-                    }
-                    console.log('=== 小红书原始数据样本 ===');
-                    if (samples.xiaohongshu && samples.xiaohongshu.length > 0) {
-                      console.log('小红书表头[0-5]:', samples.xiaohongshu[0].slice(0, 6));
-                      for (let i = 1; i < Math.min(6, samples.xiaohongshu.length); i++) {
-                        let row = samples.xiaohongshu[i];
-                        console.log(`小红书第${i+1}行: 状态[1]=${row[1]}, 金额[23]=${row[23]}`);
-                      }
-                    }
-                  }
-                  // 输出GSV调试信息
-                  if (o.data.meta && o.data.meta.gsvDebug && o.data.meta.gsvDebug.douyin) {
-                    console.log('=== 抖音GSV被跳过的订单（前10个）===');
-                    var skipped = o.data.meta.gsvDebug.douyin;
-                    skipped.forEach(function(item, idx) {
-                      console.log('第' + (idx+1) + '个: 行号=' + item.row + ', 状态=' + item.status + ', 金额=' + item.amount + ', 日期=' + item.day);
-                    });
-                  }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;
                   var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));
