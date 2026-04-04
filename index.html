@@ -7806,16 +7806,17 @@
                   // 输出平台统计信息到控制台
                   if (o.data.meta && o.data.meta.platformStatsGmv) {
                     console.log('=== 四平台订单统计 ===');
-                    console.log('GMV统计:', o.data.meta.platformStatsGmv);
-                    console.log('GSV统计:', o.data.meta.platformStatsGsv);
-                    var kuaishouGmv = o.data.meta.platformStatsGmv.kuaishou || {};
-                    var kuaishouGsv = o.data.meta.platformStatsGsv.kuaishou || {};
-                    console.log('快手详情:');
-                    console.log('  - 总订单数(GMV):', kuaishouGmv.totalRows || 0);
-                    console.log('  - 有效订单数(GMV):', kuaishouGmv.validOrders || 0);
-                    console.log('  - 总订单数(GSV):', kuaishouGsv.totalRows || 0);
-                    console.log('  - 有效订单数(GSV):', kuaishouGsv.validOrders || 0);
-                    console.log('  - 被剔除订单数:', (kuaishouGmv.validOrders || 0) - (kuaishouGsv.validOrders || 0));
+                    var platforms = ['douyin', 'xiaohongshu', 'shipinhao', 'kuaishou'];
+                    var platformNames = { douyin: '抖音', xiaohongshu: '小红书', shipinhao: '视频号', kuaishou: '快手' };
+                    platforms.forEach(function(p) {
+                      var gmvStat = o.data.meta.platformStatsGmv[p] || {};
+                      var gsvStat = o.data.meta.platformStatsGsv[p] || {};
+                      console.log(platformNames[p] + ':');
+                      console.log('  - 总订单数(GMV):', gmvStat.totalRows || 0);
+                      console.log('  - 有效订单数(GMV):', gmvStat.validOrders || 0);
+                      console.log('  - 有效订单数(GSV):', gsvStat.validOrders || 0);
+                      console.log('  - 被剔除订单数:', (gmvStat.validOrders || 0) - (gsvStat.validOrders || 0));
+                    });
                   }
                   // 输出快手原始数据样本
                   if (o.data.meta && o.data.meta.debugKuaishou && o.data.meta.debugKuaishou.length > 0) {
