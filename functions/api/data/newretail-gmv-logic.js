@@ -113,7 +113,8 @@ function pad2(n) {
 function parseAmount(value) {
   if (value == null || value === '') return 0;
   if (typeof value === 'number') return value;
-  const str = String(value).replace(/[,，\s]/g, '');
+  // 去掉货币符号(¥,$,€等)、逗号、空格
+  const str = String(value).replace(/[¥$€,，\s]/g, '');
   const n = parseFloat(str);
   return isNaN(n) ? 0 : n;
 }
