@@ -579,5 +579,7 @@ export {
   aggregateByDayAndCategory,
   aggregateByWeek,
   aggregateByMonth,
+  aggregateFuwuByChannel,
+  aggregateFuwuByChannelMonthly,
   parseExcelSerial
 };
