@@ -7808,11 +7808,33 @@
           var dates = dataPoints.map(function (p) { return p.date; });
           var minD = dates[0];
           var maxD = dates[dates.length - 1];
-          var curStart = selStart.value || minD;
-          var curEnd = selEnd.value || maxD;
-          // 确保当前值在有效范围内
-          if (dates.indexOf(curStart) === -1) curStart = minD;
-          if (dates.indexOf(curEnd) === -1) curEnd = maxD;
+
+          // 计算默认值
+          var defaultStart, defaultEnd;
+          if (isMonthly) {
+            // 月度：开始2026-01，结束当前月份
+            defaultEnd = '2026-04';
+            defaultStart = '2026-01';
+          } else {
+            // 日度：结束昨天，开始30天前
+            var today = new Date('2026-04-05');
+            var yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            var thirtyDaysAgo = new Date(yesterday);
+            thirtyDaysAgo.setDate(yesterday.getDate() - 30);
+            defaultEnd = yesterday.toISOString().split('T')[0];
+            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+          }
+
+          // 如果当前值在有效范围内则保留，否则使用默认值
+          var curStart = selStart.value;
+          var curEnd = selEnd.value;
+          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
+          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          // 确保不超出数据范围
+          if (curStart < minD) curStart = minD;
+          if (curEnd > maxD) curEnd = maxD;
+
           var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
           selStart.innerHTML = optsHtml;
           selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
@@ -7843,11 +7865,33 @@
           var dates = dataPoints.map(function (p) { return p.date; });
           var minD = dates[0];
           var maxD = dates[dates.length - 1];
-          var curStart = selStart.value || minD;
-          var curEnd = selEnd.value || maxD;
-          // 确保当前值在有效范围内
-          if (dates.indexOf(curStart) === -1) curStart = minD;
-          if (dates.indexOf(curEnd) === -1) curEnd = maxD;
+
+          // 计算默认值
+          var defaultStart, defaultEnd;
+          if (isMonthly) {
+            // 月度：开始2026-01，结束当前月份
+            defaultEnd = '2026-04';
+            defaultStart = '2026-01';
+          } else {
+            // 日度：结束昨天，开始30天前
+            var today = new Date('2026-04-05');
+            var yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            var thirtyDaysAgo = new Date(yesterday);
+            thirtyDaysAgo.setDate(yesterday.getDate() - 30);
+            defaultEnd = yesterday.toISOString().split('T')[0];
+            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+          }
+
+          // 如果当前值在有效范围内则保留，否则使用默认值
+          var curStart = selStart.value;
+          var curEnd = selEnd.value;
+          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
+          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          // 确保不超出数据范围
+          if (curStart < minD) curStart = minD;
+          if (curEnd > maxD) curEnd = maxD;
+
           var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
           selStart.innerHTML = optsHtml;
           selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
@@ -8030,10 +8074,33 @@
           var dates = dataPoints.map(function (p) { return p.date; });
           var minD = dates[0];
           var maxD = dates[dates.length - 1];
-          var curStart = selStart.value || minD;
-          var curEnd = selEnd.value || maxD;
-          if (dates.indexOf(curStart) === -1) curStart = minD;
-          if (dates.indexOf(curEnd) === -1) curEnd = maxD;
+
+          // 计算默认值
+          var defaultStart, defaultEnd;
+          if (isMonthly) {
+            // 月度：开始2026-01，结束当前月份
+            defaultEnd = '2026-04';
+            defaultStart = '2026-01';
+          } else {
+            // 日度：结束昨天，开始30天前
+            var today = new Date('2026-04-05');
+            var yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            var thirtyDaysAgo = new Date(yesterday);
+            thirtyDaysAgo.setDate(yesterday.getDate() - 30);
+            defaultEnd = yesterday.toISOString().split('T')[0];
+            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+          }
+
+          // 如果当前值在有效范围内则保留，否则使用默认值
+          var curStart = selStart.value;
+          var curEnd = selEnd.value;
+          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
+          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          // 确保不超出数据范围
+          if (curStart < minD) curStart = minD;
+          if (curEnd > maxD) curEnd = maxD;
+
           var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
           selStart.innerHTML = optsHtml;
           selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
