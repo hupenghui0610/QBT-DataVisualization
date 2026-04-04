@@ -290,6 +290,12 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
       darenName = parseDarenId(row[cfg.cols.darenName]);
     }
 
+    // 5b. 剔除达人ID为"0"或空值的订单
+    if (darenId === '0' || darenId === '0.0' || (!darenId && !darenName)) {
+      skipCount++;
+      continue;
+    }
+
     // 6. 分类
     const classification = classifyOrder(darenId, darenName, platform, channelMaps);
     if (classification.skip) continue;
@@ -370,6 +376,12 @@ function processPlatformOrders(values, platform, channelMaps) {
     }
     if (cfg.cols.darenName != null) {
       darenName = parseDarenId(row[cfg.cols.darenName]);
+    }
+
+    // 5b. 剔除达人ID为"0"或空值的订单
+    if (darenId === '0' || darenId === '0.0' || (!darenId && !darenName)) {
+      skipCount++;
+      continue;
     }
 
     // 6. 分类
