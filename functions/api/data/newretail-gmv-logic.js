@@ -316,10 +316,11 @@ function processPlatformOrders(values, platform, channelMaps) {
     if (amount <= 0) continue;
     stats.hasAmount++;
 
-    // 4. 检查订单状态 (剔除已关闭)
+    // 4. 检查订单状态 - GMV不管状态，只剔除状态为""的
     const status = String(row[cfg.cols.status] || '').trim();
-    if (status === '已关闭') {
-      stats.closedSkipped++;
+    // GMV计算所有有支付时间的订单，包括"已关闭"
+    // 只有状态完全为空才跳过（这行数据可能有问题）
+    if (!status) {
       continue;
     }
 
