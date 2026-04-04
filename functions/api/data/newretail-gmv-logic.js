@@ -191,6 +191,11 @@ function classifyOrder(darenId, darenName, platform, channelMaps) {
     return { category: null, channel: channelName, skip: true };
   }
 
+  // 1b. 自营开头 → 跳过
+  if (channelName.indexOf('自营') === 0) {
+    return { category: null, channel: channelName, skip: true };
+  }
+
   // 2. DP开头 → DP类
   if (channelName.indexOf('DP') === 0) {
     return { category: 'dp', channel: channelName, skip: false };
