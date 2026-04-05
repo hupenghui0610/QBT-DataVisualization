@@ -7976,26 +7976,46 @@
               if (!btn) return;
               var metric = btn.getAttribute('data-fuwu-metric');
               if (metric !== 'gmv' && metric !== 'gsv') return;
+              // 保存当前日期选择（在改变window.fuwuMetric之前）
+              var currentStart = selStart.value;
+              var currentEnd = selEnd.value;
               window.fuwuMetric = metric;
               Array.from(gmvGsvSw.querySelectorAll('[data-fuwu-metric]')).forEach(function(b) {
                 b.classList.toggle('active', b.getAttribute('data-fuwu-metric') === metric);
               });
-              // 保存当前日期选择
-              var currentStart = selStart.value;
-              var currentEnd = selEnd.value;
+              // 重新初始化下拉框（会改变选项列表）
               initFuwuGmvSwitches();
-              // 尝试恢复日期选择
+              // 强制恢复日期选择（只要在数据范围内）
               if (currentStart && currentEnd) {
-                var dates = [];
+                var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
                 var newMetric = window.fuwuMetric || 'gmv';
                 var dataKey = newMetric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
                 var raw = window.__FOUR_PLATFORM_DATA__;
-                if (raw && raw[dataKey] && raw[dataKey].daily && raw[dataKey].daily.data) {
-                  dates = raw[dataKey].daily.data.map(function(p) { return p.date; });
+                var dates = [];
+                if (raw && raw[dataKey]) {
+                  var dataPoints = isMonthly ? (raw[dataKey].monthly.data || []) : raw[dataKey].daily.data;
+                  dates = dataPoints.map(function(p) { return p.date; });
                 }
+                // 检查日期是否在新数据集中
                 if (dates.indexOf(currentStart) >= 0 && dates.indexOf(currentEnd) >= 0) {
                   selStart.value = currentStart;
                   selEnd.value = currentEnd;
+                } else if (dates.length > 0) {
+                  // 如果原日期不在范围内，尝试找最接近的日期
+                  var minD = dates[0];
+                  var maxD = dates[dates.length - 1];
+                  if (currentStart >= minD && currentEnd <= maxD) {
+                    // 在范围内但可能日期不存在（比如跳过某些天），找最接近的
+                    var closestStart = dates.reduce(function(prev, curr) {
+                      return Math.abs(curr - currentStart) < Math.abs(prev - currentStart) ? curr : prev;
+                    });
+                    selStart.value = closestStart;
+                  }
+                  if (currentEnd >= minD && currentEnd <= maxD) {
+                    selEnd.value = currentEnd;
+                  } else {
+                    selEnd.value = maxD;
+                  }
                 }
               }
               renderFuwuGmv();
@@ -8011,21 +8031,22 @@
               if (!btn) return;
               var mode = btn.getAttribute('data-fuwu-gmv-mode');
               if (mode !== 'daily' && mode !== 'monthly') return;
+              // 保存当前日期选择（在改变window.fuwuGmvMode之前）
+              var currentStart = selStart.value;
+              var currentEnd = selEnd.value;
               window.fuwuGmvMode = mode;
               Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function (b) {
                 b.classList.toggle('active', b.getAttribute('data-fuwu-gmv-mode') === mode);
               });
-              // 保存当前日期选择
-              var currentStart = selStart.value;
-              var currentEnd = selEnd.value;
+              // 重新初始化下拉框
               initFuwuGmvSwitches();
-              // 尝试恢复日期选择（如果是月度模式，截取年月部分）
+              // 强制恢复日期选择
               if (currentStart && currentEnd) {
-                var dates = [];
                 var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
                 var metric = window.fuwuMetric || 'gmv';
                 var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
                 var raw = window.__FOUR_PLATFORM_DATA__;
+                var dates = [];
                 if (raw && raw[dataKey]) {
                   var dataPoints = isMonthly ? (raw[dataKey].monthly.data || []) : raw[dataKey].daily.data;
                   dates = dataPoints.map(function(p) { return p.date; });
@@ -8033,9 +8054,15 @@
                 // 月度模式：截取年月部分匹配
                 var lookupStart = isMonthly ? currentStart.substring(0, 7) : currentStart;
                 var lookupEnd = isMonthly ? currentEnd.substring(0, 7) : currentEnd;
-                if (dates.indexOf(lookupStart) >= 0 && dates.indexOf(lookupEnd) >= 0) {
+                if (dates.indexOf(lookupStart) >= 0) {
                   selStart.value = lookupStart;
+                } else if (dates.length > 0) {
+                  selStart.value = dates[0];
+                }
+                if (dates.indexOf(lookupEnd) >= 0) {
                   selEnd.value = lookupEnd;
+                } else if (dates.length > 0) {
+                  selEnd.value = dates[dates.length - 1];
                 }
               }
               renderFuwuGmv();
