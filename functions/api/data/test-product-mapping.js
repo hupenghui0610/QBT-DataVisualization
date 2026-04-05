@@ -65,17 +65,18 @@ export async function onRequestGet(context) {
             var row = values[i] || [];
             var product = String(row[p.productCol] || '');
             if (product) {
-              // 测试映射逻辑
+              // 测试映射逻辑（忽略大小写）
               var matchedModel = null;
               var matchedKeyword = null;
+              var productLower = product.toLowerCase();
 
               // 第一步：检查是否包含V2（V2是特殊处理，必须只包含V2不包含其他任何关键词）
-              if (product.includes('V2')) {
+              if (productLower.includes('v2')) {
                 var containsOtherKeyword = false;
                 // 检查是否包含除V2外的其他关键词
                 for (var mapping of productMapping) {
                   var kw = mapping.keyword;
-                  if (kw !== 'V2' && product.includes(kw)) {
+                  if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
                     containsOtherKeyword = true;
                     break;
                   }
@@ -96,7 +97,7 @@ export async function onRequestGet(context) {
               if (!matchedModel) {
                 for (var mapping of productMapping) {
                   var kw = mapping.keyword;
-                  if (kw !== 'V2' && product.includes(kw)) {
+                  if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
                     matchedModel = mapping.model;
                     matchedKeyword = kw;
                     break;
