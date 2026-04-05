@@ -7980,7 +7980,24 @@
               Array.from(gmvGsvSw.querySelectorAll('[data-fuwu-metric]')).forEach(function(b) {
                 b.classList.toggle('active', b.getAttribute('data-fuwu-metric') === metric);
               });
+              // 保存当前日期选择
+              var currentStart = selStart.value;
+              var currentEnd = selEnd.value;
               initFuwuGmvSwitches();
+              // 尝试恢复日期选择
+              if (currentStart && currentEnd) {
+                var dates = [];
+                var newMetric = window.fuwuMetric || 'gmv';
+                var dataKey = newMetric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+                var raw = window.__FOUR_PLATFORM_DATA__;
+                if (raw && raw[dataKey] && raw[dataKey].daily && raw[dataKey].daily.data) {
+                  dates = raw[dataKey].daily.data.map(function(p) { return p.date; });
+                }
+                if (dates.indexOf(currentStart) >= 0 && dates.indexOf(currentEnd) >= 0) {
+                  selStart.value = currentStart;
+                  selEnd.value = currentEnd;
+                }
+              }
               renderFuwuGmv();
             });
             gmvGsvSw.__bound__ = true;
@@ -7998,7 +8015,29 @@
               Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function (b) {
                 b.classList.toggle('active', b.getAttribute('data-fuwu-gmv-mode') === mode);
               });
+              // 保存当前日期选择
+              var currentStart = selStart.value;
+              var currentEnd = selEnd.value;
               initFuwuGmvSwitches();
+              // 尝试恢复日期选择（如果是月度模式，截取年月部分）
+              if (currentStart && currentEnd) {
+                var dates = [];
+                var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
+                var metric = window.fuwuMetric || 'gmv';
+                var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+                var raw = window.__FOUR_PLATFORM_DATA__;
+                if (raw && raw[dataKey]) {
+                  var dataPoints = isMonthly ? (raw[dataKey].monthly.data || []) : raw[dataKey].daily.data;
+                  dates = dataPoints.map(function(p) { return p.date; });
+                }
+                // 月度模式：截取年月部分匹配
+                var lookupStart = isMonthly ? currentStart.substring(0, 7) : currentStart;
+                var lookupEnd = isMonthly ? currentEnd.substring(0, 7) : currentEnd;
+                if (dates.indexOf(lookupStart) >= 0 && dates.indexOf(lookupEnd) >= 0) {
+                  selStart.value = lookupStart;
+                  selEnd.value = lookupEnd;
+                }
+              }
               renderFuwuGmv();
             });
             sw.__bound__ = true;
