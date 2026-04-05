@@ -8176,7 +8176,7 @@
           if (!el) return;
           var raw = window.__FOUR_PLATFORM_DATA__;
           if (!charts.chartNewretailModelDist) charts.chartNewretailModelDist = echarts.init(el);
-          if (!raw || !raw.modelDistribution || !raw.modelDistribution.length) {
+          if (!raw || !raw.modelDistribution || !raw.modelDistribution.daily || !raw.modelDistribution.daily.length) {
             var err = window.__FOUR_PLATFORM_ERROR__ || '';
             charts.chartNewretailModelDist.setOption(
               {
@@ -8191,16 +8191,30 @@
           var startVal = document.getElementById('newretailModelDistStart') && document.getElementById('newretailModelDistStart').value;
           var endVal = document.getElementById('newretailModelDistEnd') && document.getElementById('newretailModelDistEnd').value;
 
-          // 过滤数据
-          var filtered = raw.modelDistribution;
-          if (startVal && endVal && startVal <= endVal) {
-            // 这里简化处理，实际应该按日期过滤
-            // 由于modelDistribution是汇总数据，需要根据原始订单数据重新聚合
-            // 为了简化，暂时显示全部数据
-          }
+          // 根据日期范围累加型号数据
+          var dailyData = raw.modelDistribution.daily;
+          var modelNames = raw.modelDistribution.modelNames || {};
+          var modelBucket = {};
 
-          var pairs = filtered.map(function(item) {
-            return { name: item.model || item.keyword, value: item.gmv || 0 };
+          dailyData.forEach(function(dayItem) {
+            var day = dayItem.date;
+            // 如果选择了日期范围，过滤数据
+            if (startVal && endVal && startVal <= endVal) {
+              if (day < startVal || day > endVal) return;
+            }
+            // 累加每个型号的GMV
+            Object.keys(dayItem).forEach(function(key) {
+              if (key === 'date') return;
+              if (!modelBucket[key]) {
+                modelBucket[key] = 0;
+              }
+              modelBucket[key] += dayItem[key];
+            });
+          });
+
+          // 转换为数组格式
+          var pairs = Object.keys(modelBucket).map(function(key) {
+            return { name: modelNames[key] || key, value: modelBucket[key] };
           }).filter(function(x) { return x.value > 0; });
 
           pairs.sort(function(a, b) { return b.value - a.value; });
@@ -8299,13 +8313,13 @@
           if (!selS || !selE) return;
 
           var raw = window.__FOUR_PLATFORM_DATA__;
-          if (!raw || !raw.gmv || !raw.gmv.daily || !raw.gmv.daily.length) {
+          if (!raw || !raw.modelDistribution || !raw.modelDistribution.daily || !raw.modelDistribution.daily.length) {
             selS.innerHTML = '<option value="">-</option>';
             selE.innerHTML = '<option value="">-</option>';
             return;
           }
 
-          var dates = raw.gmv.daily.map(function(p) { return p.date; });
+          var dates = raw.modelDistribution.daily.map(function(p) { return p.date; });
           var minD = dates[0];
           var maxD = dates[dates.length - 1];
 

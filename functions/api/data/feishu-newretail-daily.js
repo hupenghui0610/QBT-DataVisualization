@@ -13,7 +13,7 @@ import {
   aggregateFuwuByChannel,
   aggregateFuwuByChannelMonthly,
   aggregateDpByDarenMonthly,
-  aggregateModelDistribution
+  aggregateModelDistributionByDay
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -180,8 +180,8 @@ export async function onRequestGet(context) {
       }
     }
 
-    // 4f. 聚合四平台型号分布数据（GMV）
-    var modelDistribution = aggregateModelDistribution(allOrdersGmv, modelMapping);
+    // 4f. 聚合四平台型号分布数据（按日）
+    var modelDistributionResult = aggregateModelDistributionByDay(allOrdersGmv, modelMapping);
 
     var payload = {
       mode: 'daily',
@@ -200,7 +200,7 @@ export async function onRequestGet(context) {
       dpGmvGsv: {
         monthly: dpByDarenMonthly
       },
-      modelDistribution: modelDistribution,
+      modelDistribution: modelDistributionResult,
       meta: {
         spreadsheetToken: spreadsheetToken,
         totalOrdersGmv: allOrdersGmv.length,
