@@ -820,7 +820,7 @@
     </div>
 
     <!-- 四平台合并型号分布-GMV -->
-    <div class="card wide">
+    <div class="card">
       <h3>
         <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GMV</span>
         <span class="chart-view-switch" id="newretailModelDistModeSwitch" role="group" aria-label="型号分布视图切换">
@@ -831,6 +831,20 @@
       <span id="newretailModelDistStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="newretailModelDistStart"></select> 结束：<select id="newretailModelDistEnd"></select></div>
       <div id="chartNewretailModelDist" class="chart"></div>
+    </div>
+
+    <!-- 四平台合并型号分布-GSV -->
+    <div class="card">
+      <h3>
+        <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GSV</span>
+        <span class="chart-view-switch" id="newretailModelDistGsvModeSwitch" role="group" aria-label="型号分布GSV视图切换">
+          <button type="button" class="view-btn active" id="newretailModelDistGsvBarBtn">柱状图</button>
+          <button type="button" class="view-btn" id="newretailModelDistGsvPieBtn">饼图</button>
+        </span>
+      </h3>
+      <span id="newretailModelDistGsvStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="newretailModelDistGsvStart"></select> 结束：<select id="newretailModelDistGsvEnd"></select></div>
+      <div id="chartNewretailModelDistGsv" class="chart"></div>
     </div>
   </div>
   </div>
@@ -7920,10 +7934,12 @@
           initFourPlatformGsvSwitches();
           initFuwuGmvSwitches();
           initNewretailModelDist();
+          initNewretailModelDistGsv();
           renderFourPlatformGmv();
           renderFourPlatformGsv();
           renderFuwuGmv();
           renderNewretailModelDist();
+          renderNewretailModelDistGsv();
         }
 
         (function () {
@@ -8363,6 +8379,206 @@
               pieBtn.classList.add('active');
               barBtn.classList.remove('active');
               renderNewretailModelDist();
+            };
+            barBtn.__bound__ = true;
+            pieBtn.__bound__ = true;
+          }
+        }
+
+        // ==================== 四平台合并型号分布-GSV ====================
+        window.newretailModelDistGsvViewMode = 'bar';
+
+        function renderNewretailModelDistGsv() {
+          var el = document.getElementById('chartNewretailModelDistGsv');
+          if (!el) return;
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!charts.chartNewretailModelDistGsv) charts.chartNewretailModelDistGsv = echarts.init(el);
+          if (!raw || !raw.modelDistributionGsv || !raw.modelDistributionGsv.daily || !raw.modelDistributionGsv.daily.length) {
+            var err = window.__FOUR_PLATFORM_ERROR__ || '';
+            charts.chartNewretailModelDistGsv.setOption(
+              {
+                title: { text: err || '暂无型号分布数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+                series: [],
+              },
+              true
+            );
+            return;
+          }
+
+          var startVal = document.getElementById('newretailModelDistGsvStart') && document.getElementById('newretailModelDistGsvStart').value;
+          var endVal = document.getElementById('newretailModelDistGsvEnd') && document.getElementById('newretailModelDistGsvEnd').value;
+
+          // 根据日期范围累加型号数据
+          var dailyData = raw.modelDistributionGsv.daily;
+          var modelBucket = {};
+
+          dailyData.forEach(function(dayItem) {
+            var day = dayItem.date;
+            // 如果选择了日期范围，过滤数据
+            if (startVal && endVal && startVal <= endVal) {
+              if (day < startVal || day > endVal) return;
+            }
+            // 累加每个型号的GSV
+            Object.keys(dayItem).forEach(function(key) {
+              if (key === 'date') return;
+              if (!modelBucket[key]) {
+                modelBucket[key] = 0;
+              }
+              modelBucket[key] += dayItem[key];
+            });
+          });
+
+          // 转换为数组格式
+          var pairs = Object.keys(modelBucket).map(function(modelName) {
+            return { name: modelName, value: modelBucket[modelName] };
+          }).filter(function(x) { return x.value > 0; });
+
+          pairs.sort(function(a, b) { return b.value - a.value; });
+
+          if (!pairs.length) {
+            charts.chartNewretailModelDistGsv.setOption(
+              {
+                title: { text: '所选区间内无型号数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+                series: [],
+              },
+              true
+            );
+            return;
+          }
+
+          var topN = 15;
+          var show = pairs.slice(0, topN);
+          var restSum = 0;
+          for (var i = topN; i < pairs.length; i++) restSum += pairs[i].value;
+          var names = show.map(function(p) { return p.name; });
+          var vals = show.map(function(p) { return p.value; });
+          if (restSum > 0) {
+            names.push('其他');
+            vals.push(restSum);
+          }
+
+          var mode = window.newretailModelDistGsvViewMode || 'bar';
+          var opt = mode === 'pie'
+            ? {
+                title: { show: false },
+                tooltip: {
+                  trigger: 'item',
+                  formatter: function(p) {
+                    var val = p && p.value != null ? Number(p.value) : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GSV: ' + val.toFixed(2) + ' 万<br/>占比: ' + Number(p.percent || 0).toFixed(2) + '%';
+                  },
+                },
+                series: [{
+                  type: 'pie',
+                  radius: ['35%', '68%'],
+                  center: ['50%', '54%'],
+                  data: names.map(function(n, i) { return { name: n, value: vals[i] }; }),
+                  label: {
+                    formatter: function(p) {
+                      return (p.name || '') + ': ' + Number(p.percent || 0).toFixed(2) + '%';
+                    },
+                  },
+                }],
+              }
+            : {
+                title: { show: false },
+                tooltip: {
+                  trigger: 'axis',
+                  axisPointer: { type: 'shadow' },
+                  formatter: function(params) {
+                    var p = params[0] || {};
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GSV: ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万';
+                  },
+                },
+                grid: { left: 120, right: 48, top: 8, bottom: 8 },
+                xAxis: {
+                  type: 'value',
+                  axisLabel: {
+                    formatter: function(v) {
+                      return v >= 1e4 ? (v / 1e4).toFixed(0) + '万' : String(v);
+                    },
+                  },
+                },
+                yAxis: {
+                  type: 'category',
+                  data: names,
+                  inverse: true,
+                  axisLabel: { width: 110, overflow: 'truncate', ellipsis: '...' },
+                },
+                series: [{
+                  type: 'bar',
+                  data: vals,
+                  name: 'GSV',
+                  itemStyle: { color: '#10b981' },
+                  label: {
+                    show: true,
+                    position: 'right',
+                    formatter: function(p) {
+                      var v = p && p.value != null ? Number(p.value) : 0;
+                      return v.toFixed(2) + '万';
+                    },
+                  },
+                }],
+              };
+          charts.chartNewretailModelDistGsv.setOption(applyMobileChartOption(opt), true);
+        }
+
+        function initNewretailModelDistGsv() {
+          var selS = document.getElementById('newretailModelDistGsvStart');
+          var selE = document.getElementById('newretailModelDistGsvEnd');
+          if (!selS || !selE) return;
+
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!raw || !raw.modelDistributionGsv || !raw.modelDistributionGsv.daily || !raw.modelDistributionGsv.daily.length) {
+            selS.innerHTML = '<option value="">-</option>';
+            selE.innerHTML = '<option value="">-</option>';
+            return;
+          }
+
+          var dates = raw.modelDistributionGsv.daily.map(function(p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+
+          // 计算默认值：结束日期昨天，起始日期30天前
+          var today = new Date('2026-04-05');
+          var yesterday = new Date(today);
+          yesterday.setDate(today.getDate() - 1);
+          var thirtyDaysAgo = new Date(yesterday);
+          thirtyDaysAgo.setDate(yesterday.getDate() - 30);
+          var defaultEnd = yesterday.toISOString().split('T')[0];
+          var defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+
+          // 确保默认值在数据范围内
+          if (defaultEnd > maxD) defaultEnd = maxD;
+          if (defaultStart < minD) defaultStart = minD;
+
+          // 生成选项
+          var optsHtml = dates.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+          selS.innerHTML = '<option value="">全量</option>' + optsHtml;
+          selE.innerHTML = '<option value="">全量</option>' + optsHtml;
+
+          // 设置默认值（如果在数据范围内）
+          selS.value = dates.indexOf(defaultStart) >= 0 ? defaultStart : minD;
+          selE.value = dates.indexOf(defaultEnd) >= 0 ? defaultEnd : maxD;
+
+          selS.onchange = renderNewretailModelDistGsv;
+          selE.onchange = renderNewretailModelDistGsv;
+
+          // 绑定柱状图/饼图切换
+          var barBtn = document.getElementById('newretailModelDistGsvBarBtn');
+          var pieBtn = document.getElementById('newretailModelDistGsvPieBtn');
+          if (barBtn && pieBtn && !barBtn.__bound__) {
+            barBtn.onclick = function() {
+              window.newretailModelDistGsvViewMode = 'bar';
+              barBtn.classList.add('active');
+              pieBtn.classList.remove('active');
+              renderNewretailModelDistGsv();
+            };
+            pieBtn.onclick = function() {
+              window.newretailModelDistGsvViewMode = 'pie';
+              pieBtn.classList.add('active');
+              barBtn.classList.remove('active');
+              renderNewretailModelDistGsv();
             };
             barBtn.__bound__ = true;
             pieBtn.__bound__ = true;

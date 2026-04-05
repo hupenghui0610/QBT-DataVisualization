@@ -182,6 +182,7 @@ export async function onRequestGet(context) {
 
     // 4f. 聚合四平台型号分布数据（按日）
     var modelDistributionResult = aggregateModelDistributionByDay(allOrdersGmv, modelMapping);
+    var modelDistributionGsvResult = aggregateModelDistributionByDay(allOrdersGsv, modelMapping);
 
     var payload = {
       mode: 'daily',
@@ -201,6 +202,7 @@ export async function onRequestGet(context) {
         monthly: dpByDarenMonthly
       },
       modelDistribution: modelDistributionResult,
+      modelDistributionGsv: modelDistributionGsvResult,
       meta: {
         spreadsheetToken: spreadsheetToken,
         totalOrdersGmv: allOrdersGmv.length,
