@@ -779,20 +779,7 @@
   <div class="grid" id="chartGridNewretail">
     <div class="card wide">
       <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>四平台合并GSV（DP/直对/服务商）</span>
-        <span class="chart-view-switch" id="fourPlatformGsvModeSwitch" role="group" aria-label="四平台GSV口径（日度/月度）">
-          <button type="button" class="view-btn active" data-four-platform-gsv-mode="daily">日度</button>
-          <button type="button" class="view-btn" data-four-platform-gsv-mode="monthly">月度</button>
-        </span>
-      </h3>
-      <span id="fourPlatformGsvStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="fourPlatformGsvStart"></select> 结束：<select id="fourPlatformGsvEnd"></select></div>
-      <div id="chartFourPlatformGsv" class="chart"></div>
-      <div id="fourPlatformGsvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期GSV合计"></div>
-    </div>
-    <div class="card wide">
-      <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>四平台合并GMV（DP/直对/服务商）</span>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>四平台合并GMV</span>
         <span class="chart-view-switch" id="fourPlatformGmvModeSwitch" role="group" aria-label="四平台GMV口径（日度/月度）">
           <button type="button" class="view-btn active" data-four-platform-mode="daily">日度</button>
           <button type="button" class="view-btn" data-four-platform-mode="monthly">月度</button>
@@ -803,11 +790,24 @@
       <div id="chartFourPlatformGmv" class="chart"></div>
       <div id="fourPlatformGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期GMV合计"></div>
     </div>
+    <div class="card wide">
+      <h3>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>四平台合并GSV</span>
+        <span class="chart-view-switch" id="fourPlatformGsvModeSwitch" role="group" aria-label="四平台GSV口径（日度/月度）">
+          <button type="button" class="view-btn active" data-four-platform-gsv-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-four-platform-gsv-mode="monthly">月度</button>
+        </span>
+      </h3>
+      <span id="fourPlatformGsvStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="fourPlatformGsvStart"></select> 结束：<select id="fourPlatformGsvEnd"></select></div>
+      <div id="chartFourPlatformGsv" class="chart"></div>
+      <div id="fourPlatformGsvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期GSV合计"></div>
+    </div>
 
     <!-- 服务商GMV图表（按渠道拆分） -->
     <div class="card wide">
       <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>服务商GMV（按渠道）</span>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>服务商GMV</span>
         <span class="chart-view-switch" id="fuwuGmvModeSwitch">
           <button type="button" class="view-btn active" data-fuwu-gmv-mode="daily">日度</button>
           <button type="button" class="view-btn" data-fuwu-gmv-mode="monthly">月度</button>
@@ -7923,6 +7923,16 @@
             Array.from(sw.querySelectorAll('[data-four-platform-mode]')).forEach(function (b) {
               b.classList.toggle('active', b.getAttribute('data-four-platform-mode') === mode);
             });
+            // 联动GSV图表
+            window.fourPlatformGsvMode = mode;
+            var gsvSw = document.getElementById('fourPlatformGsvModeSwitch');
+            if (gsvSw) {
+              Array.from(gsvSw.querySelectorAll('[data-four-platform-gsv-mode]')).forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-four-platform-gsv-mode') === mode);
+              });
+              initFourPlatformGsvSwitches();
+              renderFourPlatformGsv();
+            }
             initFourPlatformGmvSwitches();
             renderFourPlatformGmv();
           });
@@ -7942,6 +7952,16 @@
             Array.from(sw.querySelectorAll('[data-four-platform-gsv-mode]')).forEach(function (b) {
               b.classList.toggle('active', b.getAttribute('data-four-platform-gsv-mode') === mode);
             });
+            // 联动GMV图表
+            window.fourPlatformGmvMode = mode;
+            var gmvSw = document.getElementById('fourPlatformGmvModeSwitch');
+            if (gmvSw) {
+              Array.from(gmvSw.querySelectorAll('[data-four-platform-mode]')).forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-four-platform-mode') === mode);
+              });
+              initFourPlatformGmvSwitches();
+              renderFourPlatformGmv();
+            }
             initFourPlatformGsvSwitches();
             renderFourPlatformGsv();
           });
