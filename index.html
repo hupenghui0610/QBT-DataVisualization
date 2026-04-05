@@ -113,7 +113,19 @@
       color: #fff;
       border-color: #2563eb;
     }
-    /* GMV/GSV 切换按钮样式 - 更加明显 */
+    /* GMV/GSV 切换按钮样式 - 货架电商 */
+    #shelfMetricSwitch .view-btn[data-shelf-metric="gmv"],
+    #shelfMetricSwitch .view-btn[data-shelf-metric="gsv"] {
+      border-color: #10b981;
+      color: #10b981;
+      background: #fff;
+    }
+    #shelfMetricSwitch .view-btn[data-shelf-metric="gmv"].active,
+    #shelfMetricSwitch .view-btn[data-shelf-metric="gsv"].active {
+      background: #10b981;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    }
     .chart-view-switch.metric-switch { gap: 8px; }
     .chart-view-switch.metric-switch .view-btn {
       padding: 4px 12px;
@@ -742,8 +754,12 @@
   <div class="grid" id="chartGridDaily">
     <div class="card wide">
       <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>GMV</span>
-        <span class="chart-view-switch shop-learn-qinzi-switch" id="gmvCombinedJdModeSwitch" role="group" aria-label="京东与天猫 GMV 口径（店铺/学习机/亲子屏）">
+        <i class="chart-title-icon fa fa-line-chart"></i><span>货架电商</span>
+        <span class="chart-view-switch metric-switch" id="shelfMetricSwitch" style="margin-right:8px">
+          <button type="button" class="view-btn active" data-shelf-metric="gmv">GMV</button>
+          <button type="button" class="view-btn" data-shelf-metric="gsv">GSV</button>
+        </span>
+        <span class="chart-view-switch shop-learn-qinzi-switch" id="gmvCombinedJdModeSwitch" role="group" aria-label="京东与天猫 GMV/GSV 口径（店铺/学习机/亲子屏）">
           <button type="button" class="view-btn active" data-gmv-jd-mode="shop">全品类合计</button>
           <button type="button" class="view-btn" data-gmv-jd-mode="learn">学习机</button>
           <button type="button" class="view-btn" data-gmv-jd-mode="qinzi">亲子屏</button>
@@ -751,18 +767,7 @@
       </h3>
       <div class="date-range">起始：<select id="gmvCombinedStart"></select> 结束：<select id="gmvCombinedEnd"></select></div>
       <div id="chartGmvCombined" class="chart"></div>
-    </div>
-    <div class="card wide">
-      <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>GSV</span>
-        <span class="chart-view-switch shop-learn-qinzi-switch" role="group" aria-label="京东与天猫 GSV 口径（店铺/学习机/亲子屏，与 GMV 联动）">
-          <button type="button" class="view-btn active" data-gmv-jd-mode="shop">全品类合计</button>
-          <button type="button" class="view-btn" data-gmv-jd-mode="learn">学习机</button>
-          <button type="button" class="view-btn" data-gmv-jd-mode="qinzi">亲子屏</button>
-        </span>
-      </h3>
-      <div class="date-range">起始：<select id="gsvCombinedStart"></select> 结束：<select id="gsvCombinedEnd"></select></div>
-      <div id="chartGsvCombined" class="chart"></div>
+      <div id="gmvCombinedPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期货架电商合计"></div>
     </div>
     <div class="card">
       <h3>
@@ -5061,6 +5066,7 @@
       }
       function initGmvCombinedJdModeSwitch() {
         if (window.gmvCombinedJdMode == null) window.gmvCombinedJdMode = 'shop';
+        if (window.shelfMetric == null) window.shelfMetric = 'gmv';
         document.querySelectorAll('.shop-learn-qinzi-switch').forEach(function (wrap) {
           if (wrap.getAttribute('data-bound') === '1') return;
           wrap.setAttribute('data-bound', '1');
@@ -5072,8 +5078,29 @@
             window.gmvCombinedJdMode = m;
             syncGmvCombinedJdModeButtons();
             renderGmvCombined();
-            renderGsvCombined();
           });
+        });
+        // 绑定GMV/GSV切换
+        var metricWrap = document.getElementById('shelfMetricSwitch');
+        if (metricWrap && !metricWrap.__bound__) {
+          metricWrap.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-shelf-metric]');
+            if (!btn || !metricWrap.contains(btn)) return;
+            var m = btn.getAttribute('data-shelf-metric');
+            if (!m || (m !== 'gmv' && m !== 'gsv')) return;
+            window.shelfMetric = m;
+            syncShelfMetricButtons();
+            renderGmvCombined();
+          });
+          metricWrap.__bound__ = true;
+        }
+      }
+      function syncShelfMetricButtons() {
+        var m = window.shelfMetric || 'gmv';
+        var wrap = document.getElementById('shelfMetricSwitch');
+        if (!wrap) return;
+        wrap.querySelectorAll('.view-btn').forEach(function (b) {
+          b.classList.toggle('active', b.getAttribute('data-shelf-metric') === m);
         });
       }
       function syncGmvCombinedJdModeButtons() {
@@ -5087,6 +5114,7 @@
       function initGmvCombinedSelects(points) {
         initGmvCombinedJdModeSwitch();
         syncGmvCombinedJdModeButtons();
+        syncShelfMetricButtons();
         var selS = document.getElementById('gmvCombinedStart');
         var selE = document.getElementById('gmvCombinedEnd');
         if (!selS || !selE) return;
@@ -5131,13 +5159,15 @@
       function renderGmvCombined() {
         var el = document.getElementById('chartGmvCombined');
         if (!el) return;
-        var pts = window.gmvCombinedPointsCached;
+        var isGsv = (window.shelfMetric || 'gmv') === 'gsv';
+        var pts = isGsv ? window.gsvCombinedPointsCached : window.gmvCombinedPointsCached;
+        var metricName = isGsv ? 'GSV' : 'GMV';
         if (!charts.chartGmvCombined) charts.chartGmvCombined = echarts.init(el);
         if (!pts || !pts.length) {
           charts.chartGmvCombined.setOption(
             {
               title: {
-                text: '暂无 GMV 数据',
+                text: '暂无 ' + metricName + ' 数据',
                 left: 'center',
                 top: 'middle',
                 textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' },
@@ -5146,6 +5176,7 @@
             },
             true
           );
+          renderGmvCombinedPeriodTotals(null, metricName);
           return;
         }
         var startVal = document.getElementById('gmvCombinedStart') && document.getElementById('gmvCombinedStart').value;
@@ -5156,23 +5187,39 @@
             return p.date >= startVal && p.date <= endVal;
           });
         }
-        filtered = denseFillCalendarDaysForRange(filtered, startVal, endVal, emptyGmvCombinedPoint);
+        filtered = denseFillCalendarDaysForRange(filtered, startVal, endVal, isGsv ? emptyGsvCombinedPoint : emptyGmvCombinedPoint);
         var x = filtered.map(function (p) {
           return p.date;
         });
         var jdMode = window.gmvCombinedJdMode || 'shop';
+        // 根据GMV/GSV和数据维度选择字段
         var yJd = filtered.map(function (p) {
-          var raw = jdMode === 'learn' ? p.jdLearn : jdMode === 'qinzi' ? p.jdQinzi : p.jdThirdF;
+          var raw;
+          if (isGsv) {
+            raw = jdMode === 'learn' ? p.jdGsvLearn : jdMode === 'qinzi' ? p.jdGsvQinzi : p.jdGsvShop;
+          } else {
+            raw = jdMode === 'learn' ? p.jdLearn : jdMode === 'qinzi' ? p.jdQinzi : p.jdThirdF;
+          }
           if (raw == null || !isFinite(Number(raw))) return null;
           return Number(raw) / 10000;
         });
         var yTm = filtered.map(function (p) {
-          var rawTm = jdMode === 'learn' ? p.tmallLearn : jdMode === 'qinzi' ? p.tmallQinzi : p.tmallShop;
+          var rawTm;
+          if (isGsv) {
+            rawTm = jdMode === 'learn' ? p.tmallGsvLearn : jdMode === 'qinzi' ? p.tmallGsvQinzi : p.tmallGsvShop;
+          } else {
+            rawTm = jdMode === 'learn' ? p.tmallLearn : jdMode === 'qinzi' ? p.tmallQinzi : p.tmallShop;
+          }
           if (rawTm == null || !isFinite(Number(rawTm))) return null;
           return Number(rawTm) / 10000;
         });
         var yDy = filtered.map(function (p) {
-          var rawDy = jdMode === 'learn' ? p.douyinLearn : jdMode === 'qinzi' ? p.douyinQinzi : p.douyinShop;
+          var rawDy;
+          if (isGsv) {
+            rawDy = jdMode === 'learn' ? p.douyinGsvLearn : jdMode === 'qinzi' ? p.douyinGsvQinzi : p.douyinGsvShop;
+          } else {
+            rawDy = jdMode === 'learn' ? p.douyinLearn : jdMode === 'qinzi' ? p.douyinQinzi : p.douyinShop;
+          }
           if (rawDy == null || !isFinite(Number(rawDy))) return null;
           return Number(rawDy) / 10000;
         });
@@ -5203,7 +5250,7 @@
           xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
           yAxis: {
             type: 'value',
-            name: 'GMV',
+            name: metricName,
             axisLabel: {
               formatter: function (v) {
                 return Number(v).toFixed(0) + '万';
@@ -5213,6 +5260,63 @@
           series: series,
         };
         charts.chartGmvCombined.setOption(applyMobileChartOption(opt), true);
+        renderGmvCombinedPeriodTotals(filtered, metricName, isGsv, jdMode);
+      }
+      function renderGmvCombinedPeriodTotals(rows, metricName, isGsv, jdMode) {
+        var wrap = document.getElementById('gmvCombinedPeriodTotals');
+        if (!wrap) return;
+        var colors = ['#5470c6', '#91cc75', '#fac858'];
+        var labels = ['京东', '天猫', '抖音自播'];
+        if (!rows || !rows.length) {
+          wrap.innerHTML = labels
+            .map(function (label, i) {
+              return (
+                '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                colors[i] +
+                '"><div class="all-channel-gmv-period-totals__label">' +
+                label +
+                '</div><div class="all-channel-gmv-period-totals__value">—</div></div>'
+              );
+            })
+            .join('');
+          return;
+        }
+        var acc = { jd: 0, tm: 0, dy: 0 };
+        rows.forEach(function (p) {
+          if (!p) return;
+          var jdRaw, tmRaw, dyRaw;
+          if (isGsv) {
+            jdRaw = jdMode === 'learn' ? p.jdGsvLearn : jdMode === 'qinzi' ? p.jdGsvQinzi : p.jdGsvShop;
+            tmRaw = jdMode === 'learn' ? p.tmallGsvLearn : jdMode === 'qinzi' ? p.tmallGsvQinzi : p.tmallGsvShop;
+            dyRaw = jdMode === 'learn' ? p.douyinGsvLearn : jdMode === 'qinzi' ? p.douyinGsvQinzi : p.douyinGsvShop;
+          } else {
+            jdRaw = jdMode === 'learn' ? p.jdLearn : jdMode === 'qinzi' ? p.jdQinzi : p.jdThirdF;
+            tmRaw = jdMode === 'learn' ? p.tmallLearn : jdMode === 'qinzi' ? p.tmallQinzi : p.tmallShop;
+            dyRaw = jdMode === 'learn' ? p.douyinLearn : jdMode === 'qinzi' ? p.douyinQinzi : p.douyinShop;
+          }
+          if (jdRaw != null && isFinite(Number(jdRaw))) acc.jd += Number(jdRaw);
+          if (tmRaw != null && isFinite(Number(tmRaw))) acc.tm += Number(tmRaw);
+          if (dyRaw != null && isFinite(Number(dyRaw))) acc.dy += Number(dyRaw);
+        });
+        // 转换为万元并格式化
+        var items = [
+          { label: '京东', val: acc.jd / 10000 },
+          { label: '天猫', val: acc.tm / 10000 },
+          { label: '抖音自播', val: acc.dy / 10000 },
+        ];
+        wrap.innerHTML = items
+          .map(function (it, i) {
+            return (
+              '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+              colors[i] +
+              '"><div class="all-channel-gmv-period-totals__label">' +
+              it.label +
+              '</div><div class="all-channel-gmv-period-totals__value">' +
+              (it.val >= 10000 ? (it.val/10000).toFixed(2) + '亿' : it.val.toFixed(2) + '万') +
+              '</div></div>'
+            );
+          })
+          .join('');
       }
       /** 日销全品类 jdThirdF / tmallShop / douyinShop + 抖音明细 DP / 达人，按日对齐 */
       function buildAllChannelGmvPoints() {
@@ -6275,29 +6379,36 @@
         var dy1 = dyRaw && dyRaw.valueRange && dyRaw.valueRange.values;
         var dy2 = dyRaw && dyRaw.valueRange2 && dyRaw.valueRange2.values;
         var dy3 = dyRaw && dyRaw.valueRange3 && dyRaw.valueRange3.values;
+        // 构建GMV数据
         if ((!tmV || !tmV.length) && (!jdV || !jdV.length) && (!vr1 || !vr1.length) && (!dy1 || !dy1.length) && (!dy2 || !dy2.length) && (!dy3 || !dy3.length)) {
           window.gmvCombinedPointsCached = [];
           initGmvCombinedSelects([]);
           renderGmvCombined();
-          refreshGsvCombined();
           refreshAllChannelGmv();
           refreshAllChannelRefund();
-          return;
+        } else {
+          window.gmvCombinedPointsCached = gmvCombinedBuildPoints(jdV || [], tmV || [], vr1, vr2 || [], dy1 || [], dy2 || [], dy3 || []);
+          if (!window.gmvCombinedPointsCached.length) {
+            initGmvCombinedSelects([]);
+            renderGmvCombined();
+            refreshAllChannelGmv();
+            refreshAllChannelRefund();
+          } else {
+            initGmvCombinedSelects(window.gmvCombinedPointsCached);
+            renderGmvCombined();
+            refreshAllChannelGmv();
+            refreshAllChannelRefund();
+          }
         }
-        window.gmvCombinedPointsCached = gmvCombinedBuildPoints(jdV || [], tmV || [], vr1, vr2 || [], dy1 || [], dy2 || [], dy3 || []);
-        if (!window.gmvCombinedPointsCached.length) {
-          initGmvCombinedSelects([]);
-          renderGmvCombined();
-          refreshGsvCombined();
-          refreshAllChannelGmv();
-          refreshAllChannelRefund();
-          return;
+        // 构建GSV数据
+        var jd1 = gmvRaw && gmvRaw.jdSheet1ValueRange && gmvRaw.jdSheet1ValueRange.values;
+        var jd2 = gmvRaw && gmvRaw.jdSheet2ValueRange && gmvRaw.jdSheet2ValueRange.values;
+        if ((!tmV || !tmV.length) && (!jdV || !jdV.length) && (!jd1 || !jd1.length) && (!jd2 || !jd2.length) && (!dy1 || !dy1.length) && (!dy2 || !dy2.length) && (!dy3 || !dy3.length)) {
+          window.gsvCombinedPointsCached = [];
+        } else {
+          window.gsvCombinedPointsCached = gsvCombinedBuildPoints(jdV || [], jd1 || [], jd2 || [], tmV || [], dy1 || [], dy2 || [], dy3 || []);
         }
-        initGmvCombinedSelects(window.gmvCombinedPointsCached);
-        renderGmvCombined();
-        refreshGsvCombined();
-        refreshAllChannelGmv();
-        refreshAllChannelRefund();
+        refreshAllChannelGsv();
       }
       /** GSV：店铺=京东第三表 F×0.75、天猫 H（或 GMV×0.75 fallback）；学习机=京东首表 G×0.75、天猫 L；亲子屏=京东次表 G×0.75、天猫 N */
       var GSV_JD_FACTOR = 0.75;
@@ -6372,164 +6483,6 @@
               douyinDarenGsvShop: mapDyJ[d] != null ? Number(mapDyJ[d]) : 0,
             };
           });
-      }
-      function initGsvCombinedSelects(points) {
-        initGmvCombinedJdModeSwitch();
-        syncGmvCombinedJdModeButtons();
-        var selS = document.getElementById('gsvCombinedStart');
-        var selE = document.getElementById('gsvCombinedEnd');
-        if (!selS || !selE) return;
-        var datesFromData = (points || []).map(function (p) {
-          return p.date;
-        });
-        var def = defaultJdDailyFilterRange();
-        var merged = {};
-        datesFromData.forEach(function (d) {
-          if (d) merged[d] = true;
-        });
-        merged[def.start] = true;
-        merged[def.end] = true;
-        var allDates = Object.keys(merged)
-          .filter(Boolean)
-          .sort();
-        var opts = allDates.map(function (dt) {
-          return '<option value="' + dt + '">' + (dt ? dt.slice(0, 10) : dt) + '</option>';
-        });
-        var html = '<option value="">全量</option>' + opts.join('');
-        selS.innerHTML = html;
-        selE.innerHTML = html;
-        selS.value = def.start;
-        selE.value = def.end;
-        if (selS.value !== def.start) {
-          var o1 = document.createElement('option');
-          o1.value = def.start;
-          o1.textContent = def.start.slice(0, 10);
-          selS.appendChild(o1);
-          selS.value = def.start;
-        }
-        if (selE.value !== def.end) {
-          var o2 = document.createElement('option');
-          o2.value = def.end;
-          o2.textContent = def.end.slice(0, 10);
-          selE.appendChild(o2);
-          selE.value = def.end;
-        }
-        selS.onchange = renderGsvCombined;
-        selE.onchange = renderGsvCombined;
-      }
-      function renderGsvCombined() {
-        var el = document.getElementById('chartGsvCombined');
-        if (!el) return;
-        var pts = window.gsvCombinedPointsCached;
-        if (!charts.chartGsvCombined) charts.chartGsvCombined = echarts.init(el);
-        if (!pts || !pts.length) {
-          charts.chartGsvCombined.setOption(
-            {
-              title: {
-                text: '暂无 GSV 数据',
-                left: 'center',
-                top: 'middle',
-                textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' },
-              },
-              series: [],
-            },
-            true
-          );
-          return;
-        }
-        var startVal = document.getElementById('gsvCombinedStart') && document.getElementById('gsvCombinedStart').value;
-        var endVal = document.getElementById('gsvCombinedEnd') && document.getElementById('gsvCombinedEnd').value;
-        var filtered = pts;
-        if (startVal && endVal && startVal <= endVal) {
-          filtered = pts.filter(function (p) {
-            return p.date >= startVal && p.date <= endVal;
-          });
-        }
-        filtered = denseFillCalendarDaysForRange(filtered, startVal, endVal, emptyGsvCombinedPoint);
-        var x = filtered.map(function (p) {
-          return p.date;
-        });
-        var jdMode = window.gmvCombinedJdMode || 'shop';
-        var yJd = filtered.map(function (p) {
-          var raw = jdMode === 'learn' ? p.jdGsvLearn : jdMode === 'qinzi' ? p.jdGsvQinzi : p.jdGsvShop;
-          if (raw == null || !isFinite(Number(raw))) return null;
-          return Number(raw) / 10000;
-        });
-        var yTm = filtered.map(function (p) {
-          var rawTm = jdMode === 'learn' ? p.tmallGsvLearn : jdMode === 'qinzi' ? p.tmallGsvQinzi : p.tmallGsvShop;
-          if (rawTm == null || !isFinite(Number(rawTm))) return null;
-          return Number(rawTm) / 10000;
-        });
-        var yDy = filtered.map(function (p) {
-          var rawDy = jdMode === 'learn' ? p.douyinGsvLearn : jdMode === 'qinzi' ? p.douyinGsvQinzi : p.douyinGsvShop;
-          if (rawDy == null || !isFinite(Number(rawDy))) return null;
-          return Number(rawDy) / 10000;
-        });
-        var legendData = ['京东', '天猫', '抖音自播'];
-        var series = [
-          { name: '京东', type: 'line', smooth: true, data: yJd, showSymbol: x.length <= 40, connectNulls: false },
-          { name: '天猫', type: 'line', smooth: true, data: yTm, showSymbol: x.length <= 40, connectNulls: false },
-          { name: '抖音自播', type: 'line', smooth: true, data: yDy, showSymbol: x.length <= 40, connectNulls: false },
-        ];
-        var opt = {
-          tooltip: {
-            trigger: 'axis',
-            formatter: function (params) {
-              var p0 = params[0] || {};
-              return (
-                (p0.axisValue || '') +
-                '<br/>' +
-                params
-                  .map(function (p) {
-                    return (p.marker || '') + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万';
-                  })
-                  .join('<br/>')
-              );
-            },
-          },
-          legend: { data: legendData, top: 6, left: 'center' },
-          grid: { left: 56, right: 40, top: 40, bottom: 52 },
-          xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
-          yAxis: {
-            type: 'value',
-            name: 'GSV',
-            axisLabel: {
-              formatter: function (v) {
-                return Number(v).toFixed(0) + '万';
-              },
-            },
-          },
-          series: series,
-        };
-        charts.chartGsvCombined.setOption(applyMobileChartOption(opt), true);
-      }
-      function refreshGsvCombined() {
-        var gmvRaw = window.__QBT_FEISHU_GMV_COMBINED__;
-        var jdV = gmvRaw && gmvRaw.jdValueRange && gmvRaw.jdValueRange.values;
-        var jd1 = gmvRaw && gmvRaw.jdSheet1ValueRange && gmvRaw.jdSheet1ValueRange.values;
-        var jd2 = gmvRaw && gmvRaw.jdSheet2ValueRange && gmvRaw.jdSheet2ValueRange.values;
-        var tmV = gmvRaw && gmvRaw.tmallValueRange && gmvRaw.tmallValueRange.values;
-        var dyRaw = window.__QBT_FEISHU_DOUYIN_SALES__;
-        var dy1 = dyRaw && dyRaw.valueRange && dyRaw.valueRange.values;
-        var dy2 = dyRaw && dyRaw.valueRange2 && dyRaw.valueRange2.values;
-        var dy3 = dyRaw && dyRaw.valueRange3 && dyRaw.valueRange3.values;
-        if ((!tmV || !tmV.length) && (!jdV || !jdV.length) && (!dy1 || !dy1.length) && (!dy2 || !dy2.length) && (!dy3 || !dy3.length)) {
-          window.gsvCombinedPointsCached = [];
-          initGsvCombinedSelects([]);
-          renderGsvCombined();
-          refreshAllChannelGsv();
-          return;
-        }
-        window.gsvCombinedPointsCached = gsvCombinedBuildPoints(jdV || [], jd1 || [], jd2 || [], tmV || [], dy1 || [], dy2 || [], dy3 || []);
-        if (!window.gsvCombinedPointsCached.length) {
-          initGsvCombinedSelects([]);
-          renderGsvCombined();
-          refreshAllChannelGsv();
-          return;
-        }
-        initGsvCombinedSelects(window.gsvCombinedPointsCached);
-        renderGsvCombined();
-        refreshAllChannelGsv();
       }
       function initJdConversionSelects(points) {
         var selS = document.getElementById('jdConvStart');
