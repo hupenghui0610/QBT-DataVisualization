@@ -67,21 +67,46 @@ export async function onRequestGet(context) {
             if (product) {
               // 测试映射逻辑
               var matchedModel = null;
-              for (var mapping of productMapping) {
-                var kw = mapping.keyword;
-                if (kw === 'V2') {
-                  // V2特殊逻辑：包含V2但不能包含V20
-                  if (product.includes('V2') && !product.includes('V20')) {
-                    matchedModel = mapping.model;
+              var matchedKeyword = null;
+
+              // 第一步：检查是否包含V2（V2是特殊处理，必须只包含V2不包含其他任何关键词）
+              if (product.includes('V2')) {
+                var containsOtherKeyword = false;
+                // 检查是否包含除V2外的其他关键词
+                for (var mapping of productMapping) {
+                  var kw = mapping.keyword;
+                  if (kw !== 'V2' && product.includes(kw)) {
+                    containsOtherKeyword = true;
                     break;
                   }
-                } else if (product.includes(kw)) {
-                  matchedModel = mapping.model;
-                  break;
+                }
+                // 如果只包含V2，不包含其他任何关键词，则匹配V2
+                if (!containsOtherKeyword) {
+                  for (var mapping of productMapping) {
+                    if (mapping.keyword === 'V2') {
+                      matchedModel = mapping.model;
+                      matchedKeyword = 'V2';
+                      break;
+                    }
+                  }
                 }
               }
+
+              // 第二步：如果没匹配到V2，则按正常逻辑匹配其他关键词
+              if (!matchedModel) {
+                for (var mapping of productMapping) {
+                  var kw = mapping.keyword;
+                  if (kw !== 'V2' && product.includes(kw)) {
+                    matchedModel = mapping.model;
+                    matchedKeyword = kw;
+                    break;
+                  }
+                }
+              }
+
               samples.push({
-                product: product.length > 50 ? product.substring(0, 50) + '...' : product,
+                product: product.length > 80 ? product.substring(0, 80) + '...' : product,
+                matchedKeyword: matchedKeyword || '-',
                 matchedModel: matchedModel || '未匹配'
               });
             }
