@@ -113,6 +113,42 @@
       color: #fff;
       border-color: #2563eb;
     }
+    /* GMV/GSV 切换按钮样式 - 更加明显 */
+    .chart-view-switch.metric-switch { gap: 8px; }
+    .chart-view-switch.metric-switch .view-btn {
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border-width: 2px;
+      transition: all 0.2s ease;
+    }
+    .chart-view-switch.metric-switch .view-btn[data-metric="gmv"],
+    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gmv"] {
+      border-color: #10b981;
+      color: #10b981;
+      background: #ecfdf5;
+    }
+    .chart-view-switch.metric-switch .view-btn[data-metric="gmv"].active,
+    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gmv"].active {
+      background: #10b981;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    }
+    .chart-view-switch.metric-switch .view-btn[data-metric="gsv"],
+    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gsv"] {
+      border-color: #f59e0b;
+      color: #f59e0b;
+      background: #fffbeb;
+    }
+    .chart-view-switch.metric-switch .view-btn[data-metric="gsv"].active,
+    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gsv"].active {
+      background: #f59e0b;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    }
+    .chart-view-switch.metric-switch .view-btn:hover {
+      transform: translateY(-1px);
+    }
     .card .chart { width: 100%; height: 320px; }
     .card.wide { grid-column: 1 / -1; }
     .card.wide .chart { height: 380px; }
@@ -779,36 +815,27 @@
   <div class="grid" id="chartGridNewretail">
     <div class="card wide">
       <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>四平台合并GMV</span>
-        <span class="chart-view-switch" id="fourPlatformGmvModeSwitch" role="group" aria-label="四平台GMV口径（日度/月度）">
-          <button type="button" class="view-btn active" data-four-platform-mode="daily">日度</button>
-          <button type="button" class="view-btn" data-four-platform-mode="monthly">月度</button>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>四平台合并</span>
+        <span class="chart-view-switch metric-switch" id="fourPlatformMetricSwitch" style="margin-right:8px">
+          <button type="button" class="view-btn active" data-metric="gmv">GMV</button>
+          <button type="button" class="view-btn" data-metric="gsv">GSV</button>
+        </span>
+        <span class="chart-view-switch" id="fourPlatformModeSwitch">
+          <button type="button" class="view-btn active" data-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-mode="monthly">月度</button>
         </span>
       </h3>
-      <span id="fourPlatformGmvStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="fourPlatformGmvStart"></select> 结束：<select id="fourPlatformGmvEnd"></select></div>
-      <div id="chartFourPlatformGmv" class="chart"></div>
-      <div id="fourPlatformGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期GMV合计"></div>
-    </div>
-    <div class="card wide">
-      <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>四平台合并GSV</span>
-        <span class="chart-view-switch" id="fourPlatformGsvModeSwitch" role="group" aria-label="四平台GSV口径（日度/月度）">
-          <button type="button" class="view-btn active" data-four-platform-gsv-mode="daily">日度</button>
-          <button type="button" class="view-btn" data-four-platform-gsv-mode="monthly">月度</button>
-        </span>
-      </h3>
-      <span id="fourPlatformGsvStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="fourPlatformGsvStart"></select> 结束：<select id="fourPlatformGsvEnd"></select></div>
-      <div id="chartFourPlatformGsv" class="chart"></div>
-      <div id="fourPlatformGsvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期GSV合计"></div>
+      <span id="fourPlatformStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="fourPlatformStart"></select> 结束：<select id="fourPlatformEnd"></select></div>
+      <div id="chartFourPlatform" class="chart"></div>
+      <div id="fourPlatformPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期合计"></div>
     </div>
 
     <!-- 服务商图表（按渠道拆分） -->
     <div class="card wide">
       <h3>
         <i class="chart-title-icon fa fa-line-chart"></i><span>服务商</span>
-        <span class="chart-view-switch" id="fuwuGmvGsvModeSwitch" style="margin-right:8px">
+        <span class="chart-view-switch metric-switch" id="fuwuGmvGsvModeSwitch" style="margin-right:8px">
           <button type="button" class="view-btn active" data-fuwu-metric="gmv">GMV</button>
           <button type="button" class="view-btn" data-fuwu-metric="gsv">GSV</button>
         </span>
@@ -7608,30 +7635,35 @@
         /** ==================== 四平台合并GMV/GSV图表（全新独立实现） ==================== */
         window.__FOUR_PLATFORM_DATA__ = null;
         window.__FOUR_PLATFORM_ERROR__ = '';
-        window.fourPlatformGmvMode = 'daily';
-        window.fourPlatformGsvMode = 'daily';
+        window.fourPlatformMode = 'daily';
+        window.fourPlatformMetric = 'gmv';
 
-        function renderFourPlatformGmv() {
-          var el = document.getElementById('chartFourPlatformGmv');
+        function renderFourPlatform() {
+          var el = document.getElementById('chartFourPlatform');
           if (!el) return;
           var raw = window.__FOUR_PLATFORM_DATA__;
-          if (!charts.chartFourPlatformGmv) charts.chartFourPlatformGmv = echarts.init(el);
-          if (!raw || !raw.gmv || !raw.gmv.daily || !raw.gmv.daily.length) {
+          if (!charts.chartFourPlatform) charts.chartFourPlatform = echarts.init(el);
+
+          var metric = window.fourPlatformMetric || 'gmv';
+          var dataKey = metric === 'gsv' ? 'gsv' : 'gmv';
+          var metricName = metric === 'gsv' ? 'GSV' : 'GMV';
+
+          if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.length) {
             var err = window.__FOUR_PLATFORM_ERROR__ || '';
-            charts.chartFourPlatformGmv.setOption(
+            charts.chartFourPlatform.setOption(
               {
-                title: { text: err || '暂无四平台GMV数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+                title: { text: err || '暂无四平台' + metricName + '数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
                 series: [],
               },
               true
             );
             return;
           }
-          var startVal = document.getElementById('fourPlatformGmvStart') && document.getElementById('fourPlatformGmvStart').value;
-          var endVal = document.getElementById('fourPlatformGmvEnd') && document.getElementById('fourPlatformGmvEnd').value;
-          var daily = raw.gmv.daily;
-          var monthly = raw.gmv.monthly || [];
-          var isMonthly = (window.fourPlatformGmvMode || 'daily') === 'monthly';
+          var startVal = document.getElementById('fourPlatformStart') && document.getElementById('fourPlatformStart').value;
+          var endVal = document.getElementById('fourPlatformEnd') && document.getElementById('fourPlatformEnd').value;
+          var daily = raw[dataKey].daily;
+          var monthly = raw[dataKey].monthly || [];
+          var isMonthly = (window.fourPlatformMode || 'daily') === 'monthly';
           var pts = isMonthly ? monthly : daily;
           var filtered = pts;
           if (startVal && endVal && startVal <= endVal) {
@@ -7658,19 +7690,19 @@
             legend: { data: ['DP', '直对', '服务商'], top: 6, left: 'center' },
             grid: { left: 56, right: 40, top: 40, bottom: 60 },
             xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
-            yAxis: { type: 'value', name: 'GMV（万）', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '万'; } } },
+            yAxis: { type: 'value', name: metricName + '（万）', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '万'; } } },
             series: [
               { name: 'DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
               { name: '直对', type: 'line', smooth: true, data: yZhidui, showSymbol: x.length <= 40, connectNulls: false },
               { name: '服务商', type: 'line', smooth: true, data: yFuwu, showSymbol: x.length <= 40, connectNulls: false },
             ],
           };
-          charts.chartFourPlatformGmv.setOption(applyMobileChartOption(opt), true);
-          renderFourPlatformGmvPeriodTotals(filtered);
+          charts.chartFourPlatform.setOption(applyMobileChartOption(opt), true);
+          renderFourPlatformPeriodTotals(filtered, metricName);
         }
 
-        function renderFourPlatformGmvPeriodTotals(rows) {
-          var wrap = document.getElementById('fourPlatformGmvPeriodTotals');
+        function renderFourPlatformPeriodTotals(rows, metricName) {
+          var wrap = document.getElementById('fourPlatformPeriodTotals');
           if (!wrap) return;
           var colors = ['#5470c6', '#91cc75', '#fac858'];
           var labels = ['DP', '直对', '服务商'];
@@ -7715,294 +7747,105 @@
             .join('');
         }
 
-        function renderFourPlatformGsv() {
-          var el = document.getElementById('chartFourPlatformGsv');
-          if (!el) return;
+        function initFourPlatformSwitches() {
+          var selStart = document.getElementById('fourPlatformStart');
+          var selEnd = document.getElementById('fourPlatformEnd');
           var raw = window.__FOUR_PLATFORM_DATA__;
-          if (!charts.chartFourPlatformGsv) charts.chartFourPlatformGsv = echarts.init(el);
-          if (!raw || !raw.gsv || !raw.gsv.daily || !raw.gsv.daily.length) {
-            var err = window.__FOUR_PLATFORM_ERROR__ || '';
-            charts.chartFourPlatformGsv.setOption(
-              {
-                title: { text: err || '暂无四平台GSV数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
-                series: [],
-              },
-              true
-            );
+          if (!selStart || !selEnd) return;
+
+          var metric = window.fourPlatformMetric || 'gmv';
+          var dataKey = metric === 'gsv' ? 'gsv' : 'gmv';
+
+          if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.length) {
+            selStart.innerHTML = '<option value="">-</option>';
+            selEnd.innerHTML = '<option value="">-</option>';
             return;
           }
-          var startVal = document.getElementById('fourPlatformGsvStart') && document.getElementById('fourPlatformGsvStart').value;
-          var endVal = document.getElementById('fourPlatformGsvEnd') && document.getElementById('fourPlatformGsvEnd').value;
-          var daily = raw.gsv.daily;
-          var monthly = raw.gsv.monthly || [];
-          var isMonthly = (window.fourPlatformGsvMode || 'daily') === 'monthly';
-          var pts = isMonthly ? monthly : daily;
-          var filtered = pts;
-          if (startVal && endVal && startVal <= endVal) {
-            filtered = pts.filter(function (p) {
-              return p.date >= startVal && p.date <= endVal;
+          var isMonthly = (window.fourPlatformMode || 'daily') === 'monthly';
+          var dataPoints = isMonthly ? (raw[dataKey].monthly || []) : raw[dataKey].daily;
+          if (!dataPoints.length) {
+            selStart.innerHTML = '<option value="">-</option>';
+            selEnd.innerHTML = '<option value="">-</option>';
+            return;
+          }
+          var dates = dataPoints.map(function (p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+
+          var defaultStart, defaultEnd;
+          if (isMonthly) {
+            defaultEnd = '2026-04';
+            defaultStart = '2026-01';
+          } else {
+            var today = new Date('2026-04-05');
+            var yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            var thirtyDaysAgo = new Date(yesterday);
+            thirtyDaysAgo.setDate(yesterday.getDate() - 30);
+            defaultEnd = yesterday.toISOString().split('T')[0];
+            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+          }
+
+          var curStart = selStart.value;
+          var curEnd = selEnd.value;
+          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
+          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          if (curStart < minD) curStart = minD;
+          if (curEnd > maxD) curEnd = maxD;
+
+          var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          selStart.innerHTML = optsHtml;
+          selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          if (!selStart.value) selStart.value = minD;
+          if (!selEnd.value) selEnd.value = maxD;
+          selStart.onchange = renderFourPlatform;
+          selEnd.onchange = renderFourPlatform;
+
+          var metricSw = document.getElementById('fourPlatformMetricSwitch');
+          if (metricSw && !metricSw.__bound__) {
+            metricSw.addEventListener('click', function(e) {
+              var btn = e.target.closest && e.target.closest('[data-metric]');
+              if (!btn) return;
+              var newMetric = btn.getAttribute('data-metric');
+              if (newMetric !== 'gmv' && newMetric !== 'gsv') return;
+              window.fourPlatformMetric = newMetric;
+              Array.from(metricSw.querySelectorAll('[data-metric]')).forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-metric') === newMetric);
+              });
+              initFourPlatformSwitches();
+              renderFourPlatform();
             });
-          }
-          var x = filtered.map(function (p) { return p.date; });
-          var yDp = filtered.map(function (p) { return p.dp != null ? p.dp : null; });
-          var yZhidui = filtered.map(function (p) { return p.zhidui != null ? p.zhidui : null; });
-          var yFuwu = filtered.map(function (p) { return p.fuwu != null ? p.fuwu : null; });
-          var opt = {
-            tooltip: {
-              trigger: 'axis',
-              formatter: function (params) {
-                var p0 = params[0] || {};
-                var html = (p0.axisValue || '') + '<br/>';
-                params.forEach(function (p) {
-                  html += (p.marker || '') + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万<br/>';
-                });
-                return html;
-              },
-            },
-            legend: { data: ['DP', '直对', '服务商'], top: 6, left: 'center' },
-            grid: { left: 56, right: 40, top: 40, bottom: 60 },
-            xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
-            yAxis: { type: 'value', name: 'GSV（万）', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '万'; } } },
-            series: [
-              { name: 'DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
-              { name: '直对', type: 'line', smooth: true, data: yZhidui, showSymbol: x.length <= 40, connectNulls: false },
-              { name: '服务商', type: 'line', smooth: true, data: yFuwu, showSymbol: x.length <= 40, connectNulls: false },
-            ],
-          };
-          charts.chartFourPlatformGsv.setOption(applyMobileChartOption(opt), true);
-          renderFourPlatformGsvPeriodTotals(filtered);
-        }
-
-        function renderFourPlatformGsvPeriodTotals(rows) {
-          var wrap = document.getElementById('fourPlatformGsvPeriodTotals');
-          if (!wrap) return;
-          var colors = ['#5470c6', '#91cc75', '#fac858'];
-          var labels = ['DP', '直对', '服务商'];
-          if (!rows || !rows.length) {
-            wrap.innerHTML = labels
-              .map(function (label, i) {
-                return (
-                  '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
-                  colors[i] +
-                  '"><div class="all-channel-gmv-period-totals__label">' +
-                  label +
-                  '</div><div class="all-channel-gmv-period-totals__value">—</div></div>'
-                );
-              })
-              .join('');
-            return;
-          }
-          var acc = { dp: 0, zhidui: 0, fuwu: 0 };
-          rows.forEach(function (p) {
-            if (!p) return;
-            if (p.dp != null && isFinite(Number(p.dp))) acc.dp += Number(p.dp);
-            if (p.zhidui != null && isFinite(Number(p.zhidui))) acc.zhidui += Number(p.zhidui);
-            if (p.fuwu != null && isFinite(Number(p.fuwu))) acc.fuwu += Number(p.fuwu);
-          });
-          var items = [
-            { label: 'DP', val: acc.dp },
-            { label: '直对', val: acc.zhidui },
-            { label: '服务商', val: acc.fuwu },
-          ];
-          wrap.innerHTML = items
-            .map(function (it, i) {
-              return (
-                '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
-                colors[i] +
-                '"><div class="all-channel-gmv-period-totals__label">' +
-                it.label +
-                '</div><div class="all-channel-gmv-period-totals__value">' +
-                formatNewretailPeriodTotal(it.val) +
-                '</div></div>'
-              );
-            })
-            .join('');
-        }
-
-        function initFourPlatformGmvSwitches() {
-          var selStart = document.getElementById('fourPlatformGmvStart');
-          var selEnd = document.getElementById('fourPlatformGmvEnd');
-          var raw = window.__FOUR_PLATFORM_DATA__;
-          if (!selStart || !selEnd) return;
-          if (!raw || !raw.gmv || !raw.gmv.daily || !raw.gmv.daily.length) {
-            selStart.innerHTML = '<option value="">-</option>';
-            selEnd.innerHTML = '<option value="">-</option>';
-            return;
-          }
-          // 根据当前模式选择数据源
-          var isMonthly = (window.fourPlatformGmvMode || 'daily') === 'monthly';
-          var dataPoints = isMonthly ? (raw.gmv.monthly || []) : raw.gmv.daily;
-          if (!dataPoints.length) {
-            selStart.innerHTML = '<option value="">-</option>';
-            selEnd.innerHTML = '<option value="">-</option>';
-            return;
-          }
-          var dates = dataPoints.map(function (p) { return p.date; });
-          var minD = dates[0];
-          var maxD = dates[dates.length - 1];
-
-          // 计算默认值
-          var defaultStart, defaultEnd;
-          if (isMonthly) {
-            // 月度：开始2026-01，结束当前月份
-            defaultEnd = '2026-04';
-            defaultStart = '2026-01';
-          } else {
-            // 日度：结束昨天，开始30天前
-            var today = new Date('2026-04-05');
-            var yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-            var thirtyDaysAgo = new Date(yesterday);
-            thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-            defaultEnd = yesterday.toISOString().split('T')[0];
-            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+            metricSw.__bound__ = true;
           }
 
-          // 如果当前值在有效范围内则保留，否则使用默认值
-          var curStart = selStart.value;
-          var curEnd = selEnd.value;
-          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
-          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
-          // 确保不超出数据范围
-          if (curStart < minD) curStart = minD;
-          if (curEnd > maxD) curEnd = maxD;
-
-          var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
-          selStart.innerHTML = optsHtml;
-          selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
-          if (!selStart.value) selStart.value = minD;
-          if (!selEnd.value) selEnd.value = maxD;
-          selStart.onchange = renderFourPlatformGmv;
-          selEnd.onchange = renderFourPlatformGmv;
-        }
-
-        function initFourPlatformGsvSwitches() {
-          var selStart = document.getElementById('fourPlatformGsvStart');
-          var selEnd = document.getElementById('fourPlatformGsvEnd');
-          var raw = window.__FOUR_PLATFORM_DATA__;
-          if (!selStart || !selEnd) return;
-          if (!raw || !raw.gsv || !raw.gsv.daily || !raw.gsv.daily.length) {
-            selStart.innerHTML = '<option value="">-</option>';
-            selEnd.innerHTML = '<option value="">-</option>';
-            return;
+          var modeSw = document.getElementById('fourPlatformModeSwitch');
+          if (modeSw && !modeSw.__bound__) {
+            modeSw.addEventListener('click', function(e) {
+              var btn = e.target.closest && e.target.closest('[data-mode]');
+              if (!btn) return;
+              var mode = btn.getAttribute('data-mode');
+              if (mode !== 'daily' && mode !== 'monthly') return;
+              window.fourPlatformMode = mode;
+              Array.from(modeSw.querySelectorAll('[data-mode]')).forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+              });
+              initFourPlatformSwitches();
+              renderFourPlatform();
+            });
+            modeSw.__bound__ = true;
           }
-          // 根据当前模式选择数据源
-          var isMonthly = (window.fourPlatformGsvMode || 'daily') === 'monthly';
-          var dataPoints = isMonthly ? (raw.gsv.monthly || []) : raw.gsv.daily;
-          if (!dataPoints.length) {
-            selStart.innerHTML = '<option value="">-</option>';
-            selEnd.innerHTML = '<option value="">-</option>';
-            return;
-          }
-          var dates = dataPoints.map(function (p) { return p.date; });
-          var minD = dates[0];
-          var maxD = dates[dates.length - 1];
-
-          // 计算默认值
-          var defaultStart, defaultEnd;
-          if (isMonthly) {
-            // 月度：开始2026-01，结束当前月份
-            defaultEnd = '2026-04';
-            defaultStart = '2026-01';
-          } else {
-            // 日度：结束昨天，开始30天前
-            var today = new Date('2026-04-05');
-            var yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-            var thirtyDaysAgo = new Date(yesterday);
-            thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-            defaultEnd = yesterday.toISOString().split('T')[0];
-            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
-          }
-
-          // 如果当前值在有效范围内则保留，否则使用默认值
-          var curStart = selStart.value;
-          var curEnd = selEnd.value;
-          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
-          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
-          // 确保不超出数据范围
-          if (curStart < minD) curStart = minD;
-          if (curEnd > maxD) curEnd = maxD;
-
-          var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
-          selStart.innerHTML = optsHtml;
-          selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
-          if (!selStart.value) selStart.value = minD;
-          if (!selEnd.value) selEnd.value = maxD;
-          selStart.onchange = renderFourPlatformGsv;
-          selEnd.onchange = renderFourPlatformGsv;
         }
 
         function refreshFourPlatformCharts() {
-          initFourPlatformGmvSwitches();
-          initFourPlatformGsvSwitches();
+          initFourPlatformSwitches();
           initFuwuGmvSwitches();
           initNewretailModelDist();
           initNewretailModelDistGsv();
-          renderFourPlatformGmv();
-          renderFourPlatformGsv();
+          renderFourPlatform();
           renderFuwuGmv();
           renderNewretailModelDist();
           renderNewretailModelDistGsv();
         }
-
-        (function () {
-          if (window.__fourPlatformGmvSwitchBound) return;
-          var sw = document.getElementById('fourPlatformGmvModeSwitch');
-          if (!sw) return;
-          sw.addEventListener('click', function (e) {
-            var btn = e.target.closest && e.target.closest('[data-four-platform-mode]');
-            if (!btn) return;
-            var mode = btn.getAttribute('data-four-platform-mode');
-            if (mode !== 'daily' && mode !== 'monthly') return;
-            window.fourPlatformGmvMode = mode;
-            Array.from(sw.querySelectorAll('[data-four-platform-mode]')).forEach(function (b) {
-              b.classList.toggle('active', b.getAttribute('data-four-platform-mode') === mode);
-            });
-            // 联动GSV图表
-            window.fourPlatformGsvMode = mode;
-            var gsvSw = document.getElementById('fourPlatformGsvModeSwitch');
-            if (gsvSw) {
-              Array.from(gsvSw.querySelectorAll('[data-four-platform-gsv-mode]')).forEach(function (b) {
-                b.classList.toggle('active', b.getAttribute('data-four-platform-gsv-mode') === mode);
-              });
-              initFourPlatformGsvSwitches();
-              renderFourPlatformGsv();
-            }
-            initFourPlatformGmvSwitches();
-            renderFourPlatformGmv();
-          });
-          window.__fourPlatformGmvSwitchBound = true;
-        })();
-
-        (function () {
-          if (window.__fourPlatformGsvSwitchBound) return;
-          var sw = document.getElementById('fourPlatformGsvModeSwitch');
-          if (!sw) return;
-          sw.addEventListener('click', function (e) {
-            var btn = e.target.closest && e.target.closest('[data-four-platform-gsv-mode]');
-            if (!btn) return;
-            var mode = btn.getAttribute('data-four-platform-gsv-mode');
-            if (mode !== 'daily' && mode !== 'monthly') return;
-            window.fourPlatformGsvMode = mode;
-            Array.from(sw.querySelectorAll('[data-four-platform-gsv-mode]')).forEach(function (b) {
-              b.classList.toggle('active', b.getAttribute('data-four-platform-gsv-mode') === mode);
-            });
-            // 联动GMV图表
-            window.fourPlatformGmvMode = mode;
-            var gmvSw = document.getElementById('fourPlatformGmvModeSwitch');
-            if (gmvSw) {
-              Array.from(gmvSw.querySelectorAll('[data-four-platform-mode]')).forEach(function (b) {
-                b.classList.toggle('active', b.getAttribute('data-four-platform-mode') === mode);
-              });
-              initFourPlatformGmvSwitches();
-              renderFourPlatformGmv();
-            }
-            initFourPlatformGsvSwitches();
-            renderFourPlatformGsv();
-          });
-          window.__fourPlatformGsvSwitchBound = true;
-        })();
 
         // ==================== 服务商图表（按渠道拆分，支持GMV/GSV切换） ====================
         window.fuwuGmvMode = 'daily';
@@ -8617,13 +8460,11 @@
         }
 
         function fetchFourPlatformData() {
-          var stElGmv = document.getElementById('fourPlatformGmvStatus');
-          var stElGsv = document.getElementById('fourPlatformGsvStatus');
+          var stEl = document.getElementById('fourPlatformStatus');
           if (typeof XbsAuth === 'undefined' || !XbsAuth.getToken()) {
             window.__FOUR_PLATFORM_DATA__ = null;
             window.__FOUR_PLATFORM_ERROR__ = '未登录：请先登录后再拉取数据。';
-            if (stElGmv) stElGmv.textContent = window.__FOUR_PLATFORM_ERROR__;
-            if (stElGsv) stElGsv.textContent = window.__FOUR_PLATFORM_ERROR__;
+            if (stEl) stEl.textContent = window.__FOUR_PLATFORM_ERROR__;
             refreshFourPlatformCharts();
             return Promise.resolve();
           }
@@ -8635,6 +8476,7 @@
                 if (valid) {
                   window.__FOUR_PLATFORM_DATA__ = o.data;
                   window.__FOUR_PLATFORM_ERROR__ = '';
+                  if (stEl) stEl.textContent = '';
                   // 输出平台统计信息到控制台
                   if (o.data.meta && o.data.meta.platformStatsGmv) {
                     console.log('=== 四平台订单统计 ===');
@@ -8674,23 +8516,20 @@
                   window.__FOUR_PLATFORM_DATA__ = null;
                   var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));
                   window.__FOUR_PLATFORM_ERROR__ = '拉取失败：' + msg;
-                  if (stElGmv) stElGmv.textContent = window.__FOUR_PLATFORM_ERROR__;
-                  if (stElGsv) stElGsv.textContent = window.__FOUR_PLATFORM_ERROR__;
+                  if (stEl) stEl.textContent = window.__FOUR_PLATFORM_ERROR__;
                 }
                 refreshFourPlatformCharts();
               } catch (e) {
                 window.__FOUR_PLATFORM_DATA__ = null;
                 window.__FOUR_PLATFORM_ERROR__ = '数据解析失败：' + (e && e.message ? e.message : String(e));
-                if (stElGmv) stElGmv.textContent = window.__FOUR_PLATFORM_ERROR__;
-                if (stElGsv) stElGsv.textContent = window.__FOUR_PLATFORM_ERROR__;
+                if (stEl) stEl.textContent = window.__FOUR_PLATFORM_ERROR__;
                 refreshFourPlatformCharts();
               }
             })
             .catch(function (err) {
               window.__FOUR_PLATFORM_DATA__ = null;
               window.__FOUR_PLATFORM_ERROR__ = '请求失败：' + (err && err.message ? err.message : '网络或跨域错误');
-              if (stElGmv) stElGmv.textContent = window.__FOUR_PLATFORM_ERROR__;
-              if (stElGsv) stElGsv.textContent = window.__FOUR_PLATFORM_ERROR__;
+              if (stEl) stEl.textContent = window.__FOUR_PLATFORM_ERROR__;
               refreshFourPlatformCharts();
             });
         }
