@@ -8504,6 +8504,17 @@
                     console.log('=== DP类每个达人昵称月度GMV/GSV（万）===');
                     console.table(o.data.dpGmvGsv.monthly);
                   }
+                  // 输出未匹配到产品型号的商品名称
+                  if (o.data.modelDistribution && o.data.modelDistribution.unmatchedProducts && o.data.modelDistribution.unmatchedProducts.length > 0) {
+                    console.log('=== 未匹配到产品型号的商品名称（GMV）===');
+                    console.log('数量:', o.data.modelDistribution.unmatchedProducts.length);
+                    console.log('列表:', o.data.modelDistribution.unmatchedProducts);
+                  }
+                  if (o.data.modelDistributionGsv && o.data.modelDistributionGsv.unmatchedProducts && o.data.modelDistributionGsv.unmatchedProducts.length > 0) {
+                    console.log('=== 未匹配到产品型号的商品名称（GSV）===');
+                    console.log('数量:', o.data.modelDistributionGsv.unmatchedProducts.length);
+                    console.log('列表:', o.data.modelDistributionGsv.unmatchedProducts);
+                  }
                 } else {
                   window.__FOUR_PLATFORM_DATA__ = null;
                   var msg = (o.data && (o.data.error || o.data.detail)) || ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));

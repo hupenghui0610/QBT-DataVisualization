@@ -745,7 +745,8 @@ function aggregateModelDistributionByDay(allOrders, modelMapping) {
   });
 
   return {
-    daily: result
+    daily: result,
+    unmatchedProducts: Array.from(unmatchedProducts).sort()
   };
 }
 
