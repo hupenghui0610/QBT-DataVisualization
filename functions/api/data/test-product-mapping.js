@@ -1,6 +1,6 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
-import { fetchSheetValuesV2, fetchSheetListV2 } from '../../_lib/feishu.js';
+import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
 
@@ -23,14 +23,9 @@ export async function onRequestGet(context) {
   var spreadsheetToken = env.FEISHU_NEWRETAIL_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
 
   try {
-    // 1. 先获取所有sheet列表
-    console.log('正在获取sheet列表...');
-    var sheetListRes = await fetchSheetListV2(env, spreadsheetToken);
-    console.log('Sheet列表:', JSON.stringify(sheetListRes, null, 2));
-
-    // 2. 读取第六个sheet（产品型号映射表）
-    // 根据飞书API，sheet ID通常是类似 'NYYiAs' 的格式
-    var productSheetId = 'NYYiAs'; // 从URL中看到的sheet ID
+    // 1. 读取产品型号映射表
+    // 根据飞书URL，sheet ID是 'NYYiAs'
+    var productSheetId = 'NYYiAs';
     var productRange = productSheetId + '!A1:B1000';
     console.log('正在读取产品型号映射表:', productRange);
     var productJson = await fetchSheetValuesV2(env, spreadsheetToken, productRange, { valueRenderOption: 'FormattedValue' });
@@ -102,7 +97,6 @@ export async function onRequestGet(context) {
     }
 
     return jsonResponse({
-      sheetList: sheetListRes,
       productMapping: productMapping,
       platformSamples: platformSamples
     }, 200, origin);
