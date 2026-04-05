@@ -8018,7 +8018,10 @@
                 var p0 = params[0] || {};
                 var html = (p0.axisValue || '') + '<br/>';
                 params.forEach(function (p) {
-                  html += (p.marker || '') + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万<br/>';
+                  var val = p.value != null ? Number(p.value) : null;
+                  var isZero = val === 0 || val === null || isNaN(val);
+                  var lineStyle = isZero ? ' style="color:#999"' : '';
+                  html += '<span' + lineStyle + '>' + (p.marker || '') + p.seriesName + ': ' + (val != null && !isNaN(val) ? val.toFixed(2) : '-') + ' 万</span><br/>';
                 });
                 return html;
               },
