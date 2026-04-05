@@ -1,5 +1,4 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
-import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -9,8 +8,9 @@ export async function onRequestGet(context) {
   var env = context.env;
   var origin = request.headers.get('Origin') || undefined;
 
-  var auth = await authenticateRequest(request, env);
-  if (auth.error) return auth.error;
+  // 暂时跳过登录验证，仅用于测试
+  // var auth = await authenticateRequest(request, env);
+  // if (auth.error) return auth.error;
 
   if (!env.FEISHU_APP_ID || !env.FEISHU_APP_SECRET) {
     return jsonResponse(
