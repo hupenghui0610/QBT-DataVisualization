@@ -8655,6 +8655,16 @@
                     console.log('=== 未匹配到渠道的达人ID（前20个）===');
                     console.log(o.data.meta.debugUnmatchedDarenIds);
                   }
+                  // 输出服务商数据信息
+                  if (o.data.fuwuGsv) {
+                    console.log('=== 服务商数据 ===');
+                    console.log('fuwuGsv.daily:', o.data.fuwuGsv.daily);
+                    console.log('fuwuGsv.monthly:', o.data.fuwuGsv.monthly);
+                    if (o.data.fuwuGsv.daily && o.data.fuwuGsv.daily.data) {
+                      console.log('fuwuGsv.daily.data长度:', o.data.fuwuGsv.daily.data.length);
+                      console.log('fuwuGsv.daily.channels:', o.data.fuwuGsv.daily.channels);
+                    }
+                  }
                   // 输出DP类每个达人每个月的GMV和GSV
                   if (o.data.dpGmvGsv && o.data.dpGmvGsv.monthly && o.data.dpGmvGsv.monthly.length > 0) {
                     console.log('=== DP类每个达人昵称月度GMV/GSV（万）===');
