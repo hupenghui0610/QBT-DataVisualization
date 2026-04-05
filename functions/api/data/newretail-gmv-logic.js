@@ -672,8 +672,8 @@ function aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv) {
  */
 function aggregateModelDistributionByDay(allOrders, modelMapping) {
   const dailyBucket = {};
-
   const mappingList = modelMapping || [];
+  const unmatchedProducts = new Set();
 
   allOrders.forEach(order => {
     if (!order || !order.product || !order.date) return;
@@ -721,8 +721,18 @@ function aggregateModelDistributionByDay(allOrders, modelMapping) {
         dailyBucket[day][matchedModelName] = 0;
       }
       dailyBucket[day][matchedModelName] += order.amount;
+    } else {
+      // 记录未匹配的产品名称
+      unmatchedProducts.add(order.product);
     }
   });
+
+  // 输出未匹配的产品名称
+  if (unmatchedProducts.size > 0) {
+    console.log('=== 未匹配到产品型号的商品名称 ===');
+    console.log('未匹配数量:', unmatchedProducts.size);
+    console.log('未匹配列表:', Array.from(unmatchedProducts).sort());
+  }
 
   // 转换为数组格式
   const result = [];
