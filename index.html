@@ -8323,12 +8323,27 @@
           var minD = dates[0];
           var maxD = dates[dates.length - 1];
 
-          // 默认选择全部数据范围
+          // 计算默认值：结束日期昨天，起始日期30天前
+          var today = new Date('2026-04-05');
+          var yesterday = new Date(today);
+          yesterday.setDate(today.getDate() - 1);
+          var thirtyDaysAgo = new Date(yesterday);
+          thirtyDaysAgo.setDate(yesterday.getDate() - 30);
+          var defaultEnd = yesterday.toISOString().split('T')[0];
+          var defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+
+          // 确保默认值在数据范围内
+          if (defaultEnd > maxD) defaultEnd = maxD;
+          if (defaultStart < minD) defaultStart = minD;
+
+          // 生成选项
           var optsHtml = dates.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
           selS.innerHTML = '<option value="">全量</option>' + optsHtml;
           selE.innerHTML = '<option value="">全量</option>' + optsHtml;
-          selS.value = '';
-          selE.value = '';
+
+          // 设置默认值（如果在数据范围内）
+          selS.value = dates.indexOf(defaultStart) >= 0 ? defaultStart : minD;
+          selE.value = dates.indexOf(defaultEnd) >= 0 ? defaultEnd : maxD;
 
           selS.onchange = renderNewretailModelDist;
           selE.onchange = renderNewretailModelDist;
