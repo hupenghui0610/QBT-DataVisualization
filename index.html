@@ -123,28 +123,20 @@
       transition: all 0.2s ease;
     }
     .chart-view-switch.metric-switch .view-btn[data-metric="gmv"],
-    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gmv"] {
+    .chart-view-switch.metric-switch .view-btn[data-metric="gsv"],
+    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gmv"],
+    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gsv"] {
       border-color: #10b981;
       color: #10b981;
-      background: #ecfdf5;
+      background: #fff;
     }
     .chart-view-switch.metric-switch .view-btn[data-metric="gmv"].active,
-    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gmv"].active {
+    .chart-view-switch.metric-switch .view-btn[data-metric="gsv"].active,
+    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gmv"].active,
+    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gsv"].active {
       background: #10b981;
       color: #fff;
       box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-    }
-    .chart-view-switch.metric-switch .view-btn[data-metric="gsv"],
-    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gsv"] {
-      border-color: #f59e0b;
-      color: #f59e0b;
-      background: #fffbeb;
-    }
-    .chart-view-switch.metric-switch .view-btn[data-metric="gsv"].active,
-    .chart-view-switch.metric-switch .view-btn[data-fuwu-metric="gsv"].active {
-      background: #f59e0b;
-      color: #fff;
-      box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
     }
     .chart-view-switch.metric-switch .view-btn:hover {
       transform: translateY(-1px);
