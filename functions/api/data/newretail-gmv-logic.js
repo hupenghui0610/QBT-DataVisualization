@@ -311,7 +311,8 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
       amount: amount,
       category: classification.category,
       channel: classification.channel,
-      darenId: darenName || darenId || '未知'
+      darenId: darenName || darenId || '未知',
+      product: row[cfg.cols.product] || ''
     });
   }
 
@@ -408,7 +409,8 @@ function processPlatformOrders(values, platform, channelMaps) {
       amount: amount,
       category: classification.category,
       channel: classification.channel,
-      darenId: darenName || darenId || '未知'
+      darenId: darenName || darenId || '未知',
+      product: row[cfg.cols.product] || ''
     });
     stats.final++;
   }
@@ -660,6 +662,87 @@ function aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv) {
   return result;
 }
 
+/** ==================== 按产品型号聚合分布数据 ====================
+ * 根据产品型号映射表聚合订单数据
+ * 规则：
+ * 1. 忽略大小写匹配
+ * 2. V2特殊处理：包含"V2"且不包含其他任何关键词时才匹配V2
+ * 3. 其他关键词按顺序匹配第一个包含的
+ */
+function aggregateModelDistribution(allOrders, modelMapping) {
+  const modelBucket = {};
+  const modelNames = {}; // 存储型号ID -> 型号名称
+
+  // 初始化型号映射（用于去重和快速查找）
+  const mappingList = modelMapping || [];
+
+  allOrders.forEach(order => {
+    if (!order || !order.product) return;
+    const productLower = String(order.product).toLowerCase();
+    let matchedModel = null;
+    let matchedModelName = null;
+
+    // 第一步：检查是否包含V2（V2特殊处理）
+    if (productLower.includes('v2')) {
+      let containsOtherKeyword = false;
+      // 检查是否包含除V2外的其他关键词
+      for (const mapping of mappingList) {
+        const kw = mapping.keyword;
+        if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
+          containsOtherKeyword = true;
+          break;
+        }
+      }
+      // 如果只包含V2，不包含其他任何关键词，则匹配V2
+      if (!containsOtherKeyword) {
+        for (const mapping of mappingList) {
+          if (mapping.keyword === 'V2') {
+            matchedModel = 'V2';
+            matchedModelName = mapping.model;
+            break;
+          }
+        }
+      }
+    }
+
+    // 第二步：如果没匹配到V2，则按正常逻辑匹配其他关键词
+    if (!matchedModel) {
+      for (const mapping of mappingList) {
+        const kw = mapping.keyword;
+        if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
+          matchedModel = kw;
+          matchedModelName = mapping.model;
+          break;
+        }
+      }
+    }
+
+    // 如果匹配到型号，累加金额
+    if (matchedModel && matchedModelName) {
+      if (!modelBucket[matchedModel]) {
+        modelBucket[matchedModel] = 0;
+        modelNames[matchedModel] = matchedModelName;
+      }
+      modelBucket[matchedModel] += order.amount;
+    }
+  });
+
+  // 转换为数组格式
+  const result = [];
+  Object.keys(modelBucket).forEach(key => {
+    result.push({
+      keyword: key,
+      model: modelNames[key],
+      gmv: Number((modelBucket[key] / 10000).toFixed(2))
+    });
+  });
+
+  // 按GMV降序排序
+  result.sort((a, b) => b.gmv - a.gmv);
+
+  return result;
+}
+
 // ==================== 导出 ====================
 export {
   PLATFORM_CONFIG,
@@ -677,5 +760,6 @@ export {
   aggregateFuwuByChannel,
   aggregateFuwuByChannelMonthly,
   aggregateDpByDarenMonthly,
+  aggregateModelDistribution,
   parseExcelSerial
 };

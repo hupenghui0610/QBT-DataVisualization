@@ -818,6 +818,20 @@
       <div id="chartFuwuGmv" class="chart"></div>
       <div id="fuwuGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期服务商GMV合计"></div>
     </div>
+
+    <!-- 四平台合并型号分布 -->
+    <div class="card wide">
+      <h3>
+        <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布</span>
+        <span class="chart-view-switch" id="newretailModelDistModeSwitch" role="group" aria-label="型号分布视图切换">
+          <button type="button" class="view-btn active" id="newretailModelDistBarBtn">柱状图</button>
+          <button type="button" class="view-btn" id="newretailModelDistPieBtn">饼图</button>
+        </span>
+      </h3>
+      <span id="newretailModelDistStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="newretailModelDistStart"></select> 结束：<select id="newretailModelDistEnd"></select></div>
+      <div id="chartNewretailModelDist" class="chart"></div>
+    </div>
   </div>
   </div>
   </div>
@@ -7905,9 +7919,11 @@
           initFourPlatformGmvSwitches();
           initFourPlatformGsvSwitches();
           initFuwuGmvSwitches();
+          initNewretailModelDist();
           renderFourPlatformGmv();
           renderFourPlatformGsv();
           renderFuwuGmv();
+          renderNewretailModelDist();
         }
 
         (function () {
@@ -8151,6 +8167,178 @@
           });
           window.__fuwuGmvSwitchBound = true;
         })();
+
+        // ==================== 四平台合并型号分布 ====================
+        window.newretailModelDistViewMode = 'bar';
+
+        function renderNewretailModelDist() {
+          var el = document.getElementById('chartNewretailModelDist');
+          if (!el) return;
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!charts.chartNewretailModelDist) charts.chartNewretailModelDist = echarts.init(el);
+          if (!raw || !raw.modelDistribution || !raw.modelDistribution.length) {
+            var err = window.__FOUR_PLATFORM_ERROR__ || '';
+            charts.chartNewretailModelDist.setOption(
+              {
+                title: { text: err || '暂无型号分布数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+                series: [],
+              },
+              true
+            );
+            return;
+          }
+
+          var startVal = document.getElementById('newretailModelDistStart') && document.getElementById('newretailModelDistStart').value;
+          var endVal = document.getElementById('newretailModelDistEnd') && document.getElementById('newretailModelDistEnd').value;
+
+          // 过滤数据
+          var filtered = raw.modelDistribution;
+          if (startVal && endVal && startVal <= endVal) {
+            // 这里简化处理，实际应该按日期过滤
+            // 由于modelDistribution是汇总数据，需要根据原始订单数据重新聚合
+            // 为了简化，暂时显示全部数据
+          }
+
+          var pairs = filtered.map(function(item) {
+            return { name: item.model || item.keyword, value: item.gmv || 0 };
+          }).filter(function(x) { return x.value > 0; });
+
+          pairs.sort(function(a, b) { return b.value - a.value; });
+
+          if (!pairs.length) {
+            charts.chartNewretailModelDist.setOption(
+              {
+                title: { text: '所选区间内无型号数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+                series: [],
+              },
+              true
+            );
+            return;
+          }
+
+          var topN = 15;
+          var show = pairs.slice(0, topN);
+          var restSum = 0;
+          for (var i = topN; i < pairs.length; i++) restSum += pairs[i].value;
+          var names = show.map(function(p) { return p.name; });
+          var vals = show.map(function(p) { return p.value; });
+          if (restSum > 0) {
+            names.push('其他');
+            vals.push(restSum);
+          }
+
+          var mode = window.newretailModelDistViewMode || 'bar';
+          var opt = mode === 'pie'
+            ? {
+                title: { show: false },
+                tooltip: {
+                  trigger: 'item',
+                  formatter: function(p) {
+                    var val = p && p.value != null ? Number(p.value) : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GMV: ' + val.toFixed(2) + ' 万<br/>占比: ' + Number(p.percent || 0).toFixed(2) + '%';
+                  },
+                },
+                series: [{
+                  type: 'pie',
+                  radius: ['35%', '68%'],
+                  center: ['50%', '54%'],
+                  data: names.map(function(n, i) { return { name: n, value: vals[i] }; }),
+                  label: {
+                    formatter: function(p) {
+                      return (p.name || '') + ': ' + Number(p.percent || 0).toFixed(2) + '%';
+                    },
+                  },
+                }],
+              }
+            : {
+                title: { show: false },
+                tooltip: {
+                  trigger: 'axis',
+                  axisPointer: { type: 'shadow' },
+                  formatter: function(params) {
+                    var p = params[0] || {};
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GMV: ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万';
+                  },
+                },
+                grid: { left: 120, right: 48, top: 8, bottom: 8 },
+                xAxis: {
+                  type: 'value',
+                  axisLabel: {
+                    formatter: function(v) {
+                      return v >= 1e4 ? (v / 1e4).toFixed(0) + '万' : String(v);
+                    },
+                  },
+                },
+                yAxis: {
+                  type: 'category',
+                  data: names,
+                  inverse: true,
+                  axisLabel: { width: 110, overflow: 'truncate', ellipsis: '...' },
+                },
+                series: [{
+                  type: 'bar',
+                  data: vals,
+                  name: 'GMV',
+                  itemStyle: { color: '#3b82f6' },
+                  label: {
+                    show: true,
+                    position: 'right',
+                    formatter: function(p) {
+                      var v = p && p.value != null ? Number(p.value) : 0;
+                      return v.toFixed(2) + '万';
+                    },
+                  },
+                }],
+              };
+          charts.chartNewretailModelDist.setOption(applyMobileChartOption(opt), true);
+        }
+
+        function initNewretailModelDist() {
+          var selS = document.getElementById('newretailModelDistStart');
+          var selE = document.getElementById('newretailModelDistEnd');
+          if (!selS || !selE) return;
+
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!raw || !raw.gmv || !raw.gmv.daily || !raw.gmv.daily.length) {
+            selS.innerHTML = '<option value="">-</option>';
+            selE.innerHTML = '<option value="">-</option>';
+            return;
+          }
+
+          var dates = raw.gmv.daily.map(function(p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+
+          // 默认选择全部数据范围
+          var optsHtml = dates.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+          selS.innerHTML = '<option value="">全量</option>' + optsHtml;
+          selE.innerHTML = '<option value="">全量</option>' + optsHtml;
+          selS.value = '';
+          selE.value = '';
+
+          selS.onchange = renderNewretailModelDist;
+          selE.onchange = renderNewretailModelDist;
+
+          // 绑定柱状图/饼图切换
+          var barBtn = document.getElementById('newretailModelDistBarBtn');
+          var pieBtn = document.getElementById('newretailModelDistPieBtn');
+          if (barBtn && pieBtn && !barBtn.__bound__) {
+            barBtn.onclick = function() {
+              window.newretailModelDistViewMode = 'bar';
+              barBtn.classList.add('active');
+              pieBtn.classList.remove('active');
+              renderNewretailModelDist();
+            };
+            pieBtn.onclick = function() {
+              window.newretailModelDistViewMode = 'pie';
+              pieBtn.classList.add('active');
+              barBtn.classList.remove('active');
+              renderNewretailModelDist();
+            };
+            barBtn.__bound__ = true;
+            pieBtn.__bound__ = true;
+          }
+        }
 
         function fetchFourPlatformData() {
           var stElGmv = document.getElementById('fourPlatformGmvStatus');

@@ -12,7 +12,8 @@ import {
   aggregateByMonth,
   aggregateFuwuByChannel,
   aggregateFuwuByChannelMonthly,
-  aggregateDpByDarenMonthly
+  aggregateDpByDarenMonthly,
+  aggregateModelDistribution
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -163,6 +164,25 @@ export async function onRequestGet(context) {
     // 4d. DP类按渠道月度汇总
     var dpByDarenMonthly = aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv);
 
+    // 4e. 读取产品型号映射表并聚合型号分布
+    var modelMappingRange = 'NYYiAs!A1:B1000';
+    var modelMappingJson = await fetchSheetValuesV2(env, spreadsheetToken, modelMappingRange, { valueRenderOption: 'FormattedValue' });
+    var modelMapping = [];
+    if (modelMappingJson && modelMappingJson.code === 0) {
+      var modelValues = modelMappingJson.data?.valueRange?.values || [];
+      for (var i = 1; i < modelValues.length; i++) {
+        var row = modelValues[i] || [];
+        var keyword = String(row[0] || '').trim();
+        var model = String(row[1] || '').trim();
+        if (keyword && model) {
+          modelMapping.push({ keyword: keyword, model: model });
+        }
+      }
+    }
+
+    // 4f. 聚合四平台型号分布数据（GMV）
+    var modelDistribution = aggregateModelDistribution(allOrdersGmv, modelMapping);
+
     var payload = {
       mode: 'daily',
       gmv: {
@@ -180,6 +200,7 @@ export async function onRequestGet(context) {
       dpGmvGsv: {
         monthly: dpByDarenMonthly
       },
+      modelDistribution: modelDistribution,
       meta: {
         spreadsheetToken: spreadsheetToken,
         totalOrdersGmv: allOrdersGmv.length,
