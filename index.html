@@ -850,7 +850,7 @@
     </div>
 
     <!-- 四平台合并型号分布-GMV -->
-    <div class="card">
+    <div class="card wide">
       <h3>
         <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GMV</span>
         <span class="chart-view-switch" id="newretailModelDistModeSwitch" role="group" aria-label="型号分布视图切换">
@@ -864,7 +864,7 @@
     </div>
 
     <!-- 四平台合并型号分布-GSV -->
-    <div class="card">
+    <div class="card wide">
       <h3>
         <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GSV</span>
         <span class="chart-view-switch" id="newretailModelDistGsvModeSwitch" role="group" aria-label="型号分布GSV视图切换">
@@ -7612,16 +7612,51 @@
           var monthly = raw[dataKey].monthly || [];
           var isMonthly = (window.fourPlatformMode || 'daily') === 'monthly';
           var pts = isMonthly ? monthly : daily;
+
+          // 生成完整的日期序列（补全缺失日期）
           var filtered = pts;
           if (startVal && endVal && startVal <= endVal) {
             filtered = pts.filter(function (p) {
               return p.date >= startVal && p.date <= endVal;
             });
           }
-          var x = filtered.map(function (p) { return p.date; });
-          var yDp = filtered.map(function (p) { return p.dp != null ? p.dp : null; });
-          var yZhidui = filtered.map(function (p) { return p.zhidui != null ? p.zhidui : null; });
-          var yFuwu = filtered.map(function (p) { return p.fuwu != null ? p.fuwu : null; });
+
+          // 构建日期到数据的映射
+          var dataMap = {};
+          filtered.forEach(function(p) {
+            dataMap[p.date] = p;
+          });
+
+          // 生成完整的日期序列
+          var fullDates = [];
+          if (startVal && endVal) {
+            if (isMonthly) {
+              // 月度：YYYY-MM格式
+              var cur = new Date(startVal + '-01');
+              var end = new Date(endVal + '-01');
+              while (cur <= end) {
+                var y = cur.getFullYear();
+                var m = String(cur.getMonth() + 1).padStart(2, '0');
+                fullDates.push(y + '-' + m);
+                cur.setMonth(cur.getMonth() + 1);
+              }
+            } else {
+              // 日度：YYYY-MM-DD格式
+              var cur = new Date(startVal);
+              var end = new Date(endVal);
+              while (cur <= end) {
+                fullDates.push(cur.toISOString().split('T')[0]);
+                cur.setDate(cur.getDate() + 1);
+              }
+            }
+          } else {
+            fullDates = filtered.map(function(p) { return p.date; });
+          }
+
+          var x = fullDates;
+          var yDp = fullDates.map(function (d) { var p = dataMap[d]; return p && p.dp != null ? p.dp : 0; });
+          var yZhidui = fullDates.map(function (d) { var p = dataMap[d]; return p && p.zhidui != null ? p.zhidui : 0; });
+          var yFuwu = fullDates.map(function (d) { var p = dataMap[d]; return p && p.fuwu != null ? p.fuwu : 0; });
           var opt = {
             tooltip: {
               trigger: 'axis',
@@ -7645,7 +7680,9 @@
             ],
           };
           charts.chartFourPlatform.setOption(applyMobileChartOption(opt), true);
-          renderFourPlatformPeriodTotals(filtered, metricName);
+          // 构建完整数据用于计算总计
+          var fullData = fullDates.map(function(d) { return dataMap[d] || { date: d, dp: 0, zhidui: 0, fuwu: 0 }; });
+          renderFourPlatformPeriodTotals(fullData, metricName);
         }
 
         function renderFourPlatformPeriodTotals(rows, metricName) {
@@ -7826,19 +7863,54 @@
           var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
           var pts = isMonthly ? monthly.data : daily.data;
           var channels = isMonthly ? monthly.channels : daily.channels;
+
+          // 生成完整的日期序列（补全缺失日期）
           var filtered = pts;
           if (startVal && endVal && startVal <= endVal) {
             filtered = pts.filter(function (p) {
               return p.date >= startVal && p.date <= endVal;
             });
           }
-          var x = filtered.map(function (p) { return p.date; });
+
+          // 构建日期到数据的映射
+          var dataMap = {};
+          filtered.forEach(function(p) {
+            dataMap[p.date] = p;
+          });
+
+          // 生成完整的日期序列
+          var fullDates = [];
+          if (startVal && endVal) {
+            if (isMonthly) {
+              // 月度：YYYY-MM格式
+              var cur = new Date(startVal + '-01');
+              var end = new Date(endVal + '-01');
+              while (cur <= end) {
+                var y = cur.getFullYear();
+                var m = String(cur.getMonth() + 1).padStart(2, '0');
+                fullDates.push(y + '-' + m);
+                cur.setMonth(cur.getMonth() + 1);
+              }
+            } else {
+              // 日度：YYYY-MM-DD格式
+              var cur = new Date(startVal);
+              var end = new Date(endVal);
+              while (cur <= end) {
+                fullDates.push(cur.toISOString().split('T')[0]);
+                cur.setDate(cur.getDate() + 1);
+              }
+            }
+          } else {
+            fullDates = filtered.map(function(p) { return p.date; });
+          }
+
+          var x = fullDates;
           var series = channels.map(function (ch) {
             return {
               name: ch,
               type: 'line',
               smooth: true,
-              data: filtered.map(function (p) { return p[ch] != null ? p[ch] : null; }),
+              data: fullDates.map(function (d) { var p = dataMap[d]; return p && p[ch] != null ? p[ch] : 0; }),
               showSymbol: x.length <= 40,
               connectNulls: false
             };
@@ -7865,7 +7937,16 @@
             series: series,
           };
           charts.chartFuwuGmv.setOption(applyMobileChartOption(opt), true);
-          renderFuwuGmvPeriodTotals(filtered, channels, metricName);
+          // 构建完整数据用于计算总计（缺失日期填充0）
+          var fullData = fullDates.map(function(d) {
+            var p = dataMap[d];
+            if (p) return p;
+            // 创建包含所有渠道值为0的对象
+            var zeroObj = { date: d };
+            channels.forEach(function(ch) { zeroObj[ch] = 0; });
+            return zeroObj;
+          });
+          renderFuwuGmvPeriodTotals(fullData, channels, metricName);
         }
 
         function renderFuwuGmvPeriodTotals(rows, channels, metricName) {
@@ -7963,8 +8044,9 @@
           var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
           selStart.innerHTML = optsHtml;
           selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
-          if (!selStart.value) selStart.value = minD;
-          if (!selEnd.value) selEnd.value = maxD;
+          // 只有在当前值无效时才使用默认值，保留用户已选择的日期
+          if (!selStart.value || dates.indexOf(selStart.value) === -1) selStart.value = curStart;
+          if (!selEnd.value || dates.indexOf(selEnd.value) === -1) selEnd.value = curEnd;
           selStart.onchange = renderFuwuGmv;
           selEnd.onchange = renderFuwuGmv;
 
@@ -7983,9 +8065,9 @@
               Array.from(gmvGsvSw.querySelectorAll('[data-fuwu-metric]')).forEach(function(b) {
                 b.classList.toggle('active', b.getAttribute('data-fuwu-metric') === metric);
               });
-              // 重新初始化下拉框（会改变选项列表）
+              // 重新初始化下拉框
               initFuwuGmvSwitches();
-              // 强制恢复日期选择（只要在数据范围内）
+              // 强制恢复日期选择（在新数据范围内）
               if (currentStart && currentEnd) {
                 var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
                 var newMetric = window.fuwuMetric || 'gmv';
@@ -7996,26 +8078,29 @@
                   var dataPoints = isMonthly ? (raw[dataKey].monthly.data || []) : raw[dataKey].daily.data;
                   dates = dataPoints.map(function(p) { return p.date; });
                 }
-                // 检查日期是否在新数据集中
-                if (dates.indexOf(currentStart) >= 0 && dates.indexOf(currentEnd) >= 0) {
-                  selStart.value = currentStart;
-                  selEnd.value = currentEnd;
-                } else if (dates.length > 0) {
-                  // 如果原日期不在范围内，尝试找最接近的日期
-                  var minD = dates[0];
-                  var maxD = dates[dates.length - 1];
-                  if (currentStart >= minD && currentEnd <= maxD) {
-                    // 在范围内但可能日期不存在（比如跳过某些天），找最接近的
-                    var closestStart = dates.reduce(function(prev, curr) {
-                      return Math.abs(curr - currentStart) < Math.abs(prev - currentStart) ? curr : prev;
-                    });
-                    selStart.value = closestStart;
-                  }
-                  if (currentEnd >= minD && currentEnd <= maxD) {
-                    selEnd.value = currentEnd;
-                  } else {
-                    selEnd.value = maxD;
-                  }
+                var minD = dates[0];
+                var maxD = dates[dates.length - 1];
+                // 如果原日期在新数据范围内则保留，否则使用边界值
+                if (currentStart >= minD && currentStart <= maxD) {
+                  // 找最接近的日期
+                  var closestStart = dates.reduce(function(prev, curr) {
+                    return Math.abs(new Date(curr) - new Date(currentStart)) < Math.abs(new Date(prev) - new Date(currentStart)) ? curr : prev;
+                  });
+                  selStart.value = closestStart;
+                } else if (currentStart < minD) {
+                  selStart.value = minD;
+                } else if (currentStart > maxD) {
+                  selStart.value = maxD;
+                }
+                if (currentEnd >= minD && currentEnd <= maxD) {
+                  var closestEnd = dates.reduce(function(prev, curr) {
+                    return Math.abs(new Date(curr) - new Date(currentEnd)) < Math.abs(new Date(prev) - new Date(currentEnd)) ? curr : prev;
+                  });
+                  selEnd.value = closestEnd;
+                } else if (currentEnd < minD) {
+                  selEnd.value = minD;
+                } else if (currentEnd > maxD) {
+                  selEnd.value = maxD;
                 }
               }
               renderFuwuGmv();
