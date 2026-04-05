@@ -804,10 +804,14 @@
       <div id="fourPlatformGsvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期GSV合计"></div>
     </div>
 
-    <!-- 服务商GMV图表（按渠道拆分） -->
+    <!-- 服务商图表（按渠道拆分） -->
     <div class="card wide">
       <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>服务商GMV</span>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>服务商</span>
+        <span class="chart-view-switch" id="fuwuGmvGsvModeSwitch" style="margin-right:8px">
+          <button type="button" class="view-btn active" data-fuwu-metric="gmv">GMV</button>
+          <button type="button" class="view-btn" data-fuwu-metric="gsv">GSV</button>
+        </span>
         <span class="chart-view-switch" id="fuwuGmvModeSwitch">
           <button type="button" class="view-btn active" data-fuwu-gmv-mode="daily">日度</button>
           <button type="button" class="view-btn" data-fuwu-gmv-mode="monthly">月度</button>
@@ -816,7 +820,7 @@
       <span id="fuwuGmvStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="fuwuGmvStart"></select> 结束：<select id="fuwuGmvEnd"></select></div>
       <div id="chartFuwuGmv" class="chart"></div>
-      <div id="fuwuGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期服务商GMV合计"></div>
+      <div id="fuwuGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期服务商合计"></div>
     </div>
 
     <!-- 四平台合并型号分布-GMV -->
@@ -8000,19 +8004,25 @@
           window.__fourPlatformGsvSwitchBound = true;
         })();
 
-        // ==================== 服务商GMV图表（按渠道拆分） ====================
+        // ==================== 服务商图表（按渠道拆分，支持GMV/GSV切换） ====================
         window.fuwuGmvMode = 'daily';
+        window.fuwuMetric = 'gmv'; // 'gmv' 或 'gsv'
 
         function renderFuwuGmv() {
           var el = document.getElementById('chartFuwuGmv');
           if (!el) return;
           var raw = window.__FOUR_PLATFORM_DATA__;
           if (!charts.chartFuwuGmv) charts.chartFuwuGmv = echarts.init(el);
-          if (!raw || !raw.fuwuGmv || !raw.fuwuGmv.daily || !raw.fuwuGmv.daily.data || !raw.fuwuGmv.daily.data.length) {
+
+          var metric = window.fuwuMetric || 'gmv';
+          var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+          var metricName = metric === 'gsv' ? 'GSV' : 'GMV';
+
+          if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.data || !raw[dataKey].daily.data.length) {
             var err = window.__FOUR_PLATFORM_ERROR__ || '';
             charts.chartFuwuGmv.setOption(
               {
-                title: { text: err || '暂无服务商GMV数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+                title: { text: err || '暂无服务商数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
                 series: [],
               },
               true
@@ -8021,8 +8031,8 @@
           }
           var startVal = document.getElementById('fuwuGmvStart') && document.getElementById('fuwuGmvStart').value;
           var endVal = document.getElementById('fuwuGmvEnd') && document.getElementById('fuwuGmvEnd').value;
-          var daily = raw.fuwuGmv.daily;
-          var monthly = raw.fuwuGmv.monthly || { data: [], channels: [] };
+          var daily = raw[dataKey].daily;
+          var monthly = raw[dataKey].monthly || { data: [], channels: [] };
           var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
           var pts = isMonthly ? monthly.data : daily.data;
           var channels = isMonthly ? monthly.channels : daily.channels;
@@ -8061,14 +8071,14 @@
             legend: { data: channels, top: 6, left: 'center', type: 'scroll' },
             grid: { left: 56, right: 40, top: 40, bottom: 60 },
             xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
-            yAxis: { type: 'value', name: 'GMV（万）', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '万'; } } },
+            yAxis: { type: 'value', name: metricName + '（万）', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '万'; } } },
             series: series,
           };
           charts.chartFuwuGmv.setOption(applyMobileChartOption(opt), true);
-          renderFuwuGmvPeriodTotals(filtered, channels);
+          renderFuwuGmvPeriodTotals(filtered, channels, metricName);
         }
 
-        function renderFuwuGmvPeriodTotals(rows, channels) {
+        function renderFuwuGmvPeriodTotals(rows, channels, metricName) {
           var wrap = document.getElementById('fuwuGmvPeriodTotals');
           if (!wrap) return;
           if (!rows || !rows.length || !channels || !channels.length) {
@@ -8114,13 +8124,17 @@
           var selEnd = document.getElementById('fuwuGmvEnd');
           var raw = window.__FOUR_PLATFORM_DATA__;
           if (!selStart || !selEnd) return;
-          if (!raw || !raw.fuwuGmv || !raw.fuwuGmv.daily || !raw.fuwuGmv.daily.data || !raw.fuwuGmv.daily.data.length) {
+
+          var metric = window.fuwuMetric || 'gmv';
+          var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+
+          if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.data || !raw[dataKey].daily.data.length) {
             selStart.innerHTML = '<option value="">-</option>';
             selEnd.innerHTML = '<option value="">-</option>';
             return;
           }
           var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
-          var dataPoints = isMonthly ? (raw.fuwuGmv.monthly.data || []) : raw.fuwuGmv.daily.data;
+          var dataPoints = isMonthly ? (raw[dataKey].monthly.data || []) : raw[dataKey].daily.data;
           if (!dataPoints.length) {
             selStart.innerHTML = '<option value="">-</option>';
             selEnd.innerHTML = '<option value="">-</option>';
@@ -8163,26 +8177,43 @@
           if (!selEnd.value) selEnd.value = maxD;
           selStart.onchange = renderFuwuGmv;
           selEnd.onchange = renderFuwuGmv;
-        }
 
-        (function () {
-          if (window.__fuwuGmvSwitchBound) return;
-          var sw = document.getElementById('fuwuGmvModeSwitch');
-          if (!sw) return;
-          sw.addEventListener('click', function (e) {
-            var btn = e.target.closest && e.target.closest('[data-fuwu-gmv-mode]');
-            if (!btn) return;
-            var mode = btn.getAttribute('data-fuwu-gmv-mode');
-            if (mode !== 'daily' && mode !== 'monthly') return;
-            window.fuwuGmvMode = mode;
-            Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function (b) {
-              b.classList.toggle('active', b.getAttribute('data-fuwu-gmv-mode') === mode);
+          // 绑定GMV/GSV切换
+          var gmvGsvSw = document.getElementById('fuwuGmvGsvModeSwitch');
+          if (gmvGsvSw && !gmvGsvSw.__bound__) {
+            gmvGsvSw.addEventListener('click', function(e) {
+              var btn = e.target.closest && e.target.closest('[data-fuwu-metric]');
+              if (!btn) return;
+              var metric = btn.getAttribute('data-fuwu-metric');
+              if (metric !== 'gmv' && metric !== 'gsv') return;
+              window.fuwuMetric = metric;
+              Array.from(gmvGsvSw.querySelectorAll('[data-fuwu-metric]')).forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-fuwu-metric') === metric);
+              });
+              initFuwuGmvSwitches();
+              renderFuwuGmv();
             });
-            initFuwuGmvSwitches();
-            renderFuwuGmv();
-          });
-          window.__fuwuGmvSwitchBound = true;
-        })();
+            gmvGsvSw.__bound__ = true;
+          }
+
+          // 绑定日度/月度切换
+          var sw = document.getElementById('fuwuGmvModeSwitch');
+          if (sw && !sw.__bound__) {
+            sw.addEventListener('click', function (e) {
+              var btn = e.target.closest && e.target.closest('[data-fuwu-gmv-mode]');
+              if (!btn) return;
+              var mode = btn.getAttribute('data-fuwu-gmv-mode');
+              if (mode !== 'daily' && mode !== 'monthly') return;
+              window.fuwuGmvMode = mode;
+              Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-fuwu-gmv-mode') === mode);
+              });
+              initFuwuGmvSwitches();
+              renderFuwuGmv();
+            });
+            sw.__bound__ = true;
+          }
+        }
 
         // ==================== 四平台合并型号分布 ====================
         window.newretailModelDistViewMode = 'bar';

@@ -160,6 +160,8 @@ export async function onRequestGet(context) {
     // 4c. 服务商按渠道汇总
     var fuwuByChannel = aggregateFuwuByChannel(allOrdersGmv);
     var fuwuByChannelMonthly = aggregateFuwuByChannelMonthly(fuwuByChannel.data);
+    var fuwuByChannelGsv = aggregateFuwuByChannel(allOrdersGsv);
+    var fuwuByChannelGsvMonthly = aggregateFuwuByChannelMonthly(fuwuByChannelGsv.data);
 
     // 4d. DP类按渠道月度汇总
     var dpByDarenMonthly = aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv);
@@ -197,6 +199,10 @@ export async function onRequestGet(context) {
       fuwuGmv: {
         daily: fuwuByChannel,
         monthly: fuwuByChannelMonthly
+      },
+      fuwuGsv: {
+        daily: fuwuByChannelGsv,
+        monthly: fuwuByChannelGsvMonthly
       },
       dpGmvGsv: {
         monthly: dpByDarenMonthly
