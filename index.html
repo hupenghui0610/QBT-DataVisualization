@@ -8193,7 +8193,6 @@
 
           // 根据日期范围累加型号数据
           var dailyData = raw.modelDistribution.daily;
-          var modelNames = raw.modelDistribution.modelNames || {};
           var modelBucket = {};
 
           dailyData.forEach(function(dayItem) {
@@ -8205,6 +8204,7 @@
             // 累加每个型号的GMV
             Object.keys(dayItem).forEach(function(key) {
               if (key === 'date') return;
+              // key 已经是型号名称
               if (!modelBucket[key]) {
                 modelBucket[key] = 0;
               }
@@ -8213,8 +8213,8 @@
           });
 
           // 转换为数组格式
-          var pairs = Object.keys(modelBucket).map(function(key) {
-            return { name: modelNames[key] || key, value: modelBucket[key] };
+          var pairs = Object.keys(modelBucket).map(function(modelName) {
+            return { name: modelName, value: modelBucket[modelName] };
           }).filter(function(x) { return x.value > 0; });
 
           pairs.sort(function(a, b) { return b.value - a.value; });

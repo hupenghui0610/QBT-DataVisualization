@@ -668,17 +668,16 @@ function aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv) {
  * 1. 忽略大小写匹配
  * 2. V2特殊处理：包含"V2"且不包含其他任何关键词时才匹配V2
  * 3. 其他关键词按顺序匹配第一个包含的
+ * 4. 相同型号名称的数据会合并（不同关键词映射到相同型号时）
  */
 function aggregateModelDistributionByDay(allOrders, modelMapping) {
   const dailyBucket = {};
-  const modelNames = {};
 
   const mappingList = modelMapping || [];
 
   allOrders.forEach(order => {
     if (!order || !order.product || !order.date) return;
     const productLower = String(order.product).toLowerCase();
-    let matchedModel = null;
     let matchedModelName = null;
 
     // V2特殊处理
@@ -694,7 +693,6 @@ function aggregateModelDistributionByDay(allOrders, modelMapping) {
       if (!containsOtherKeyword) {
         for (const mapping of mappingList) {
           if (mapping.keyword === 'V2') {
-            matchedModel = 'V2';
             matchedModelName = mapping.model;
             break;
           }
@@ -703,27 +701,26 @@ function aggregateModelDistributionByDay(allOrders, modelMapping) {
     }
 
     // 其他关键词匹配
-    if (!matchedModel) {
+    if (!matchedModelName) {
       for (const mapping of mappingList) {
         const kw = mapping.keyword;
         if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
-          matchedModel = kw;
           matchedModelName = mapping.model;
           break;
         }
       }
     }
 
-    if (matchedModel && matchedModelName) {
+    // 如果匹配到型号，按型号名称累加金额（自动合并相同型号）
+    if (matchedModelName) {
       const day = order.date;
       if (!dailyBucket[day]) {
         dailyBucket[day] = {};
       }
-      if (!dailyBucket[day][matchedModel]) {
-        dailyBucket[day][matchedModel] = 0;
-        modelNames[matchedModel] = matchedModelName;
+      if (!dailyBucket[day][matchedModelName]) {
+        dailyBucket[day][matchedModelName] = 0;
       }
-      dailyBucket[day][matchedModel] += order.amount;
+      dailyBucket[day][matchedModelName] += order.amount;
     }
   });
 
@@ -731,15 +728,14 @@ function aggregateModelDistributionByDay(allOrders, modelMapping) {
   const result = [];
   Object.keys(dailyBucket).sort().forEach(day => {
     const dayData = { date: day };
-    Object.keys(dailyBucket[day]).forEach(modelKey => {
-      dayData[modelKey] = Number((dailyBucket[day][modelKey] / 10000).toFixed(2));
+    Object.keys(dailyBucket[day]).forEach(modelName => {
+      dayData[modelName] = Number((dailyBucket[day][modelName] / 10000).toFixed(2));
     });
     result.push(dayData);
   });
 
   return {
-    daily: result,
-    modelNames: modelNames
+    daily: result
   };
 }
 
