@@ -11,9 +11,12 @@ import {
   aggregateByWeek,
   aggregateByMonth,
   aggregateFuwuByChannel,
+  aggregateFuwuByChannelWeekly,
   aggregateFuwuByChannelMonthly,
   aggregateDpByDarenMonthly,
-  aggregateModelDistributionByDay
+  aggregateModelDistributionByDay,
+  aggregateModelDistributionByDayFiltered,
+  aggregateModelDistributionByDaren
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -80,6 +83,10 @@ export async function onRequestGet(context) {
   }
 
   try {
+    // 重置未匹配达人ID统计（每次请求开始时清空）
+    globalThis.__unmatchedDarenIds = new Set();
+    globalThis.__unmatchedDarenStats = {};
+
     // 1. 读取渠道映射表
     var chRange = CHANNEL_MAP_CONFIG.sheetId + '!A1:E2000';
     var chJson = await fetchSheetValuesV2(env, spreadsheetToken, chRange, { valueRenderOption: 'FormattedValue' });
@@ -88,6 +95,39 @@ export async function onRequestGet(context) {
     }
     var chValues = chJson.data?.valueRange?.values || [];
     var channelMaps = buildChannelMaps(chValues);
+
+    // 从渠道映射表提取达人昵称清单（D列，排除直营/自营类别）
+    // 同时构建达人ID -> 达人昵称的映射（用于非视频号平台）
+    var darenNicknamesFromChannelMap = [];
+    var darenIdToDarenNameMap = {}; // 达人ID -> 达人昵称
+    var shipinhaoNameToDarenNameMap = {}; // 视频号达人昵称（唯一标识）-> 达人昵称
+    for (var r = 1; r < chValues.length; r++) {
+      var row = chValues[r] || [];
+      var channelName = String(row[0] || '').trim();
+      var platform = String(row[1] || '').trim();
+      var darenName = String(row[3] || '').trim();
+      var darenId = String(row[4] || '').trim();
+      // 排除直营和自营类别的渠道，其他都包含
+      if (channelName && channelName.indexOf('直营') !== 0 && channelName.indexOf('自营') !== 0) {
+        if (darenName) {
+          darenNicknamesFromChannelMap.push(darenName);
+          // 视频号：用达人昵称本身作为key
+          if (platform === '视频号' && darenId) {
+            shipinhaoNameToDarenNameMap[darenId] = darenName;
+          }
+          // 其他平台：用达人ID作为key
+          else if (darenId) {
+            darenIdToDarenNameMap[darenId] = darenName;
+          }
+        }
+      }
+    }
+    // 去重并排序
+    darenNicknamesFromChannelMap = darenNicknamesFromChannelMap.filter(function(item, idx, arr) {
+      return arr.indexOf(item) === idx;
+    }).sort(function(a, b) {
+      return a.localeCompare(b, 'zh-CN');
+    });
 
     // 2. 并行读取四平台订单数据
     var platformKeys = ['douyin', 'xiaohongshu', 'shipinhao', 'kuaishou'];
@@ -151,16 +191,20 @@ export async function onRequestGet(context) {
 
     // 4. 按日期和类别汇总 - GMV
     var dailyPointsGmv = aggregateByDayAndCategory(allOrdersGmv);
+    var weeklyPointsGmv = aggregateByWeek(dailyPointsGmv);
     var monthlyPointsGmv = aggregateByMonth(dailyPointsGmv);
 
     // 4b. 按日期和类别汇总 - GSV
     var dailyPointsGsv = aggregateByDayAndCategory(allOrdersGsv);
+    var weeklyPointsGsv = aggregateByWeek(dailyPointsGsv);
     var monthlyPointsGsv = aggregateByMonth(dailyPointsGsv);
 
     // 4c. 服务商按渠道汇总
     var fuwuByChannel = aggregateFuwuByChannel(allOrdersGmv);
+    var fuwuByChannelWeekly = aggregateFuwuByChannelWeekly(fuwuByChannel.data);
     var fuwuByChannelMonthly = aggregateFuwuByChannelMonthly(fuwuByChannel.data);
     var fuwuByChannelGsv = aggregateFuwuByChannel(allOrdersGsv);
+    var fuwuByChannelGsvWeekly = aggregateFuwuByChannelWeekly(fuwuByChannelGsv.data);
     var fuwuByChannelGsvMonthly = aggregateFuwuByChannelMonthly(fuwuByChannelGsv.data);
 
     // 调试：输出GSV服务商订单统计
@@ -192,22 +236,83 @@ export async function onRequestGet(context) {
     var modelDistributionResult = aggregateModelDistributionByDay(allOrdersGmv, modelMapping);
     var modelDistributionGsvResult = aggregateModelDistributionByDay(allOrdersGsv, modelMapping);
 
+    // 4g. 聚合三个新的型号分布数据集（GSV口径）
+    // DP-沐成
+    var modelDistDpMuchengResult = aggregateModelDistributionByDayFiltered(allOrdersGsv, modelMapping, function(order) {
+      return order.category === 'dp' && order.channel && order.channel.includes('沐成');
+    });
+    // DP-逐梦
+    var modelDistDpZhumengResult = aggregateModelDistributionByDayFiltered(allOrdersGsv, modelMapping, function(order) {
+      return order.category === 'dp' && order.channel && order.channel.includes('逐梦');
+    });
+    // 达人（直对 + 服务商）
+    var modelDistDarenResult = aggregateModelDistributionByDayFiltered(allOrdersGsv, modelMapping, function(order) {
+      return order.category === 'zhidui' || order.category === 'fuwu';
+    });
+
+    // 按达人昵称分别聚合型号分布数据（用于筛选功能）
+    var modelDistDarenByDaren = aggregateModelDistributionByDaren(allOrdersGsv, modelMapping, function(order) {
+      return order.category === 'zhidui' || order.category === 'fuwu' || order.category === 'dp';
+    }, darenNicknamesFromChannelMap, darenIdToDarenNameMap, shipinhaoNameToDarenNameMap);
+
+    // 输出未匹配达人ID的详细统计
+    if (globalThis.__unmatchedDarenStats && Object.keys(globalThis.__unmatchedDarenStats).length > 0) {
+      console.log('\n=== 未匹配到渠道的达人ID统计 ===');
+      console.log('未匹配达人数量:', Object.keys(globalThis.__unmatchedDarenStats).length);
+
+      // 转换为数组并排序（按GMV+GSV总额降序）
+      const sortedStats = Object.values(globalThis.__unmatchedDarenStats)
+        .sort((a, b) => (b.gmv + b.gsv) - (a.gmv + a.gsv));
+
+      // 打印详细列表
+      console.log('\n达人ID | 平台 | 订单数 | GMV金额(元) | GSV金额(元) | 总额(元)');
+      console.log('-'.repeat(90));
+
+      let totalGmv = 0;
+      let totalGsv = 0;
+      let totalCount = 0;
+
+      sortedStats.forEach(stat => {
+        const rowTotal = stat.gmv + stat.gsv;
+        totalGmv += stat.gmv;
+        totalGsv += stat.gsv;
+        totalCount += stat.count;
+
+        console.log(
+          `${stat.darenId.padEnd(20)} | ` +
+          `${stat.platform.padEnd(8)} | ` +
+          `${String(stat.count).padStart(6)} | ` +
+          `${String(stat.gmv.toFixed(2)).padStart(12)} | ` +
+          `${String(stat.gsv.toFixed(2)).padStart(12)} | ` +
+          `${rowTotal.toFixed(2)}`
+        );
+      });
+
+      console.log('-'.repeat(90));
+      console.log(`合计 | - | ${totalCount} | ${totalGmv.toFixed(2)} | ${totalGsv.toFixed(2)} | ${(totalGmv + totalGsv).toFixed(2)}`);
+      console.log('\n注：以上达人ID在渠道映射表中未找到对应关系，被归类到"服务商"类别');
+    }
+
     var payload = {
       mode: 'daily',
       gmv: {
         daily: dailyPointsGmv,
+        weekly: weeklyPointsGmv,
         monthly: monthlyPointsGmv,
       },
       gsv: {
         daily: dailyPointsGsv,
+        weekly: weeklyPointsGsv,
         monthly: monthlyPointsGsv,
       },
       fuwuGmv: {
         daily: fuwuByChannel,
+        weekly: fuwuByChannelWeekly,
         monthly: fuwuByChannelMonthly
       },
       fuwuGsv: {
         daily: fuwuByChannelGsv,
+        weekly: fuwuByChannelGsvWeekly,
         monthly: fuwuByChannelGsvMonthly
       },
       dpGmvGsv: {
@@ -215,6 +320,10 @@ export async function onRequestGet(context) {
       },
       modelDistribution: modelDistributionResult,
       modelDistributionGsv: modelDistributionGsvResult,
+      modelDistDpMucheng: modelDistDpMuchengResult,
+      modelDistDpZhumeng: modelDistDpZhumengResult,
+      modelDistDaren: modelDistDarenResult,
+      modelDistDarenByDaren: modelDistDarenByDaren,
       meta: {
         spreadsheetToken: spreadsheetToken,
         totalOrdersGmv: allOrdersGmv.length,
@@ -223,7 +332,8 @@ export async function onRequestGet(context) {
         platformStatsGsv: platformStatsGsv,
         platforms: platformKeys,
         cached: false,
-        debugUnmatchedDarenIds: globalThis.__unmatchedDarenIds ? Array.from(globalThis.__unmatchedDarenIds) : []
+        debugUnmatchedDarenIds: globalThis.__unmatchedDarenIds ? Array.from(globalThis.__unmatchedDarenIds) : [],
+        debugUnmatchedDarenStats: globalThis.__unmatchedDarenStats || {}
       }
     };
 

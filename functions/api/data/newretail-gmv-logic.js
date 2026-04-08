@@ -6,22 +6,22 @@ const PLATFORM_CONFIG = {
   douyin: {
     name: '抖音',
     sheetId: 'tuec5U',
-    cols: { product: 2, amount: 8, time: 33, status: 36, darenId: 40 }
+    cols: { product: 2, amount: 8, quantity: 4, time: 33, status: 36, darenId: 40 }
   },
   xiaohongshu: {
     name: '小红书',
     sheetId: 'v3JEoi',
-    cols: { product: 17, amount: 23, time: 34, status: 1, darenId: 15 }
+    cols: { product: 17, amount: 23, quantity: 19, time: 34, status: 1, darenId: 15 }
   },
   shipinhao: {
     name: '视频号',
     sheetId: 'LoahCg',
-    cols: { product: 40, amount: 18, time: 25, status: 5, darenName: 34 }
+    cols: { product: 40, amount: 18, quantity: 49, time: 25, status: 5, darenName: 34 }
   },
   kuaishou: {
     name: '快手',
     sheetId: '7uRPyy',
-    cols: { product: 25, amount: 7, time: 4, status: 6, darenId: 31 }
+    cols: { product: 25, amount: 7, quantity: 15, time: 4, status: 6, darenId: 31 }
   }
 };
 
@@ -127,6 +127,23 @@ function parseDarenId(value) {
   return str === '-' ? '' : str; // 视频号可能是 "-"
 }
 
+/** ==================== 商品数量解析 ==================== */
+function parseQuantity(value) {
+  if (value == null || value === '') return 1; // 默认为1
+  if (typeof value === 'number') {
+    return isNaN(value) || value <= 0 ? 1 : Math.round(value);
+  }
+  // 处理字符串格式（包括带千分位、全角数字等）
+  const str = String(value).trim();
+  if (!str) return 1;
+  // 移除千分位逗号、全角空格、首尾空格
+  const cleaned = str.replace(/,/g, '').replace(/，/g, '').replace(/[\s\u3000]/g, '');
+  // 转换全角数字为半角
+  const halfWidth = cleaned.replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xfee0));
+  const num = parseInt(halfWidth, 10);
+  return isNaN(num) || num <= 0 ? 1 : num;
+}
+
 /** ==================== 构建渠道映射索引 ====================
  * 渠道映射表: A=渠道名, B=平台, D=视频号昵称, E=达人ID
  */
@@ -175,7 +192,7 @@ function buildChannelMaps(chValues) {
  * - 直对开头 → 直对类
  * - 其他(包括未匹配到渠道的) → 服务商类
  */
-function classifyOrder(darenId, darenName, platform, channelMaps) {
+function classifyOrder(darenId, darenName, platform, channelMaps, amount, isGsv = false) {
   let channelName = null;
 
   if (platform === 'shipinhao') {
@@ -192,13 +209,38 @@ function classifyOrder(darenId, darenName, platform, channelMaps) {
 
   // 未匹配到渠道 → 算服务商类
   if (!channelName) {
-    // 调试：记录未匹配的达人ID（只记录前20个）
-    if (darenId) {
+    // 调试：记录未匹配的达人ID及其金额
+    if (darenId && amount > 0) {
+      const key = `${platform}:${darenId}`;
+
+      // 初始化全局统计对象
       if (typeof globalThis.__unmatchedDarenIds === 'undefined') {
         globalThis.__unmatchedDarenIds = new Set();
       }
-      if (globalThis.__unmatchedDarenIds.size < 20) {
-        globalThis.__unmatchedDarenIds.add(`${platform}:${darenId}`);
+      if (typeof globalThis.__unmatchedDarenStats === 'undefined') {
+        globalThis.__unmatchedDarenStats = {};
+      }
+
+      // 添加到Set（只记录前50个）
+      if (globalThis.__unmatchedDarenIds.size < 50) {
+        globalThis.__unmatchedDarenIds.add(key);
+      }
+
+      // 统计金额（分GMV和GSV）
+      if (!globalThis.__unmatchedDarenStats[key]) {
+        globalThis.__unmatchedDarenStats[key] = {
+          platform: platform,
+          darenId: darenId,
+          gmv: 0,
+          gsv: 0,
+          count: 0
+        };
+      }
+      globalThis.__unmatchedDarenStats[key].count++;
+      if (isGsv) {
+        globalThis.__unmatchedDarenStats[key].gsv += amount;
+      } else {
+        globalThis.__unmatchedDarenStats[key].gmv += amount;
       }
     }
     return { category: 'fuwu', channel: '未知' };
@@ -256,6 +298,12 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
     const amount = parseAmount(row[cfg.cols.amount]);
     if (amount <= 0) continue;
 
+    // 3b. 解析商品数量（如果列存在）
+    let quantity = 1;
+    if (cfg.cols.quantity != null && row.length > cfg.cols.quantity) {
+      quantity = parseQuantity(row[cfg.cols.quantity]);
+    }
+
     // 4. 检查订单状态 - GSV：各平台剔除不同状态
     const status = String(row[cfg.cols.status] || '').trim();
     let shouldSkip = false;
@@ -296,8 +344,8 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
       continue;
     }
 
-    // 6. 分类
-    const classification = classifyOrder(darenId, darenName, platform, channelMaps);
+    // 6. 分类 - 传入金额用于统计未匹配的订单
+    const classification = classifyOrder(darenId, darenName, platform, channelMaps, amount, true);
     if (classification.skip) continue;
 
     // 7. 特殊规则：达人ID 284088526715758 只计算4月1日及之后的订单
@@ -309,6 +357,7 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
       date: day,
       platform: platform,
       amount: amount,
+      quantity: quantity,
       category: classification.category,
       channel: classification.channel,
       darenId: darenName || darenId || '未知',
@@ -362,6 +411,12 @@ function processPlatformOrders(values, platform, channelMaps) {
     if (amount <= 0) continue;
     stats.hasAmount++;
 
+    // 3b. 解析商品数量（如果列存在）
+    let quantity = 1;
+    if (cfg.cols.quantity != null && row.length > cfg.cols.quantity) {
+      quantity = parseQuantity(row[cfg.cols.quantity]);
+    }
+
     // 4. 检查订单状态 - GMV不管状态，只剔除状态为""的
     const status = String(row[cfg.cols.status] || '').trim();
     // GMV计算所有有支付时间的订单，包括"已关闭"
@@ -385,8 +440,8 @@ function processPlatformOrders(values, platform, channelMaps) {
       continue;
     }
 
-    // 6. 分类
-    const classification = classifyOrder(darenId, darenName, platform, channelMaps);
+    // 6. 分类 - 传入金额用于统计未匹配的订单
+    const classification = classifyOrder(darenId, darenName, platform, channelMaps, amount, false);
     stats.classified++;
 
     if (classification.skip) {
@@ -407,6 +462,7 @@ function processPlatformOrders(values, platform, channelMaps) {
       date: day,
       platform: platform,
       amount: amount,
+      quantity: quantity,
       category: classification.category,
       channel: classification.channel,
       darenId: darenName || darenId || '未知',
@@ -525,6 +581,43 @@ function aggregateFuwuByChannelMonthly(dailyPoints) {
         monthData[channel] = Number((bucket[month][channel] || 0).toFixed(2));
       });
       return monthData;
+    })
+  };
+}
+
+/** ==================== 周度聚合（服务商按渠道） ==================== */
+function aggregateFuwuByChannelWeekly(dailyPoints) {
+  const bucket = {};
+  const channels = new Set();
+
+  dailyPoints.forEach(p => {
+    const week = weekStartFromDateStr(p.date);
+    if (!week) return;
+    Object.keys(p).forEach(key => {
+      if (key === 'date') return;
+      channels.add(key);
+      if (!bucket[week]) {
+        bucket[week] = {};
+      }
+      if (!bucket[week][key]) {
+        bucket[week][key] = 0;
+      }
+      bucket[week][key] += p[key];
+    });
+  });
+
+  const sortedWeeks = Object.keys(bucket).sort();
+  const sortedChannels = Array.from(channels).sort();
+
+  return {
+    days: sortedWeeks,
+    channels: sortedChannels,
+    data: sortedWeeks.map(week => {
+      const weekData = { date: week };
+      sortedChannels.forEach(channel => {
+        weekData[channel] = Number((bucket[week][channel] || 0).toFixed(2));
+      });
+      return weekData;
     })
   };
 }
@@ -711,16 +804,17 @@ function aggregateModelDistributionByDay(allOrders, modelMapping) {
       }
     }
 
-    // 如果匹配到型号，按型号名称累加金额（自动合并相同型号）
+    // 如果匹配到型号，按型号名称累加金额和数量（自动合并相同型号）
     if (matchedModelName) {
       const day = order.date;
       if (!dailyBucket[day]) {
         dailyBucket[day] = {};
       }
       if (!dailyBucket[day][matchedModelName]) {
-        dailyBucket[day][matchedModelName] = 0;
+        dailyBucket[day][matchedModelName] = { amount: 0, quantity: 0 };
       }
-      dailyBucket[day][matchedModelName] += order.amount;
+      dailyBucket[day][matchedModelName].amount += order.amount;
+      dailyBucket[day][matchedModelName].quantity += (order.quantity || 1);
     } else {
       // 记录未匹配的产品名称
       unmatchedProducts.add(order.product);
@@ -739,7 +833,11 @@ function aggregateModelDistributionByDay(allOrders, modelMapping) {
   Object.keys(dailyBucket).sort().forEach(day => {
     const dayData = { date: day };
     Object.keys(dailyBucket[day]).forEach(modelName => {
-      dayData[modelName] = Number((dailyBucket[day][modelName] / 10000).toFixed(2));
+      // 存储金额（万元）和数量
+      dayData[modelName] = {
+        amount: Number((dailyBucket[day][modelName].amount / 10000).toFixed(2)),
+        quantity: dailyBucket[day][modelName].quantity
+      };
     });
     result.push(dayData);
   });
@@ -748,6 +846,247 @@ function aggregateModelDistributionByDay(allOrders, modelMapping) {
     daily: result,
     unmatchedProducts: Array.from(unmatchedProducts).sort()
   };
+}
+
+/**
+ * 按筛选条件聚合型号分布数据（支持按渠道名称筛选）
+ * @param {Array} allOrders - 订单列表
+ * @param {Array} modelMapping - 型号映射表
+ * @param {Function} filterFn - 过滤函数，接收order返回boolean
+ * @returns {Object} { daily: [...], unmatchedProducts: [...] }
+ */
+function aggregateModelDistributionByDayFiltered(allOrders, modelMapping, filterFn) {
+  const dailyBucket = {};
+  const mappingList = modelMapping || [];
+  const unmatchedProducts = new Set();
+
+  allOrders.forEach(order => {
+    // 先应用过滤函数
+    if (!filterFn(order)) return;
+    if (!order || !order.product || !order.date) return;
+    const productLower = String(order.product).toLowerCase();
+    let matchedModelName = null;
+
+    // V2特殊处理
+    if (productLower.includes('v2')) {
+      let containsOtherKeyword = false;
+      for (const mapping of mappingList) {
+        const kw = mapping.keyword;
+        if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
+          containsOtherKeyword = true;
+          break;
+        }
+      }
+      if (!containsOtherKeyword) {
+        for (const mapping of mappingList) {
+          if (mapping.keyword === 'V2') {
+            matchedModelName = mapping.model;
+            break;
+          }
+        }
+      }
+    }
+
+    // 其他关键词匹配
+    if (!matchedModelName) {
+      for (const mapping of mappingList) {
+        const kw = mapping.keyword;
+        if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
+          matchedModelName = mapping.model;
+          break;
+        }
+      }
+    }
+
+    // 如果匹配到型号，按型号名称累加金额和数量
+    if (matchedModelName) {
+      const day = order.date;
+      if (!dailyBucket[day]) {
+        dailyBucket[day] = {};
+      }
+      if (!dailyBucket[day][matchedModelName]) {
+        dailyBucket[day][matchedModelName] = { amount: 0, quantity: 0 };
+      }
+      dailyBucket[day][matchedModelName].amount += order.amount;
+      dailyBucket[day][matchedModelName].quantity += (order.quantity || 1);
+    } else {
+      unmatchedProducts.add(order.product);
+    }
+  });
+
+  // 转换为数组格式
+  const result = [];
+  Object.keys(dailyBucket).sort().forEach(day => {
+    const dayData = { date: day };
+    Object.keys(dailyBucket[day]).forEach(modelName => {
+      dayData[modelName] = {
+        amount: Number((dailyBucket[day][modelName].amount / 10000).toFixed(2)),
+        quantity: dailyBucket[day][modelName].quantity
+      };
+    });
+    result.push(dayData);
+  });
+
+  return {
+    daily: result,
+    unmatchedProducts: Array.from(unmatchedProducts).sort()
+  };
+}
+
+/**
+ * 按达人昵称分别聚合型号分布数据
+ * 用于达人型号分布-GSV图表的筛选功能
+ * @param {Array} allOrders - 订单数据
+ * @param {Array} modelMapping - 型号映射表
+ * @param {Function} filterFn - 过滤函数（如直对+服务商）
+ * @param {Array} expectedDarenList - 预期的达人昵称列表（从渠道映射表获取）
+ * @param {Object} darenIdToDarenNameMap - 达人ID -> 达人昵称的映射（非视频号平台）
+ * @param {Object} shipinhaoNameToDarenNameMap - 视频号达人昵称 -> 达人昵称的映射（视频号）
+ * @returns {Object} - { byDaren: {达人昵称: {daily: [...]}}, darenList: [{name, id}] }
+ */
+function aggregateModelDistributionByDaren(allOrders, modelMapping, filterFn, expectedDarenList, darenIdToDarenNameMap, shipinhaoNameToDarenNameMap) {
+  const byDaren = {}; // 按达人分组的型号分布数据
+  const darenInfoMap = {}; // 达人信息映射（昵称->{id, platforms:Set, totalAmount}）
+  const mappingList = modelMapping || [];
+  const darenIdMap = darenIdToDarenNameMap || {};
+  const shipinhaoMap = shipinhaoNameToDarenNameMap || {};
+
+  // 初始化所有预期的达人（即使暂时没有订单数据）
+  if (expectedDarenList && expectedDarenList.length > 0) {
+    expectedDarenList.forEach(darenName => {
+      if (darenName && !byDaren[darenName]) {
+        byDaren[darenName] = {};
+        darenInfoMap[darenName] = ''; // ID未知，设为空
+      }
+    });
+  }
+
+  allOrders.forEach(order => {
+    // 应用过滤函数（如只保留直对+服务商）
+    if (!filterFn(order)) return;
+    if (!order || !order.product || !order.date) return;
+
+    // 获取达人昵称：
+    // - 视频号：通过 shipinhaoNameToDarenNameMap 查找
+    // - 其他平台：通过 darenIdToDarenNameMap 查找（用 order.darenId）
+    let darenName = '';
+    if (order.platform === 'shipinhao') {
+      // 视频号：order.darenId 存储的是达人昵称本身，直接用于查找
+      const shipinhaoName = order.darenId || '';
+      darenName = shipinhaoMap[shipinhaoName] || shipinhaoName;
+    } else {
+      // 其他平台：通过达人ID查找昵称
+      const darenId = order.darenId || '';
+      darenName = darenIdMap[darenId] || '';
+    }
+
+    // 如果无法获取达人昵称，跳过此订单
+    if (!darenName) return;
+
+    // 记录达人信息（包括平台和金额）
+    if (!darenInfoMap[darenName]) {
+      darenInfoMap[darenName] = { id: order.darenId || '', platforms: new Set(), totalAmount: 0 };
+    }
+    darenInfoMap[darenName].platforms.add(order.platform);
+    darenInfoMap[darenName].totalAmount += order.amount;
+
+    // 初始化该达人的数据桶
+    if (!byDaren[darenName]) {
+      byDaren[darenName] = {};
+    }
+
+    const productLower = String(order.product).toLowerCase();
+    let matchedModelName = null;
+
+    // V2特殊处理
+    if (productLower.includes('v2')) {
+      let containsOtherKeyword = false;
+      for (const mapping of mappingList) {
+        const kw = mapping.keyword;
+        if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
+          containsOtherKeyword = true;
+          break;
+        }
+      }
+      if (!containsOtherKeyword) {
+        for (const mapping of mappingList) {
+          if (mapping.keyword === 'V2') {
+            matchedModelName = mapping.model;
+            break;
+          }
+        }
+      }
+    }
+
+    // 其他关键词匹配
+    if (!matchedModelName) {
+      for (const mapping of mappingList) {
+        const kw = mapping.keyword;
+        if (kw !== 'V2' && productLower.includes(kw.toLowerCase())) {
+          matchedModelName = mapping.model;
+          break;
+        }
+      }
+    }
+
+    // 如果匹配到型号，累加数据
+    if (matchedModelName) {
+      const day = order.date;
+      if (!byDaren[darenName][day]) {
+        byDaren[darenName][day] = {};
+      }
+      if (!byDaren[darenName][day][matchedModelName]) {
+        byDaren[darenName][day][matchedModelName] = { amount: 0, quantity: 0 };
+      }
+      byDaren[darenName][day][matchedModelName].amount += order.amount;
+      byDaren[darenName][day][matchedModelName].quantity += (order.quantity || 1);
+    }
+  });
+
+  // 转换数据格式
+  const result = {};
+  Object.keys(byDaren).forEach(darenName => {
+    const dailyBucket = byDaren[darenName];
+    const dailyArray = [];
+    Object.keys(dailyBucket).sort().forEach(day => {
+      const dayData = { date: day };
+      Object.keys(dailyBucket[day]).forEach(modelName => {
+        dayData[modelName] = {
+          amount: Number((dailyBucket[day][modelName].amount / 10000).toFixed(2)),
+          quantity: dailyBucket[day][modelName].quantity
+        };
+      });
+      dailyArray.push(dayData);
+    });
+    result[darenName] = { daily: dailyArray };
+  });
+
+  // 生成达人列表（按昵称排序）- 使用预期的达人列表顺序
+  let darenNames = expectedDarenList && expectedDarenList.length > 0
+    ? expectedDarenList.filter(name => byDaren[name] !== undefined)
+    : Object.keys(darenInfoMap).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+
+  // 添加不在预期列表中但有数据的达人
+  Object.keys(byDaren).forEach(name => {
+    if (!darenNames.includes(name)) {
+      darenNames.push(name);
+    }
+  });
+
+  const darenList = darenNames
+    .map(name => {
+      const info = darenInfoMap[name] || { id: '', platforms: new Set(), totalAmount: 0 };
+      return {
+        name,
+        id: info.id || '',
+        platforms: Array.from(info.platforms || []),
+        totalAmount: info.totalAmount || 0
+      };
+    })
+    .filter(item => item.totalAmount > 0) // 过滤掉0金额的达人
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+
+  return { byDaren: result, darenList };
 }
 
 // ==================== 导出 ====================
@@ -765,8 +1104,11 @@ export {
   aggregateByWeek,
   aggregateByMonth,
   aggregateFuwuByChannel,
+  aggregateFuwuByChannelWeekly,
   aggregateFuwuByChannelMonthly,
   aggregateDpByDarenMonthly,
   aggregateModelDistributionByDay,
+  aggregateModelDistributionByDayFiltered,
+  aggregateModelDistributionByDaren,
   parseExcelSerial
 };

@@ -474,6 +474,243 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     #global-loading .loading-text { font-size: 14px; color: #64748b; }
     body.loading-active { overflow: hidden; }
+    /* 骨架屏样式 - 现代化美观设计 */
+    #page-skeleton {
+      display: none;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+      padding: 20px;
+    }
+    #page-skeleton.is-visible {
+      display: block;
+    }
+    /* 页面头部骨架 */
+    #page-skeleton .skeleton-page-header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-top: 20px;
+    }
+    #page-skeleton .skeleton-page-header h1 {
+      margin: 0 auto 16px;
+      width: 280px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #e8ecf1 0%, #f0f4f8 50%, #e8ecf1 100%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 2s ease-in-out infinite;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    #page-skeleton .skeleton-page-header .subtitle {
+      margin: 0 auto;
+      width: 360px;
+      height: 20px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #e8ecf1 0%, #f0f4f8 50%, #e8ecf1 100%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 2s ease-in-out infinite 0.3s;
+    }
+    /* 导航条骨架 */
+    #page-skeleton .skeleton-nav {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 30px;
+      padding: 8px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 12px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #page-skeleton .skeleton-nav-item {
+      flex: 1;
+      height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #e8ecf1 0%, #f0f4f8 50%, #e8ecf1 100%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 2s ease-in-out infinite;
+    }
+    #page-skeleton .skeleton-nav-item:nth-child(2) { animation-delay: 0.1s; }
+    #page-skeleton .skeleton-nav-item:nth-child(3) { animation-delay: 0.2s; }
+    /* 内容区域骨架 */
+    #page-skeleton .skeleton-content {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    #page-skeleton .skeleton-section-title {
+      width: 180px;
+      height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #e8ecf1 0%, #f0f4f8 50%, #e8ecf1 100%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 2s ease-in-out infinite;
+      margin-bottom: 20px;
+      margin-left: 8px;
+    }
+    /* 图表卡片骨架 */
+    #page-skeleton .skeleton-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    #page-skeleton .skeleton-card {
+      background: rgba(255,255,255,0.8);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+    #page-skeleton .skeleton-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    #page-skeleton .skeleton-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #e8ecf1 0%, #f0f4f8 100%);
+      animation: skeleton-pulse 2s ease-in-out infinite;
+    }
+    #page-skeleton .skeleton-card-title {
+      flex: 1;
+      height: 22px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #e8ecf1 0%, #f0f4f8 50%, #e8ecf1 100%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 2s ease-in-out infinite 0.2s;
+    }
+    #page-skeleton .skeleton-card-body {
+      height: 280px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #eef1f5 0%, #f5f7fa 50%, #eef1f5 100%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 2s ease-in-out infinite 0.4s;
+      position: relative;
+      overflow: hidden;
+    }
+    #page-skeleton .skeleton-card-body::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: skeleton-shine 2s infinite;
+    }
+    /* 全宽卡片 */
+    #page-skeleton .skeleton-card.wide {
+      grid-column: 1 / -1;
+    }
+    #page-skeleton .skeleton-card.wide .skeleton-card-body {
+      height: 320px;
+    }
+    /* 加载状态指示器 */
+    #page-skeleton .skeleton-loader {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 28px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 30px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+    #page-skeleton .skeleton-loader-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e2e8f0;
+      border-top-color: #4a69bd;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    #page-skeleton .skeleton-loader-text {
+      font-size: 14px;
+      color: #475569;
+      font-weight: 500;
+    }
+    /* 动画定义 */
+    @keyframes skeleton-pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    @keyframes skeleton-shine {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    /* 原有骨架屏样式保留兼容 */
+    .card-skeleton { display: none; }
+    /* 图表维度切换加载覆盖层 */
+    .chart-dim-loading-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 6px;
+    }
+    .chart-dim-loading-overlay.is-visible {
+      display: flex;
+    }
+    .chart-dim-loading-overlay .dim-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #4a69bd;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    .chart-dim-loading-overlay .dim-loading-text {
+      font-size: 14px;
+      color: #475569;
+      font-weight: 500;
+    }
+    /* 维度按钮加载状态 */
+    .view-btn.is-loading {
+      opacity: 0.7;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .view-btn.is-loading::after {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-left: 6px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      vertical-align: middle;
+    }
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 10002;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #page-skeleton .skeleton-loading-status .status-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
     #ai-assistant-wrap { display: none; /* 暂时隐藏 AI 助手；恢复时删除本行 display:none */ position: fixed; right: 20px; bottom: 20px; z-index: 9999; font-family: inherit; }
     #ai-assistant-btn { width: 52px; height: 52px; border-radius: 50%; background: #4a69bd; color: #fff; border: none; box-shadow: 0 4px 12px rgba(74,105,189,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; }
     #ai-assistant-btn:hover { background: #3d5aa0; }
@@ -671,6 +908,81 @@
     <div class="spinner"></div>
     <span class="loading-text">加载中…</span>
   </div>
+  <!-- 页面骨架屏 - 美观的加载界面 -->
+  <div id="page-skeleton">
+    <!-- 页面头部骨架 -->
+    <div class="skeleton-page-header">
+      <h1></h1>
+      <div class="subtitle"></div>
+    </div>
+
+    <!-- 导航条骨架 -->
+    <div class="skeleton-nav">
+      <div class="skeleton-nav-item"></div>
+      <div class="skeleton-nav-item"></div>
+      <div class="skeleton-nav-item"></div>
+    </div>
+
+    <!-- 内容区域骨架 -->
+    <div class="skeleton-content">
+      <!-- 章节标题 -->
+      <div class="skeleton-section-title"></div>
+
+      <!-- 图表卡片网格 -->
+      <div class="skeleton-cards">
+        <!-- 卡片1 -->
+        <div class="skeleton-card">
+          <div class="skeleton-card-header">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+          </div>
+          <div class="skeleton-card-body"></div>
+        </div>
+
+        <!-- 卡片2 -->
+        <div class="skeleton-card">
+          <div class="skeleton-card-header">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+          </div>
+          <div class="skeleton-card-body"></div>
+        </div>
+
+        <!-- 卡片3 - 全宽 -->
+        <div class="skeleton-card wide">
+          <div class="skeleton-card-header">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+          </div>
+          <div class="skeleton-card-body"></div>
+        </div>
+
+        <!-- 卡片4 -->
+        <div class="skeleton-card">
+          <div class="skeleton-card-header">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+          </div>
+          <div class="skeleton-card-body"></div>
+        </div>
+
+        <!-- 卡片5 -->
+        <div class="skeleton-card">
+          <div class="skeleton-card-header">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+          </div>
+          <div class="skeleton-card-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部加载指示器 -->
+    <div class="skeleton-loader" id="skeletonLoader">
+      <div class="skeleton-loader-spinner"></div>
+      <span class="skeleton-loader-text" id="skeletonStatusText">正在加载数据...</span>
+    </div>
+  </div>
   <div id="main-content" style="display:none">
   <div style="position:relative;z-index:1">
   <div class="page-header">
@@ -715,9 +1027,10 @@
     <div class="card wide card-all-channel-gmv">
       <h3>
         <i class="chart-title-icon fa fa-line-chart"></i><span>全渠道GMV</span>
-        <span class="chart-view-switch" id="allChannelGmvTrendModeSwitch" role="group" aria-label="全渠道GMV口径（日度/周度）">
+        <span class="chart-view-switch" id="allChannelGmvTrendModeSwitch" role="group" aria-label="全渠道GMV口径（日度/周度/月度）">
           <button type="button" class="view-btn active" data-all-channel-trend-mode="daily">日度</button>
           <button type="button" class="view-btn" data-all-channel-trend-mode="weekly">周度</button>
+          <button type="button" class="view-btn" data-all-channel-trend-mode="monthly">月度</button>
         </span>
       </h3>
       <div class="date-range">起始：<select id="allChannelGmvStart"></select> 结束：<select id="allChannelGmvEnd"></select></div>
@@ -727,9 +1040,10 @@
     <div class="card wide card-all-channel-gsv">
       <h3>
         <i class="chart-title-icon fa fa-line-chart"></i><span>全渠道GSV</span>
-        <span class="chart-view-switch" id="allChannelGsvTrendModeSwitch" role="group" aria-label="全渠道GSV口径（日度/周度）">
+        <span class="chart-view-switch" id="allChannelGsvTrendModeSwitch" role="group" aria-label="全渠道GSV口径（日度/周度/月度）">
           <button type="button" class="view-btn active" data-all-channel-trend-mode="daily">日度</button>
           <button type="button" class="view-btn" data-all-channel-trend-mode="weekly">周度</button>
+          <button type="button" class="view-btn" data-all-channel-trend-mode="monthly">月度</button>
         </span>
       </h3>
       <div class="date-range">起始：<select id="allChannelGsvStart"></select> 结束：<select id="allChannelGsvEnd"></select></div>
@@ -739,9 +1053,10 @@
     <div class="card wide card-all-channel-refund">
       <h3>
         <i class="chart-title-icon fa fa-line-chart"></i><span>退款率</span>
-        <span class="chart-view-switch" id="allChannelRefundTrendModeSwitch" role="group" aria-label="全渠道退款率口径（日度/周度）">
+        <span class="chart-view-switch" id="allChannelRefundTrendModeSwitch" role="group" aria-label="全渠道退款率口径（日度/周度/月度）">
           <button type="button" class="view-btn active" data-all-channel-trend-mode="daily">日度</button>
           <button type="button" class="view-btn" data-all-channel-trend-mode="weekly">周度</button>
+          <button type="button" class="view-btn" data-all-channel-trend-mode="monthly">月度</button>
         </span>
       </h3>
       <div class="date-range">起始：<select id="allChannelRefundStart"></select> 结束：<select id="allChannelRefundEnd"></select></div>
@@ -821,12 +1136,20 @@
         </span>
         <span class="chart-view-switch" id="fourPlatformModeSwitch">
           <button type="button" class="view-btn active" data-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-mode="weekly">周度</button>
           <button type="button" class="view-btn" data-mode="monthly">月度</button>
         </span>
       </h3>
       <span id="fourPlatformStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="fourPlatformStart"></select> 结束：<select id="fourPlatformEnd"></select></div>
-      <div id="chartFourPlatform" class="chart"></div>
+      <div class="chart-wrap--overlay">
+        <div id="chartFourPlatform" class="chart"></div>
+        <!-- 维度切换加载覆盖层 -->
+        <div class="chart-dim-loading-overlay" id="fourPlatformDimLoading">
+          <div class="dim-spinner"></div>
+          <span class="dim-loading-text" id="fourPlatformDimLoadingText">正在计算数据...</span>
+        </div>
+      </div>
       <div id="fourPlatformPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期合计"></div>
     </div>
 
@@ -840,17 +1163,25 @@
         </span>
         <span class="chart-view-switch" id="fuwuGmvModeSwitch">
           <button type="button" class="view-btn active" data-fuwu-gmv-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-fuwu-gmv-mode="weekly">周度</button>
           <button type="button" class="view-btn" data-fuwu-gmv-mode="monthly">月度</button>
         </span>
       </h3>
       <span id="fuwuGmvStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="fuwuGmvStart"></select> 结束：<select id="fuwuGmvEnd"></select></div>
-      <div id="chartFuwuGmv" class="chart"></div>
+      <div class="chart-wrap--overlay">
+        <div id="chartFuwuGmv" class="chart"></div>
+        <!-- 维度切换加载覆盖层 -->
+        <div class="chart-dim-loading-overlay" id="fuwuGmvDimLoading">
+          <div class="dim-spinner"></div>
+          <span class="dim-loading-text" id="fuwuGmvDimLoadingText">正在计算数据...</span>
+        </div>
+      </div>
       <div id="fuwuGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期服务商合计"></div>
     </div>
 
     <!-- 四平台合并型号分布-GMV -->
-    <div class="card wide">
+    <div class="card">
       <h3>
         <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GMV</span>
         <span class="chart-view-switch" id="newretailModelDistModeSwitch" role="group" aria-label="型号分布视图切换">
@@ -864,7 +1195,7 @@
     </div>
 
     <!-- 四平台合并型号分布-GSV -->
-    <div class="card wide">
+    <div class="card">
       <h3>
         <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GSV</span>
         <span class="chart-view-switch" id="newretailModelDistGsvModeSwitch" role="group" aria-label="型号分布GSV视图切换">
@@ -875,6 +1206,59 @@
       <span id="newretailModelDistGsvStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="newretailModelDistGsvStart"></select> 结束：<select id="newretailModelDistGsvEnd"></select></div>
       <div id="chartNewretailModelDistGsv" class="chart"></div>
+    </div>
+
+    <!-- DP-沐成型号分布-GSV -->
+    <div class="card">
+      <h3>
+        <i class="chart-title-icon fa fa-bar-chart"></i><span>DP-沐成型号分布-GSV</span>
+        <span class="chart-view-switch" id="modelDistDpMuchengModeSwitch" role="group" aria-label="DP沐成型号分布视图切换">
+          <button type="button" class="view-btn active" id="modelDistDpMuchengBarBtn">柱状图</button>
+          <button type="button" class="view-btn" id="modelDistDpMuchengPieBtn">饼图</button>
+        </span>
+      </h3>
+      <span id="modelDistDpMuchengStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="modelDistDpMuchengStart"></select> 结束：<select id="modelDistDpMuchengEnd"></select></div>
+      <div id="chartModelDistDpMucheng" class="chart"></div>
+    </div>
+
+    <!-- DP-逐梦型号分布-GSV -->
+    <div class="card">
+      <h3>
+        <i class="chart-title-icon fa fa-bar-chart"></i><span>DP-逐梦型号分布-GSV</span>
+        <span class="chart-view-switch" id="modelDistDpZhumengModeSwitch" role="group" aria-label="DP逐梦型号分布视图切换">
+          <button type="button" class="view-btn active" id="modelDistDpZhumengBarBtn">柱状图</button>
+          <button type="button" class="view-btn" id="modelDistDpZhumengPieBtn">饼图</button>
+        </span>
+      </h3>
+      <span id="modelDistDpZhumengStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="modelDistDpZhumengStart"></select> 结束：<select id="modelDistDpZhumengEnd"></select></div>
+      <div id="chartModelDistDpZhumeng" class="chart"></div>
+    </div>
+
+    <!-- 达人型号分布-GSV（直对+服务商） -->
+    <div class="card">
+      <h3>
+        <i class="chart-title-icon fa fa-bar-chart"></i><span>达人型号分布-GSV</span>
+        <span class="chart-view-switch" id="modelDistDarenModeSwitch" role="group" aria-label="达人型号分布视图切换">
+          <button type="button" class="view-btn active" id="modelDistDarenBarBtn">柱状图</button>
+          <button type="button" class="view-btn" id="modelDistDarenPieBtn">饼图</button>
+        </span>
+      </h3>
+      <span id="modelDistDarenStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="modelDistDarenStart"></select> 结束：<select id="modelDistDarenEnd"></select></div>
+      <div class="daren-filter-bar" style="margin: 8px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <label style="font-size: 13px; color: #555;">达人筛选：</label>
+        <div class="daren-search-select" style="position: relative; flex: 1; min-width: 200px; max-width: 400px;">
+          <input type="text" id="modelDistDarenSearch" placeholder="搜索达人昵称..."
+            style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box;"
+            autocomplete="off">
+          <select id="modelDistDarenSelect" style="width: 100%; margin-top: 4px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; background: #fff;">
+            <option value="">全部达人</option>
+          </select>
+        </div>
+      </div>
+      <div id="chartModelDistDaren" class="chart"></div>
     </div>
   </div>
   </div>
@@ -914,7 +1298,7 @@
   </div>
   <div class="page-footer">
     <hr class="footer-divider" />
-    <p class="footer-note">暂未开放实时更新数据功能，如需更新或发现数据错误请联系胡鹏辉</p>
+    <p class="footer-note">如需更新或发现数据错误请联系胡鹏辉</p>
   </div>
   <div id="ai-assistant-wrap">
     <button type="button" id="ai-assistant-btn" title="AI 助手"><i class="fa fa-comments-o"></i></button>
@@ -1050,15 +1434,21 @@
       }
       function enterApp() {
         authGate.style.display = 'none';
-        mainContent.style.display = 'block';
-        showLoading();
-        setTimeout(function () {
-          try {
-            if (typeof isLivestreamLocalPreview === 'function' && isLivestreamLocalPreview() && typeof refreshLivestreamFunnelFromFeishu === 'function') {
-              refreshLivestreamFunnelFromFeishu();
-            }
-          } catch (e) {}
-        }, 0);
+        // 先显示骨架屏，让用户立即看到反馈
+        var pageSkeleton = document.getElementById('page-skeleton');
+        if (pageSkeleton) pageSkeleton.classList.add('is-visible');
+        // 调用原来的加载逻辑
+        if (window.__runAfterAuth__) window.__runAfterAuth__();
+      }
+
+      // 显示主内容（在数据加载完成后调用）
+      function showMainContent() {
+        var pageSkeleton = document.getElementById('page-skeleton');
+        var mainContent = document.getElementById('main-content');
+        if (pageSkeleton) pageSkeleton.classList.remove('is-visible');
+        if (mainContent) mainContent.style.display = 'block';
+        initMainTabNav();
+        if (typeof window.resizeCharts === 'function') window.resizeCharts();
       }
       function showLoginGate() {
         authGate.style.display = 'flex';
@@ -3042,6 +3432,56 @@
         var diff = wd === 0 ? 6 : wd - 1;
         d.setDate(d.getDate() - diff);
         return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+      }
+      function monthFromDateStr(ds) {
+        var n = normalizeDateKeyForMerge(ds);
+        if (!n) return '';
+        var m = String(n).match(/^(\d{4})-(\d{2})/);
+        if (!m) return '';
+        return m[1] + '-' + m[2];
+      }
+
+      // 获取日期所在周的开始日期（周一）
+      function weekStartFromDateStr(ds) {
+        var n = normalizeDateKeyForMerge(ds);
+        if (!n) return '';
+        var m = String(n).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return '';
+        var d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+        var wd = d.getDay();
+        var diff = wd === 0 ? 6 : wd - 1; // 周一是每周第一天
+        d.setDate(d.getDate() - diff);
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+      }
+
+      function aggregateAllChannelGmvByWeek(pointsDaily) {
+        var daily = Array.isArray(pointsDaily) ? pointsDaily : [];
+        var bucket = {};
+        daily.forEach(function (p) {
+          var week = weekStartFromDateStr(p && p.date);
+          if (!week) return;
+          if (!bucket[week]) bucket[week] = { jdGmv: 0, tmallGmv: 0, dySelfGmv: 0, dp: 0, zhidui: 0, fuwu: 0 };
+          bucket[week].jdGmv += Number((p && p.jdGmv) || 0);
+          bucket[week].tmallGmv += Number((p && p.tmallGmv) || 0);
+          bucket[week].dySelfGmv += Number((p && p.dySelfGmv) || 0);
+          bucket[week].dp += Number((p && p.dp) || 0);
+          bucket[week].zhidui += Number((p && p.zhidui) || 0);
+          bucket[week].fuwu += Number((p && p.fuwu) || 0);
+        });
+        return Object.keys(bucket)
+          .sort()
+          .map(function (week) {
+            var b = bucket[week] || {};
+            return {
+              date: week,
+              jdGmv: Number(b.jdGmv) || 0,
+              tmallGmv: Number(b.tmallGmv) || 0,
+              dySelfGmv: Number(b.dySelfGmv) || 0,
+              dp: Number(b.dp) || 0,
+              zhidui: Number(b.zhidui) || 0,
+              fuwu: Number(b.fuwu) || 0,
+            };
+          });
       }
       /** 枚举 [startStr, endStr] 内每个自然日（含首尾），均为 YYYY-MM-DD */
       function enumerateDateStrRangeInclusive(startStr, endStr) {
@@ -5320,19 +5760,24 @@
           })
           .join('');
       }
-      /** 日销全品类 jdThirdF / tmallShop / douyinShop + 抖音明细 DP / 达人，按日对齐 */
+      /** 日销全品类 jdThirdF / tmallShop / douyinShop + 新零售明细 DP / 直对 / 服务商，按日对齐 */
       function buildAllChannelGmvPoints() {
         var gmvPts = window.gmvCombinedPointsCached || [];
-        var dyPts = window.douyinDailyTrendPointsDailyCached || [];
-        var dyMap = {};
-        dyPts.forEach(function (p) {
-          if (!p || !p.date) return;
-          var k = normalizeDateKeyForMerge(p.date);
-          if (!k) return;
-          if (!dyMap[k]) dyMap[k] = { dp: 0, daren: 0 };
-          dyMap[k].dp += Number(p.dp) || 0;
-          dyMap[k].daren += Number(p.daren) || 0;
-        });
+        var nrData = window.__FOUR_PLATFORM_DATA__;
+        var nrMap = {};
+        // 从新零售数据获取DP、直对、服务商的GMV
+        if (nrData && nrData.gmv && nrData.gmv.daily) {
+          nrData.gmv.daily.forEach(function (p) {
+            if (!p || !p.date) return;
+            var k = normalizeDateKeyForMerge(p.date);
+            if (!k) return;
+            nrMap[k] = {
+              dp: Number(p.dp) || 0,
+              zhidui: Number(p.zhidui) || 0,
+              fuwu: Number(p.fuwu) || 0
+            };
+          });
+        }
         var byDate = {};
         gmvPts.forEach(function (p) {
           if (!p || !p.date) return;
@@ -5343,10 +5788,12 @@
           byDate[d].tmallShop = p.tmallShop;
           byDate[d].douyinShop = p.douyinShop;
         });
-        Object.keys(dyMap).forEach(function (k) {
+        // 合并新零售数据
+        Object.keys(nrMap).forEach(function (k) {
           if (!byDate[k]) byDate[k] = {};
-          byDate[k].dp = dyMap[k].dp;
-          byDate[k].daren = dyMap[k].daren;
+          byDate[k].dp = nrMap[k].dp;
+          byDate[k].zhidui = nrMap[k].zhidui;
+          byDate[k].fuwu = nrMap[k].fuwu;
         });
         return Object.keys(byDate)
           .sort()
@@ -5358,40 +5805,44 @@
               tmallGmv: Number(o.tmallShop) || 0,
               dySelfGmv: Number(o.douyinShop) || 0,
               dp: Number(o.dp) || 0,
-              daren: Number(o.daren) || 0,
+              zhidui: Number(o.zhidui) || 0,
+              fuwu: Number(o.fuwu) || 0,
             };
           });
       }
-      function aggregateAllChannelGmvByWeek(pointsDaily) {
+      function aggregateAllChannelGmvByMonth(pointsDaily) {
         var daily = Array.isArray(pointsDaily) ? pointsDaily : [];
         var bucket = {};
         daily.forEach(function (p) {
-          var ws = weekStartFromDateStr(p && p.date);
-          if (!ws) return;
-          if (!bucket[ws]) bucket[ws] = { jdGmv: 0, tmallGmv: 0, dySelfGmv: 0, dp: 0, daren: 0 };
-          bucket[ws].jdGmv += Number((p && p.jdGmv) || 0);
-          bucket[ws].tmallGmv += Number((p && p.tmallGmv) || 0);
-          bucket[ws].dySelfGmv += Number((p && p.dySelfGmv) || 0);
-          bucket[ws].dp += Number((p && p.dp) || 0);
-          bucket[ws].daren += Number((p && p.daren) || 0);
+          var month = monthFromDateStr(p && p.date);
+          if (!month) return;
+          if (!bucket[month]) bucket[month] = { jdGmv: 0, tmallGmv: 0, dySelfGmv: 0, dp: 0, zhidui: 0, fuwu: 0 };
+          bucket[month].jdGmv += Number((p && p.jdGmv) || 0);
+          bucket[month].tmallGmv += Number((p && p.tmallGmv) || 0);
+          bucket[month].dySelfGmv += Number((p && p.dySelfGmv) || 0);
+          bucket[month].dp += Number((p && p.dp) || 0);
+          bucket[month].zhidui += Number((p && p.zhidui) || 0);
+          bucket[month].fuwu += Number((p && p.fuwu) || 0);
         });
         return Object.keys(bucket)
           .sort()
-          .map(function (ws) {
-            var b = bucket[ws] || {};
+          .map(function (month) {
+            var b = bucket[month] || {};
             return {
-              date: ws,
+              date: month,
               jdGmv: Number(b.jdGmv) || 0,
               tmallGmv: Number(b.tmallGmv) || 0,
               dySelfGmv: Number(b.dySelfGmv) || 0,
               dp: Number(b.dp) || 0,
-              daren: Number(b.daren) || 0,
+              zhidui: Number(b.zhidui) || 0,
+              fuwu: Number(b.fuwu) || 0,
             };
           });
       }
       function getAllChannelGmvPointsByMode() {
         var dailyMerged = buildAllChannelGmvPoints();
         var mode = window.allChannelTrendMode || 'daily';
+        if (mode === 'monthly') return aggregateAllChannelGmvByMonth(dailyMerged);
         if (mode === 'weekly') return aggregateAllChannelGmvByWeek(dailyMerged);
         return dailyMerged;
       }
@@ -5514,48 +5965,108 @@
         if (!selS || !selE) return;
         var prevS = selS.value;
         var prevE = selE.value;
+
+        var mode = window.allChannelTrendMode || 'daily';
+        var isMonthly = mode === 'monthly';
+        var isWeekly = mode === 'weekly';
+
+        // 获取数据日期列表
         var datesFromData = getAllChannelSharedDatePointsForInit().map(function (p) {
           return p.date;
         });
-        var def = defaultJdDailyFilterRange();
-        var merged = {};
-        datesFromData.forEach(function (d) {
-          if (d) merged[d] = true;
-        });
-        merged[def.start] = true;
-        merged[def.end] = true;
-        var allDates = Object.keys(merged)
-          .filter(Boolean)
-          .sort();
-        var opts = allDates.map(function (dt) {
-          return '<option value="' + dt + '">' + (dt ? dt.slice(0, 10) : dt) + '</option>';
-        });
-        var html = '<option value="">全量</option>' + opts.join('');
+
+        var html;
+        if (isMonthly) {
+          // 月度模式：提取所有月份并去重
+          var monthsSet = {};
+          datesFromData.forEach(function (d) {
+            if (d && d.length >= 7) {
+              var month = d.substring(0, 7);
+              monthsSet[month] = true;
+            }
+          });
+          // 确保有2026-01
+          monthsSet['2026-01'] = true;
+          // 确保有当前月份
+          var now = new Date();
+          var currentMonth = now.getFullYear() + '-' + pad2(now.getMonth() + 1);
+          monthsSet[currentMonth] = true;
+
+          var allMonths = Object.keys(monthsSet).filter(Boolean).sort();
+          var opts = allMonths.map(function (m) {
+            return '<option value="' + m + '">' + m + '</option>';
+          });
+          html = '<option value="">全量</option>' + opts.join('');
+        } else if (isWeekly) {
+          // 周度模式：提取所有周开始日期并去重
+          var weeksSet = {};
+          datesFromData.forEach(function (d) {
+            if (d && d.length >= 10) {
+              var week = weekStartFromDateStr(d);
+              if (week) weeksSet[week] = true;
+            }
+          });
+          var allWeeks = Object.keys(weeksSet).filter(Boolean).sort();
+          var opts = allWeeks.map(function (w) {
+            return '<option value="' + w + '">' + w + '</option>';
+          });
+          html = '<option value="">全量</option>' + opts.join('');
+        } else {
+          // 日度模式：显示日期
+          var def = defaultJdDailyFilterRange();
+          var merged = {};
+          datesFromData.forEach(function (d) {
+            if (d) merged[d] = true;
+          });
+          merged[def.start] = true;
+          merged[def.end] = true;
+          var allDates = Object.keys(merged).filter(Boolean).sort();
+          var opts = allDates.map(function (dt) {
+            return '<option value="' + dt + '">' + (dt ? dt.slice(0, 10) : dt) + '</option>';
+          });
+          html = '<option value="">全量</option>' + opts.join('');
+        }
+
         ALL_CHANNEL_DATE_PAIRS.forEach(function (pair) {
           var a = document.getElementById(pair[0]);
           var b = document.getElementById(pair[1]);
           if (a) a.innerHTML = html;
           if (b) b.innerHTML = html;
         });
+
         var firstInit = !window.__allChannelLinkedDateSelectsInited;
         window.__allChannelLinkedDateSelectsInited = true;
-        function keepDateVal(v) {
-          if (v === '') return true;
-          return !!(v && merged[v]);
-        }
-        var pickS;
-        var pickE;
-        if (firstInit) {
-          pickS = def.start;
-          pickE = def.end;
+
+        // 决定默认值
+        var pickS, pickE;
+        if (isMonthly) {
+          // 月度模式：默认2026-01到当前月
+          var now = new Date();
+          var currentMonth = now.getFullYear() + '-' + pad2(now.getMonth() + 1);
+          pickS = '2026-01';
+          pickE = currentMonth;
         } else {
-          pickS = keepDateVal(prevS) ? prevS : def.start;
-          pickE = keepDateVal(prevE) ? prevE : def.end;
-          if (pickS && pickE && pickS > pickE) {
+          // 日度模式：使用原来的逻辑
+          var def = defaultJdDailyFilterRange();
+          if (firstInit) {
             pickS = def.start;
             pickE = def.end;
+          } else {
+            var merged = {};
+            datesFromData.forEach(function (d) { if (d) merged[d] = true; });
+            function keepDateVal(v) {
+              if (v === '') return true;
+              return !!(v && merged[v]);
+            }
+            pickS = keepDateVal(prevS) ? prevS : def.start;
+            pickE = keepDateVal(prevE) ? prevE : def.end;
+            if (pickS && pickE && pickS > pickE) {
+              pickS = def.start;
+              pickE = def.end;
+            }
           }
         }
+
         applyAllChannelRangeToAllSelects(pickS, pickE);
         ALL_CHANNEL_DATE_PAIRS.forEach(function (pair) {
           var a = document.getElementById(pair[0]);
@@ -5574,22 +6085,23 @@
         return Number(valRaw).toFixed(2) + '万';
       }
       function sumAllChannelGmvRows(rows) {
-        var acc = { jd: 0, tm: 0, dy: 0, dp: 0, dr: 0 };
+        var acc = { jd: 0, tm: 0, dy: 0, dp: 0, zd: 0, fw: 0 };
         (rows || []).forEach(function (p) {
           if (!p) return;
           if (p.jdGmv != null && isFinite(Number(p.jdGmv))) acc.jd += Number(p.jdGmv);
           if (p.tmallGmv != null && isFinite(Number(p.tmallGmv))) acc.tm += Number(p.tmallGmv);
           if (p.dySelfGmv != null && isFinite(Number(p.dySelfGmv))) acc.dy += Number(p.dySelfGmv);
           if (p.dp != null && isFinite(Number(p.dp))) acc.dp += Number(p.dp);
-          if (p.daren != null && isFinite(Number(p.daren))) acc.dr += Number(p.daren);
+          if (p.zhidui != null && isFinite(Number(p.zhidui))) acc.zd += Number(p.zhidui);
+          if (p.fuwu != null && isFinite(Number(p.fuwu))) acc.fw += Number(p.fuwu);
         });
         return acc;
       }
       function renderAllChannelGmvPeriodTotals(rows) {
         var wrap = document.getElementById('allChannelGmvPeriodTotals');
         if (!wrap) return;
-        var colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'];
-        var labels = ['京东', '天猫', '抖音自播', '抖音DP', '抖音达人'];
+        var colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272'];
+        var labels = ['京东', '天猫', '抖音自播', 'DP', '直对', '服务商'];
         if (!rows || !rows.length) {
           wrap.innerHTML = labels
             .map(function (label, i) {
@@ -5606,43 +6118,46 @@
         }
         var acc = sumAllChannelGmvRows(rows);
         var items = [
-          { label: '京东', val: acc.jd },
-          { label: '天猫', val: acc.tm },
-          { label: '抖音自播', val: acc.dy },
-          { label: '抖音DP', val: acc.dp },
-          { label: '抖音达人', val: acc.dr },
+          { label: '京东', val: acc.jd, isNewretail: false },
+          { label: '天猫', val: acc.tm, isNewretail: false },
+          { label: '抖音自播', val: acc.dy, isNewretail: false },
+          { label: 'DP', val: acc.dp, isNewretail: true },
+          { label: '直对', val: acc.zd, isNewretail: true },
+          { label: '服务商', val: acc.fw, isNewretail: true },
         ];
         wrap.innerHTML = items
           .map(function (it, i) {
+            var valText = it.isNewretail ? formatNewretailPeriodTotal(it.val) : formatAllChannelGmvPeriodWan(it.val);
             return (
               '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
               colors[i] +
               '"><div class="all-channel-gmv-period-totals__label">' +
               it.label +
               '</div><div class="all-channel-gmv-period-totals__value">' +
-              formatAllChannelGmvPeriodWan(it.val) +
+              valText +
               '</div></div>'
             );
           })
           .join('');
       }
       function sumAllChannelGsvRows(rows) {
-        var acc = { jd: 0, tm: 0, dy: 0, dp: 0, dr: 0 };
+        var acc = { jd: 0, tm: 0, dy: 0, dp: 0, zd: 0, fw: 0 };
         (rows || []).forEach(function (p) {
           if (!p) return;
           if (p.jdGsv != null && isFinite(Number(p.jdGsv))) acc.jd += Number(p.jdGsv);
           if (p.tmallGsv != null && isFinite(Number(p.tmallGsv))) acc.tm += Number(p.tmallGsv);
           if (p.dySelfGsv != null && isFinite(Number(p.dySelfGsv))) acc.dy += Number(p.dySelfGsv);
           if (p.dpGsv != null && isFinite(Number(p.dpGsv))) acc.dp += Number(p.dpGsv);
-          if (p.darenGsv != null && isFinite(Number(p.darenGsv))) acc.dr += Number(p.darenGsv);
+          if (p.zhiduiGsv != null && isFinite(Number(p.zhiduiGsv))) acc.zd += Number(p.zhiduiGsv);
+          if (p.fuwuGsv != null && isFinite(Number(p.fuwuGsv))) acc.fw += Number(p.fuwuGsv);
         });
         return acc;
       }
       function renderAllChannelGsvPeriodTotals(rows) {
         var wrap = document.getElementById('allChannelGsvPeriodTotals');
         if (!wrap) return;
-        var colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'];
-        var labels = ['京东', '天猫', '抖音自播', '抖音DP', '抖音达人'];
+        var colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272'];
+        var labels = ['京东', '天猫', '抖音自播', 'DP', '直对', '服务商'];
         if (!rows || !rows.length) {
           wrap.innerHTML = labels
             .map(function (label, i) {
@@ -5659,21 +6174,23 @@
         }
         var acc = sumAllChannelGsvRows(rows);
         var items = [
-          { label: '京东', val: acc.jd },
-          { label: '天猫', val: acc.tm },
-          { label: '抖音自播', val: acc.dy },
-          { label: '抖音DP', val: acc.dp },
-          { label: '抖音达人', val: acc.dr },
+          { label: '京东', val: acc.jd, isNewretail: false },
+          { label: '天猫', val: acc.tm, isNewretail: false },
+          { label: '抖音自播', val: acc.dy, isNewretail: false },
+          { label: 'DP', val: acc.dp, isNewretail: true },
+          { label: '直对', val: acc.zd, isNewretail: true },
+          { label: '服务商', val: acc.fw, isNewretail: true },
         ];
         wrap.innerHTML = items
           .map(function (it, i) {
+            var valText = it.isNewretail ? formatNewretailPeriodTotal(it.val) : formatAllChannelGmvPeriodWan(it.val);
             return (
               '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
               colors[i] +
               '"><div class="all-channel-gmv-period-totals__label">' +
               it.label +
               '</div><div class="all-channel-gmv-period-totals__value">' +
-              formatAllChannelGmvPeriodWan(it.val) +
+              valText +
               '</div></div>'
             );
           })
@@ -5705,11 +6222,26 @@
         var mode = window.allChannelTrendMode || 'daily';
         var filtered = pts;
         if (startVal && endVal && startVal <= endVal) {
-          filtered = pts.filter(function (p) {
-            return p.date >= startVal && p.date <= endVal;
-          });
+          if (mode === 'monthly') {
+            // 月度模式：截取年月部分进行比较
+            var startMonth = startVal.substring(0, 7);
+            var endMonth = endVal.substring(0, 7);
+            filtered = pts.filter(function (p) {
+              var month = p.date.substring(0, 7);
+              return month >= startMonth && month <= endMonth;
+            });
+          } else if (mode === 'weekly') {
+            // 周度模式：直接比较周开始日期
+            filtered = pts.filter(function (p) {
+              return p.date >= startVal && p.date <= endVal;
+            });
+          } else {
+            filtered = pts.filter(function (p) {
+              return p.date >= startVal && p.date <= endVal;
+            });
+          }
         }
-        if (mode !== 'weekly') {
+        if (mode !== 'monthly' && mode !== 'weekly') {
           filtered = denseFillCalendarDaysForRange(filtered, startVal, endVal, emptyAllChannelGmvPoint);
         }
         var x = filtered.map(function (p) {
@@ -5730,13 +6262,17 @@
         });
         var yDp = filtered.map(function (p) {
           if (p == null || p.dp == null || !isFinite(Number(p.dp))) return null;
-          return p.dp / w;
+          return p.dp;  // 新零售数据已经是万为单位，不再除以10000
         });
-        var yDaren = filtered.map(function (p) {
-          if (p == null || p.daren == null || !isFinite(Number(p.daren))) return null;
-          return p.daren / w;
+        var yZhidui = filtered.map(function (p) {
+          if (p == null || p.zhidui == null || !isFinite(Number(p.zhidui))) return null;
+          return p.zhidui;  // 新零售数据已经是万为单位
         });
-        var legendData = ['京东', '天猫', '抖音自播', '抖音DP', '抖音达人'];
+        var yFuwu = filtered.map(function (p) {
+          if (p == null || p.fuwu == null || !isFinite(Number(p.fuwu))) return null;
+          return p.fuwu;  // 新零售数据已经是万为单位
+        });
+        var legendData = ['京东', '天猫', '抖音自播', 'DP', '直对', '服务商'];
         var opt = {
           tooltip: {
             trigger: 'axis',
@@ -5769,8 +6305,9 @@
             { name: '京东', type: 'line', smooth: true, data: yJd, showSymbol: x.length <= 40, connectNulls: false },
             { name: '天猫', type: 'line', smooth: true, data: yTm, showSymbol: x.length <= 40, connectNulls: false },
             { name: '抖音自播', type: 'line', smooth: true, data: yDySelf, showSymbol: x.length <= 40, connectNulls: false },
-            { name: '抖音DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
-            { name: '抖音达人', type: 'line', smooth: true, data: yDaren, showSymbol: x.length <= 40, connectNulls: false },
+            { name: 'DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
+            { name: '直对', type: 'line', smooth: true, data: yZhidui, showSymbol: x.length <= 40, connectNulls: false },
+            { name: '服务商', type: 'line', smooth: true, data: yFuwu, showSymbol: x.length <= 40, connectNulls: false },
           ],
         };
         charts.chartAllChannelGmv.setOption(applyMobileChartOption(opt), true);
@@ -5783,19 +6320,24 @@
         initMonthlyCumulativeMonthSelect();
         renderMonthlyCumulativeAchievement();
       }
-      /** 货架全品类 jdGsvShop / tmallGsvShop / douyinGsvShop + 新零售日明细 dpGsv / darenGsv */
+      /** 货架全品类 jdGsvShop / tmallGsvShop / douyinGsvShop + 新零售日明细 dpGsv / zhiduiGsv / fuwuGsv */
       function buildAllChannelGsvPoints() {
         var gsvPts = window.gsvCombinedPointsCached || [];
-        var dyPts = window.douyinDailyTrendPointsDailyCached || [];
-        var dyMap = {};
-        dyPts.forEach(function (p) {
-          if (!p || !p.date) return;
-          var k = normalizeDateKeyForMerge(p.date);
-          if (!k) return;
-          if (!dyMap[k]) dyMap[k] = { dpGsv: 0, darenGsv: 0 };
-          dyMap[k].dpGsv += Number(p.dpGsv) || 0;
-          dyMap[k].darenGsv += Number(p.darenGsv) || 0;
-        });
+        var nrData = window.__FOUR_PLATFORM_DATA__;
+        var nrMap = {};
+        // 从新零售数据获取DP、直对、服务商的GSV
+        if (nrData && nrData.gsv && nrData.gsv.daily) {
+          nrData.gsv.daily.forEach(function (p) {
+            if (!p || !p.date) return;
+            var k = normalizeDateKeyForMerge(p.date);
+            if (!k) return;
+            nrMap[k] = {
+              dpGsv: Number(p.dp) || 0,
+              zhiduiGsv: Number(p.zhidui) || 0,
+              fuwuGsv: Number(p.fuwu) || 0
+            };
+          });
+        }
         var byDate = {};
         gsvPts.forEach(function (p) {
           if (!p || !p.date) return;
@@ -5806,10 +6348,12 @@
           byDate[d].tmallGsvShop = p.tmallGsvShop;
           byDate[d].douyinGsvShop = p.douyinGsvShop;
         });
-        Object.keys(dyMap).forEach(function (k) {
+        // 合并新零售数据
+        Object.keys(nrMap).forEach(function (k) {
           if (!byDate[k]) byDate[k] = {};
-          byDate[k].dpGsv = dyMap[k].dpGsv;
-          byDate[k].darenGsv = dyMap[k].darenGsv;
+          byDate[k].dpGsv = nrMap[k].dpGsv;
+          byDate[k].zhiduiGsv = nrMap[k].zhiduiGsv;
+          byDate[k].fuwuGsv = nrMap[k].fuwuGsv;
         });
         return Object.keys(byDate)
           .sort()
@@ -5821,7 +6365,37 @@
               tmallGsv: Number(o.tmallGsvShop) || 0,
               dySelfGsv: Number(o.douyinGsvShop) || 0,
               dpGsv: Number(o.dpGsv) || 0,
-              darenGsv: Number(o.darenGsv) || 0,
+              zhiduiGsv: Number(o.zhiduiGsv) || 0,
+              fuwuGsv: Number(o.fuwuGsv) || 0,
+            };
+          });
+      }
+      function aggregateAllChannelGsvByMonth(pointsDaily) {
+        var daily = Array.isArray(pointsDaily) ? pointsDaily : [];
+        var bucket = {};
+        daily.forEach(function (p) {
+          var month = monthFromDateStr(p && p.date);
+          if (!month) return;
+          if (!bucket[month]) bucket[month] = { jdGsv: 0, tmallGsv: 0, dySelfGsv: 0, dpGsv: 0, zhiduiGsv: 0, fuwuGsv: 0 };
+          bucket[month].jdGsv += Number((p && p.jdGsv) || 0);
+          bucket[month].tmallGsv += Number((p && p.tmallGsv) || 0);
+          bucket[month].dySelfGsv += Number((p && p.dySelfGsv) || 0);
+          bucket[month].dpGsv += Number((p && p.dpGsv) || 0);
+          bucket[month].zhiduiGsv += Number((p && p.zhiduiGsv) || 0);
+          bucket[month].fuwuGsv += Number((p && p.fuwuGsv) || 0);
+        });
+        return Object.keys(bucket)
+          .sort()
+          .map(function (month) {
+            var b = bucket[month] || {};
+            return {
+              date: month,
+              jdGsv: Number(b.jdGsv) || 0,
+              tmallGsv: Number(b.tmallGsv) || 0,
+              dySelfGsv: Number(b.dySelfGsv) || 0,
+              dpGsv: Number(b.dpGsv) || 0,
+              zhiduiGsv: Number(b.zhiduiGsv) || 0,
+              fuwuGsv: Number(b.fuwuGsv) || 0,
             };
           });
       }
@@ -5829,32 +6403,35 @@
         var daily = Array.isArray(pointsDaily) ? pointsDaily : [];
         var bucket = {};
         daily.forEach(function (p) {
-          var ws = weekStartFromDateStr(p && p.date);
-          if (!ws) return;
-          if (!bucket[ws]) bucket[ws] = { jdGsv: 0, tmallGsv: 0, dySelfGsv: 0, dpGsv: 0, darenGsv: 0 };
-          bucket[ws].jdGsv += Number((p && p.jdGsv) || 0);
-          bucket[ws].tmallGsv += Number((p && p.tmallGsv) || 0);
-          bucket[ws].dySelfGsv += Number((p && p.dySelfGsv) || 0);
-          bucket[ws].dpGsv += Number((p && p.dpGsv) || 0);
-          bucket[ws].darenGsv += Number((p && p.darenGsv) || 0);
+          var week = weekStartFromDateStr(p && p.date);
+          if (!week) return;
+          if (!bucket[week]) bucket[week] = { jdGsv: 0, tmallGsv: 0, dySelfGsv: 0, dpGsv: 0, zhiduiGsv: 0, fuwuGsv: 0 };
+          bucket[week].jdGsv += Number((p && p.jdGsv) || 0);
+          bucket[week].tmallGsv += Number((p && p.tmallGsv) || 0);
+          bucket[week].dySelfGsv += Number((p && p.dySelfGsv) || 0);
+          bucket[week].dpGsv += Number((p && p.dpGsv) || 0);
+          bucket[week].zhiduiGsv += Number((p && p.zhiduiGsv) || 0);
+          bucket[week].fuwuGsv += Number((p && p.fuwuGsv) || 0);
         });
         return Object.keys(bucket)
           .sort()
-          .map(function (ws) {
-            var b = bucket[ws] || {};
+          .map(function (week) {
+            var b = bucket[week] || {};
             return {
-              date: ws,
+              date: week,
               jdGsv: Number(b.jdGsv) || 0,
               tmallGsv: Number(b.tmallGsv) || 0,
               dySelfGsv: Number(b.dySelfGsv) || 0,
               dpGsv: Number(b.dpGsv) || 0,
-              darenGsv: Number(b.darenGsv) || 0,
+              zhiduiGsv: Number(b.zhiduiGsv) || 0,
+              fuwuGsv: Number(b.fuwuGsv) || 0,
             };
           });
       }
       function getAllChannelGsvPointsByMode() {
         var dailyMerged = buildAllChannelGsvPoints();
         var mode = window.allChannelTrendMode || 'daily';
+        if (mode === 'monthly') return aggregateAllChannelGsvByMonth(dailyMerged);
         if (mode === 'weekly') return aggregateAllChannelGsvByWeek(dailyMerged);
         return dailyMerged;
       }
@@ -5894,7 +6471,8 @@
               tmall: allChannelRefundRatePct(gs.tmallGsv, gm.tmallGmv),
               dySelf: allChannelRefundRatePct(gs.dySelfGsv, gm.dySelfGmv),
               dp: allChannelRefundRatePct(gs.dpGsv, gm.dp),
-              daren: allChannelRefundRatePct(gs.darenGsv, gm.daren),
+              zhidui: allChannelRefundRatePct(gs.zhiduiGsv, gm.zhidui),
+              fuwu: allChannelRefundRatePct(gs.fuwuGsv, gm.fuwu),
             };
           });
       }
@@ -5988,8 +6566,8 @@
         var endD = lastDayOfMonthStr(ym);
         var gmvDaily = buildAllChannelGmvPoints();
         var gsvDaily = buildAllChannelGsvPoints();
-        var sumGmv = { jd: 0, tm: 0, dy: 0, dp: 0, daren: 0 };
-        var sumGsv = { jd: 0, tm: 0, dy: 0, dp: 0, daren: 0 };
+        var sumGmv = { jd: 0, tm: 0, dy: 0, dp: 0, zhidui: 0, fuwu: 0 };
+        var sumGsv = { jd: 0, tm: 0, dy: 0, dp: 0, zhidui: 0, fuwu: 0 };
         gmvDaily.forEach(function (p) {
           if (!p || !p.date) return;
           if (p.date < startD || p.date > endD) return;
@@ -5997,7 +6575,8 @@
           sumGmv.tm += Number(p.tmallGmv) || 0;
           sumGmv.dy += Number(p.dySelfGmv) || 0;
           sumGmv.dp += Number(p.dp) || 0;
-          sumGmv.daren += Number(p.daren) || 0;
+          sumGmv.zhidui += Number(p.zhidui) || 0;
+          sumGmv.fuwu += Number(p.fuwu) || 0;
         });
         gsvDaily.forEach(function (p) {
           if (!p || !p.date) return;
@@ -6006,7 +6585,8 @@
           sumGsv.tm += Number(p.tmallGsv) || 0;
           sumGsv.dy += Number(p.dySelfGsv) || 0;
           sumGsv.dp += Number(p.dpGsv) || 0;
-          sumGsv.daren += Number(p.darenGsv) || 0;
+          sumGsv.zhidui += Number(p.zhiduiGsv) || 0;
+          sumGsv.fuwu += Number(p.fuwuGsv) || 0;
         });
         return { yearMonth: ym, sumGmv: sumGmv, sumGsv: sumGsv };
       }
@@ -6041,13 +6621,15 @@
           (Number(sg.tm) || 0) +
           (Number(sg.dy) || 0) +
           (Number(sg.dp) || 0) +
-          (Number(sg.daren) || 0);
+          (Number(sg.zhidui) || 0) +
+          (Number(sg.fuwu) || 0);
         var totalGsv =
           (Number(ss.jd) || 0) +
           (Number(ss.tm) || 0) +
           (Number(ss.dy) || 0) +
           (Number(ss.dp) || 0) +
-          (Number(ss.daren) || 0);
+          (Number(ss.zhidui) || 0) +
+          (Number(ss.fuwu) || 0);
         if (totalGmv <= 0 && totalGsv <= 0) {
           wrap.innerHTML = titles
             .map(function (t, i) {
@@ -6057,11 +6639,14 @@
           return;
         }
         var w = 1e4;
-        var gmvText = isFinite(totalGmv) ? (totalGmv / w).toFixed(2) + '万' : '—';
-        var gsvText = isFinite(totalGsv) ? (totalGsv / w).toFixed(2) + '万' : '—';
+        // 货架电商数据需要除以10000，新零售数据已经是万为单位
+        var gmvWan = (Number(sg.jd) || 0) / w + (Number(sg.tm) || 0) / w + (Number(sg.dy) || 0) / w + (Number(sg.dp) || 0) + (Number(sg.zhidui) || 0) + (Number(sg.fuwu) || 0);
+        var gsvWan = (Number(ss.jd) || 0) / w + (Number(ss.tm) || 0) / w + (Number(ss.dy) || 0) / w + (Number(ss.dp) || 0) + (Number(ss.zhidui) || 0) + (Number(ss.fuwu) || 0);
+        var gmvText = isFinite(gmvWan) ? gmvWan.toFixed(2) + '万' : '—';
+        var gsvText = isFinite(gsvWan) ? gsvWan.toFixed(2) + '万' : '—';
         var refundText = '—';
-        if (totalGmv > 0 && isFinite(totalGmv) && isFinite(totalGsv)) {
-          var pct = (1 - totalGsv / totalGmv) * 100;
+        if (gmvWan > 0 && isFinite(gmvWan) && isFinite(gsvWan)) {
+          var pct = (1 - gsvWan / gmvWan) * 100;
           refundText = isFinite(pct) ? pct.toFixed(2) + '%' : '—';
         }
         wrap.innerHTML = [cellHtml(0, titles[0], gmvText), cellHtml(1, titles[1], gsvText), cellHtml(2, titles[2], refundText)].join('');
@@ -6078,7 +6663,7 @@
         var sg = pack.sumGmv;
         var ss = pack.sumGsv;
         var hasAny =
-          sg.jd + sg.tm + sg.dy + sg.dp + sg.daren + ss.jd + ss.tm + ss.dy + ss.dp + ss.daren > 0;
+          sg.jd + sg.tm + sg.dy + sg.dp + sg.zhidui + sg.fuwu + ss.jd + ss.tm + ss.dy + ss.dp + ss.zhidui + ss.fuwu > 0;
         renderMonthlyCumulativeSummaryTotals(pack);
         if (!hasAny) {
           charts.chartMonthlyCumulative.setOption(
@@ -6095,9 +6680,10 @@
           );
           return;
         }
-        var cats = ['京东', '天猫', '抖音自播', '抖音DP', '抖音达人'];
-        var gmvWan = [sg.jd / w, sg.tm / w, sg.dy / w, sg.dp / w, sg.daren / w];
-        var gsvWan = [ss.jd / w, ss.tm / w, ss.dy / w, ss.dp / w, ss.daren / w];
+        var cats = ['京东', '天猫', '抖音自播', 'DP', '直对', '服务商'];
+        // 新零售数据(dp/zhidui/fuwu)已经是万为单位，货架电商数据需要除以10000
+        var gmvWan = [sg.jd / w, sg.tm / w, sg.dy / w, sg.dp, sg.zhidui, sg.fuwu];
+        var gsvWan = [ss.jd / w, ss.tm / w, ss.dy / w, ss.dp, ss.zhidui, ss.fuwu];
         var barLabel = {
           show: true,
           position: 'inside',
@@ -6180,11 +6766,26 @@
         var mode = window.allChannelTrendMode || 'daily';
         var filtered = pts;
         if (startVal && endVal && startVal <= endVal) {
-          filtered = pts.filter(function (p) {
-            return p.date >= startVal && p.date <= endVal;
-          });
+          if (mode === 'monthly') {
+            // 月度模式：截取年月部分进行比较
+            var startMonth = startVal.substring(0, 7);
+            var endMonth = endVal.substring(0, 7);
+            filtered = pts.filter(function (p) {
+              var month = p.date.substring(0, 7);
+              return month >= startMonth && month <= endMonth;
+            });
+          } else if (mode === 'weekly') {
+            // 周度模式：直接比较周开始日期
+            filtered = pts.filter(function (p) {
+              return p.date >= startVal && p.date <= endVal;
+            });
+          } else {
+            filtered = pts.filter(function (p) {
+              return p.date >= startVal && p.date <= endVal;
+            });
+          }
         }
-        if (mode !== 'weekly') {
+        if (mode !== 'monthly' && mode !== 'weekly') {
           filtered = denseFillCalendarDaysForRange(filtered, startVal, endVal, emptyAllChannelGsvPoint);
         }
         var x = filtered.map(function (p) {
@@ -6205,13 +6806,17 @@
         });
         var yDp = filtered.map(function (p) {
           if (p == null || p.dpGsv == null || !isFinite(Number(p.dpGsv))) return null;
-          return p.dpGsv / w;
+          return p.dpGsv;  // 新零售数据已经是万为单位
         });
-        var yDaren = filtered.map(function (p) {
-          if (p == null || p.darenGsv == null || !isFinite(Number(p.darenGsv))) return null;
-          return p.darenGsv / w;
+        var yZhidui = filtered.map(function (p) {
+          if (p == null || p.zhiduiGsv == null || !isFinite(Number(p.zhiduiGsv))) return null;
+          return p.zhiduiGsv;  // 新零售数据已经是万为单位
         });
-        var legendData = ['京东', '天猫', '抖音自播', '抖音DP', '抖音达人'];
+        var yFuwu = filtered.map(function (p) {
+          if (p == null || p.fuwuGsv == null || !isFinite(Number(p.fuwuGsv))) return null;
+          return p.fuwuGsv;  // 新零售数据已经是万为单位
+        });
+        var legendData = ['京东', '天猫', '抖音自播', 'DP', '直对', '服务商'];
         var opt = {
           tooltip: {
             trigger: 'axis',
@@ -6244,8 +6849,9 @@
             { name: '京东', type: 'line', smooth: true, data: yJd, showSymbol: x.length <= 40, connectNulls: false },
             { name: '天猫', type: 'line', smooth: true, data: yTm, showSymbol: x.length <= 40, connectNulls: false },
             { name: '抖音自播', type: 'line', smooth: true, data: yDySelf, showSymbol: x.length <= 40, connectNulls: false },
-            { name: '抖音DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
-            { name: '抖音达人', type: 'line', smooth: true, data: yDaren, showSymbol: x.length <= 40, connectNulls: false },
+            { name: 'DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
+            { name: '直对', type: 'line', smooth: true, data: yZhidui, showSymbol: x.length <= 40, connectNulls: false },
+            { name: '服务商', type: 'line', smooth: true, data: yFuwu, showSymbol: x.length <= 40, connectNulls: false },
           ],
         };
         charts.chartAllChannelGsv.setOption(applyMobileChartOption(opt), true);
@@ -6276,16 +6882,30 @@
         var mode = window.allChannelTrendMode || 'daily';
         var gmvPts = getAllChannelGmvPointsByMode();
         var gsvPts = getAllChannelGsvPointsByMode();
-        if (mode !== 'weekly') {
+        if (mode !== 'monthly' && mode !== 'weekly') {
           gmvPts = denseFillCalendarDaysForRange(gmvPts, startVal, endVal, emptyAllChannelGmvPoint);
           gsvPts = denseFillCalendarDaysForRange(gsvPts, startVal, endVal, emptyAllChannelGsvPoint);
         } else if (startVal && endVal && startVal <= endVal) {
-          gmvPts = gmvPts.filter(function (p) {
-            return p.date >= startVal && p.date <= endVal;
-          });
-          gsvPts = gsvPts.filter(function (p) {
-            return p.date >= startVal && p.date <= endVal;
-          });
+          // 月度/周度模式：截取部分进行比较
+          if (mode === 'monthly') {
+            var startMonth = startVal.substring(0, 7);
+            var endMonth = endVal.substring(0, 7);
+            gmvPts = gmvPts.filter(function (p) {
+              var month = p.date.substring(0, 7);
+              return month >= startMonth && month <= endMonth;
+            });
+            gsvPts = gsvPts.filter(function (p) {
+              var month = p.date.substring(0, 7);
+              return month >= startMonth && month <= endMonth;
+            });
+          } else if (mode === 'weekly') {
+            gmvPts = gmvPts.filter(function (p) {
+              return p.date >= startVal && p.date <= endVal;
+            });
+            gsvPts = gsvPts.filter(function (p) {
+              return p.date >= startVal && p.date <= endVal;
+            });
+          }
         }
         var filtered = buildAllChannelRefundPointsFromGmvGsv(gmvPts, gsvPts);
         if (!filtered.length) {
@@ -6318,10 +6938,13 @@
         var yDp = filtered.map(function (p) {
           return p.dp;
         });
-        var yDaren = filtered.map(function (p) {
-          return p.daren;
+        var yZhidui = filtered.map(function (p) {
+          return p.zhidui;
         });
-        var legendData = ['京东', '天猫', '抖音自播', '抖音DP', '抖音达人'];
+        var yFuwu = filtered.map(function (p) {
+          return p.fuwu;
+        });
+        var legendData = ['京东', '天猫', '抖音自播', 'DP', '直对', '服务商'];
         var opt = {
           tooltip: {
             trigger: 'axis',
@@ -6354,8 +6977,9 @@
             { name: '京东', type: 'line', smooth: true, data: yJd, showSymbol: x.length <= 40, connectNulls: false },
             { name: '天猫', type: 'line', smooth: true, data: yTm, showSymbol: x.length <= 40, connectNulls: false },
             { name: '抖音自播', type: 'line', smooth: true, data: yDySelf, showSymbol: x.length <= 40, connectNulls: false },
-            { name: '抖音DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
-            { name: '抖音达人', type: 'line', smooth: true, data: yDaren, showSymbol: x.length <= 40, connectNulls: false },
+            { name: 'DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
+            { name: '直对', type: 'line', smooth: true, data: yZhidui, showSymbol: x.length <= 40, connectNulls: false },
+            { name: '服务商', type: 'line', smooth: true, data: yFuwu, showSymbol: x.length <= 40, connectNulls: false },
           ],
         };
         charts.chartAllChannelRefund.setOption(applyMobileChartOption(opt), true);
@@ -7305,8 +7929,10 @@
         }
         /** 飞书日销表格（仅写入全局供后续图表使用；未配置服务端密钥时静默失败） */
         function fetchFeishuDaily() {
+          console.log('[fetchFeishuDaily] 开始');
           var stEl = document.getElementById('jdDailyStatus');
           if (typeof XbsAuth === 'undefined' || !XbsAuth.getToken()) {
+            console.log('[fetchFeishuDaily] 未登录，直接返回');
             try {
               window.__QBT_FEISHU_DAILY_SALES__ = null;
             } catch (e) {}
@@ -7315,6 +7941,7 @@
             refreshJdDailyFromFeishu();
             return Promise.resolve();
           }
+          console.log('[fetchFeishuDaily] 发送API请求');
           return XbsAuth.fetchFeishuDailySales()
             .then(parseJsonRes)
             .then(function (o) {
@@ -7609,9 +8236,10 @@
           var startVal = document.getElementById('fourPlatformStart') && document.getElementById('fourPlatformStart').value;
           var endVal = document.getElementById('fourPlatformEnd') && document.getElementById('fourPlatformEnd').value;
           var daily = raw[dataKey].daily;
+          var weekly = raw[dataKey].weekly || [];
           var monthly = raw[dataKey].monthly || [];
-          var isMonthly = (window.fourPlatformMode || 'daily') === 'monthly';
-          var pts = isMonthly ? monthly : daily;
+          var mode = window.fourPlatformMode || 'daily';
+          var pts = mode === 'monthly' ? monthly : (mode === 'weekly' ? weekly : daily);
 
           // 生成完整的日期序列（补全缺失日期）
           var filtered = pts;
@@ -7630,7 +8258,7 @@
           // 生成完整的日期序列
           var fullDates = [];
           if (startVal && endVal) {
-            if (isMonthly) {
+            if (mode === 'monthly') {
               // 月度：YYYY-MM格式
               var cur = new Date(startVal + '-01');
               var end = new Date(endVal + '-01');
@@ -7640,6 +8268,9 @@
                 fullDates.push(y + '-' + m);
                 cur.setMonth(cur.getMonth() + 1);
               }
+            } else if (mode === 'weekly') {
+              // 周度：直接列出已有数据点
+              fullDates = filtered.map(function(p) { return p.date; });
             } else {
               // 日度：YYYY-MM-DD格式
               var cur = new Date(startVal);
@@ -7745,8 +8376,8 @@
             selEnd.innerHTML = '<option value="">-</option>';
             return;
           }
-          var isMonthly = (window.fourPlatformMode || 'daily') === 'monthly';
-          var dataPoints = isMonthly ? (raw[dataKey].monthly || []) : raw[dataKey].daily;
+          var mode = window.fourPlatformMode || 'daily';
+          var dataPoints = mode === 'monthly' ? (raw[dataKey].monthly || []) : (mode === 'weekly' ? (raw[dataKey].weekly || []) : raw[dataKey].daily);
           if (!dataPoints.length) {
             selStart.innerHTML = '<option value="">-</option>';
             selEnd.innerHTML = '<option value="">-</option>';
@@ -7757,9 +8388,12 @@
           var maxD = dates[dates.length - 1];
 
           var defaultStart, defaultEnd;
-          if (isMonthly) {
+          if (mode === 'monthly') {
             defaultEnd = '2026-04';
             defaultStart = '2026-01';
+          } else if (mode === 'weekly') {
+            defaultEnd = dates[dates.length - 1];
+            defaultStart = dates[Math.max(0, dates.length - 12)];
           } else {
             var today = new Date('2026-04-05');
             var yesterday = new Date(today);
@@ -7808,7 +8442,55 @@
               var btn = e.target.closest && e.target.closest('[data-mode]');
               if (!btn) return;
               var mode = btn.getAttribute('data-mode');
-              if (mode !== 'daily' && mode !== 'monthly') return;
+              if (mode !== 'daily' && mode !== 'weekly' && mode !== 'monthly') return;
+
+              // 检查数据是否已加载
+              var raw = window.__FOUR_PLATFORM_DATA__;
+              var modeDataAvailable = false;
+              if (raw) {
+                var metric = window.fourPlatformMetric || 'gmv';
+                var dataKey = metric === 'gsv' ? 'gsv' : 'gmv';
+                if (mode === 'daily' && raw[dataKey] && raw[dataKey].daily) {
+                  modeDataAvailable = true;
+                } else if (mode === 'weekly' && raw[dataKey] && raw[dataKey].weekly) {
+                  modeDataAvailable = true;
+                } else if (mode === 'monthly' && raw[dataKey] && raw[dataKey].monthly) {
+                  modeDataAvailable = true;
+                }
+              }
+
+              // 如果没有该维度数据，显示加载状态
+              if (!modeDataAvailable) {
+                var overlay = document.getElementById('fourPlatformDimLoading');
+                var loadingText = document.getElementById('fourPlatformDimLoadingText');
+                var modeNames = { daily: '日度', weekly: '周度', monthly: '月度' };
+                if (overlay) overlay.classList.add('is-visible');
+                if (loadingText) loadingText.textContent = '正在计算' + modeNames[mode] + '数据...';
+
+                // 禁用按钮
+                Array.from(modeSw.querySelectorAll('[data-mode]')).forEach(function(b) {
+                  b.classList.add('is-loading');
+                  b.disabled = true;
+                });
+
+                // 模拟等待数据加载（实际场景中这里会请求API）
+                setTimeout(function() {
+                  if (overlay) overlay.classList.remove('is-visible');
+                  Array.from(modeSw.querySelectorAll('[data-mode]')).forEach(function(b) {
+                    b.classList.remove('is-loading');
+                    b.disabled = false;
+                  });
+                  // 继续切换
+                  window.fourPlatformMode = mode;
+                  Array.from(modeSw.querySelectorAll('[data-mode]')).forEach(function(b) {
+                    b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+                  });
+                  initFourPlatformSwitches();
+                  renderFourPlatform();
+                }, 500);
+                return;
+              }
+
               window.fourPlatformMode = mode;
               Array.from(modeSw.querySelectorAll('[data-mode]')).forEach(function(b) {
                 b.classList.toggle('active', b.getAttribute('data-mode') === mode);
@@ -7825,10 +8507,16 @@
           initFuwuGmvSwitches();
           initNewretailModelDist();
           initNewretailModelDistGsv();
+          initModelDistDpMucheng();
+          initModelDistDpZhumeng();
+          initModelDistDaren();
           renderFourPlatform();
           renderFuwuGmv();
           renderNewretailModelDist();
           renderNewretailModelDistGsv();
+          renderModelDistDpMucheng();
+          renderModelDistDpZhumeng();
+          renderModelDistDaren();
         }
 
         // ==================== 服务商图表（按渠道拆分，支持GMV/GSV切换） ====================
@@ -7859,10 +8547,11 @@
           var startVal = document.getElementById('fuwuGmvStart') && document.getElementById('fuwuGmvStart').value;
           var endVal = document.getElementById('fuwuGmvEnd') && document.getElementById('fuwuGmvEnd').value;
           var daily = raw[dataKey].daily;
+          var weekly = raw[dataKey].weekly || { data: [], channels: [] };
           var monthly = raw[dataKey].monthly || { data: [], channels: [] };
-          var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
-          var pts = isMonthly ? monthly.data : daily.data;
-          var channels = isMonthly ? monthly.channels : daily.channels;
+          var mode = window.fuwuGmvMode || 'daily';
+          var pts = mode === 'monthly' ? monthly.data : (mode === 'weekly' ? weekly.data : daily.data);
+          var channels = mode === 'monthly' ? monthly.channels : (mode === 'weekly' ? weekly.channels : daily.channels);
 
           // 生成完整的日期序列（补全缺失日期）
           var filtered = pts;
@@ -7881,7 +8570,7 @@
           // 生成完整的日期序列
           var fullDates = [];
           if (startVal && endVal) {
-            if (isMonthly) {
+            if (mode === 'monthly') {
               // 月度：YYYY-MM格式
               var cur = new Date(startVal + '-01');
               var end = new Date(endVal + '-01');
@@ -7891,6 +8580,9 @@
                 fullDates.push(y + '-' + m);
                 cur.setMonth(cur.getMonth() + 1);
               }
+            } else if (mode === 'weekly') {
+              // 周度：直接列出已有数据点
+              fullDates = filtered.map(function(p) { return p.date; });
             } else {
               // 日度：YYYY-MM-DD格式
               var cur = new Date(startVal);
@@ -8004,8 +8696,8 @@
             selEnd.innerHTML = '<option value="">-</option>';
             return;
           }
-          var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
-          var dataPoints = isMonthly ? (raw[dataKey].monthly.data || []) : raw[dataKey].daily.data;
+          var mode = window.fuwuGmvMode || 'daily';
+          var dataPoints = mode === 'monthly' ? (raw[dataKey].monthly.data || []) : (mode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
           if (!dataPoints.length) {
             selStart.innerHTML = '<option value="">-</option>';
             selEnd.innerHTML = '<option value="">-</option>';
@@ -8017,10 +8709,14 @@
 
           // 计算默认值
           var defaultStart, defaultEnd;
-          if (isMonthly) {
+          if (mode === 'monthly') {
             // 月度：开始2026-01，结束当前月份
             defaultEnd = '2026-04';
             defaultStart = '2026-01';
+          } else if (mode === 'weekly') {
+            // 周度：最近12周
+            defaultEnd = dates[dates.length - 1];
+            defaultStart = dates[Math.max(0, dates.length - 12)];
           } else {
             // 日度：结束昨天，开始30天前
             var today = new Date('2026-04-05');
@@ -8069,13 +8765,13 @@
               initFuwuGmvSwitches();
               // 强制恢复日期选择（在新数据范围内）
               if (currentStart && currentEnd) {
-                var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
+                var fuwuMode = window.fuwuGmvMode || 'daily';
                 var newMetric = window.fuwuMetric || 'gmv';
                 var dataKey = newMetric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
                 var raw = window.__FOUR_PLATFORM_DATA__;
                 var dates = [];
                 if (raw && raw[dataKey]) {
-                  var dataPoints = isMonthly ? (raw[dataKey].monthly.data || []) : raw[dataKey].daily.data;
+                  var dataPoints = fuwuMode === 'monthly' ? (raw[dataKey].monthly.data || []) : (fuwuMode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
                   dates = dataPoints.map(function(p) { return p.date; });
                 }
                 var minD = dates[0];
@@ -8115,42 +8811,89 @@
               var btn = e.target.closest && e.target.closest('[data-fuwu-gmv-mode]');
               if (!btn) return;
               var mode = btn.getAttribute('data-fuwu-gmv-mode');
-              if (mode !== 'daily' && mode !== 'monthly') return;
-              // 保存当前日期选择（在改变window.fuwuGmvMode之前）
-              var currentStart = selStart.value;
-              var currentEnd = selEnd.value;
-              window.fuwuGmvMode = mode;
-              Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function (b) {
-                b.classList.toggle('active', b.getAttribute('data-fuwu-gmv-mode') === mode);
-              });
-              // 重新初始化下拉框
-              initFuwuGmvSwitches();
-              // 强制恢复日期选择
-              if (currentStart && currentEnd) {
-                var isMonthly = (window.fuwuGmvMode || 'daily') === 'monthly';
-                var metric = window.fuwuMetric || 'gmv';
-                var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
-                var raw = window.__FOUR_PLATFORM_DATA__;
-                var dates = [];
-                if (raw && raw[dataKey]) {
-                  var dataPoints = isMonthly ? (raw[dataKey].monthly.data || []) : raw[dataKey].daily.data;
-                  dates = dataPoints.map(function(p) { return p.date; });
-                }
-                // 月度模式：截取年月部分匹配
-                var lookupStart = isMonthly ? currentStart.substring(0, 7) : currentStart;
-                var lookupEnd = isMonthly ? currentEnd.substring(0, 7) : currentEnd;
-                if (dates.indexOf(lookupStart) >= 0) {
-                  selStart.value = lookupStart;
-                } else if (dates.length > 0) {
-                  selStart.value = dates[0];
-                }
-                if (dates.indexOf(lookupEnd) >= 0) {
-                  selEnd.value = lookupEnd;
-                } else if (dates.length > 0) {
-                  selEnd.value = dates[dates.length - 1];
+              if (mode !== 'daily' && mode !== 'weekly' && mode !== 'monthly') return;
+
+              // 检查数据是否已加载
+              var raw = window.__FOUR_PLATFORM_DATA__;
+              var metric = window.fuwuMetric || 'gmv';
+              var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+              var modeDataAvailable = false;
+              if (raw && raw[dataKey]) {
+                if (mode === 'daily' && raw[dataKey].daily) {
+                  modeDataAvailable = true;
+                } else if (mode === 'weekly' && raw[dataKey].weekly) {
+                  modeDataAvailable = true;
+                } else if (mode === 'monthly' && raw[dataKey].monthly) {
+                  modeDataAvailable = true;
                 }
               }
-              renderFuwuGmv();
+
+              // 如果没有该维度数据，显示加载状态
+              if (!modeDataAvailable) {
+                var overlay = document.getElementById('fuwuGmvDimLoading');
+                var loadingText = document.getElementById('fuwuGmvDimLoadingText');
+                var modeNames = { daily: '日度', weekly: '周度', monthly: '月度' };
+                if (overlay) overlay.classList.add('is-visible');
+                if (loadingText) loadingText.textContent = '正在计算' + modeNames[mode] + '数据...';
+
+                // 禁用按钮
+                Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function(b) {
+                  b.classList.add('is-loading');
+                  b.disabled = true;
+                });
+
+                // 模拟等待数据加载
+                setTimeout(function() {
+                  if (overlay) overlay.classList.remove('is-visible');
+                  Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function(b) {
+                    b.classList.remove('is-loading');
+                    b.disabled = false;
+                  });
+                  // 继续切换逻辑
+                  continueSwitch(mode);
+                }, 500);
+                return;
+              }
+
+              continueSwitch(mode);
+
+              function continueSwitch(mode) {
+                // 保存当前日期选择（在改变window.fuwuGmvMode之前）
+                var currentStart = selStart.value;
+                var currentEnd = selEnd.value;
+                window.fuwuGmvMode = mode;
+                Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function (b) {
+                  b.classList.toggle('active', b.getAttribute('data-fuwu-gmv-mode') === mode);
+                });
+                // 重新初始化下拉框
+                initFuwuGmvSwitches();
+                // 强制恢复日期选择
+                if (currentStart && currentEnd) {
+                  var fuwuMode = window.fuwuGmvMode || 'daily';
+                  var metric = window.fuwuMetric || 'gmv';
+                  var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+                  var raw = window.__FOUR_PLATFORM_DATA__;
+                  var dates = [];
+                  if (raw && raw[dataKey]) {
+                    var dataPoints = fuwuMode === 'monthly' ? (raw[dataKey].monthly.data || []) : (fuwuMode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
+                    dates = dataPoints.map(function(p) { return p.date; });
+                  }
+                  // 月度模式：截取年月部分匹配
+                  var lookupStart = fuwuMode === 'monthly' ? currentStart.substring(0, 7) : currentStart;
+                  var lookupEnd = fuwuMode === 'monthly' ? currentEnd.substring(0, 7) : currentEnd;
+                  if (dates.indexOf(lookupStart) >= 0) {
+                    selStart.value = lookupStart;
+                  } else if (dates.length > 0) {
+                    selStart.value = dates[0];
+                  }
+                  if (dates.indexOf(lookupEnd) >= 0) {
+                    selEnd.value = lookupEnd;
+                  } else if (dates.length > 0) {
+                    selEnd.value = dates[dates.length - 1];
+                  }
+                }
+                renderFuwuGmv();
+              }
             });
             sw.__bound__ = true;
           }
@@ -8189,20 +8932,28 @@
             if (startVal && endVal && startVal <= endVal) {
               if (day < startVal || day > endVal) return;
             }
-            // 累加每个型号的GMV
+            // 累加每个型号的GMV和数量
             Object.keys(dayItem).forEach(function(key) {
               if (key === 'date') return;
-              // key 已经是型号名称
+              // key 已经是型号名称，value 是 {amount, quantity} 对象
+              var item = dayItem[key];
               if (!modelBucket[key]) {
-                modelBucket[key] = 0;
+                modelBucket[key] = { amount: 0, quantity: 0 };
               }
-              modelBucket[key] += dayItem[key];
+              if (item && typeof item === 'object') {
+                modelBucket[key].amount += item.amount || 0;
+                modelBucket[key].quantity += item.quantity || 0;
+              } else {
+                // 兼容旧数据格式（纯数值）
+                modelBucket[key].amount += Number(item) || 0;
+                modelBucket[key].quantity += 1;
+              }
             });
           });
 
           // 转换为数组格式
           var pairs = Object.keys(modelBucket).map(function(modelName) {
-            return { name: modelName, value: modelBucket[modelName] };
+            return { name: modelName, value: modelBucket[modelName].amount, quantity: modelBucket[modelName].quantity };
           }).filter(function(x) { return x.value > 0; });
 
           pairs.sort(function(a, b) { return b.value - a.value; });
@@ -8221,12 +8972,18 @@
           var topN = 15;
           var show = pairs.slice(0, topN);
           var restSum = 0;
-          for (var i = topN; i < pairs.length; i++) restSum += pairs[i].value;
+          var restQuantity = 0;
+          for (var i = topN; i < pairs.length; i++) {
+            restSum += pairs[i].value;
+            restQuantity += pairs[i].quantity || 0;
+          }
           var names = show.map(function(p) { return p.name; });
           var vals = show.map(function(p) { return p.value; });
+          var quantities = show.map(function(p) { return p.quantity || 0; });
           if (restSum > 0) {
             names.push('其他');
             vals.push(restSum);
+            quantities.push(restQuantity);
           }
 
           var mode = window.newretailModelDistViewMode || 'bar';
@@ -8237,7 +8994,9 @@
                   trigger: 'item',
                   formatter: function(p) {
                     var val = p && p.value != null ? Number(p.value) : 0;
-                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GMV: ' + val.toFixed(2) + ' 万<br/>占比: ' + Number(p.percent || 0).toFixed(2) + '%';
+                    var idx = names.indexOf(p.name);
+                    var qty = idx >= 0 ? quantities[idx] : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GMV: ' + val.toFixed(2) + ' 万<br/>数量: ' + qty + ' 台<br/>占比: ' + Number(p.percent || 0).toFixed(2) + '%';
                   },
                 },
                 series: [{
@@ -8247,7 +9006,10 @@
                   data: names.map(function(n, i) { return { name: n, value: vals[i] }; }),
                   label: {
                     formatter: function(p) {
-                      return (p.name || '') + ': ' + Number(p.percent || 0).toFixed(2) + '%';
+                      var idx = names.indexOf(p.name);
+                      var qty = idx >= 0 ? quantities[idx] : 0;
+                      var val = p && p.value != null ? Number(p.value) : 0;
+                      return (p.name || '') + '-' + Number(p.percent || 0).toFixed(0) + '%(' + val.toFixed(0) + '万,' + qty + '台)';
                     },
                   },
                 }],
@@ -8259,10 +9021,12 @@
                   axisPointer: { type: 'shadow' },
                   formatter: function(params) {
                     var p = params[0] || {};
-                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GMV: ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万';
+                    var idx = names.indexOf(p.name);
+                    var qty = idx >= 0 ? quantities[idx] : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GMV: ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万<br/>数量: ' + qty + ' 台';
                   },
                 },
-                grid: { left: 120, right: 48, top: 8, bottom: 8 },
+                grid: { left: 120, right: 140, top: 8, bottom: 8 },
                 xAxis: {
                   type: 'value',
                   axisLabel: {
@@ -8279,7 +9043,7 @@
                 },
                 series: [{
                   type: 'bar',
-                  data: vals,
+                  data: vals.map(function(v, i) { return { value: v, quantity: quantities[i] }; }),
                   name: 'GMV',
                   itemStyle: { color: '#3b82f6' },
                   label: {
@@ -8287,7 +9051,8 @@
                     position: 'right',
                     formatter: function(p) {
                       var v = p && p.value != null ? Number(p.value) : 0;
-                      return v.toFixed(2) + '万';
+                      var qty = p && p.data && p.data.quantity != null ? p.data.quantity : 0;
+                      return v.toFixed(2) + '万，' + qty + '台';
                     },
                   },
                 }],
@@ -8390,19 +9155,28 @@
             if (startVal && endVal && startVal <= endVal) {
               if (day < startVal || day > endVal) return;
             }
-            // 累加每个型号的GSV
+            // 累加每个型号的GSV和数量
             Object.keys(dayItem).forEach(function(key) {
               if (key === 'date') return;
+              // key 已经是型号名称，value 是 {amount, quantity} 对象
+              var item = dayItem[key];
               if (!modelBucket[key]) {
-                modelBucket[key] = 0;
+                modelBucket[key] = { amount: 0, quantity: 0 };
               }
-              modelBucket[key] += dayItem[key];
+              if (item && typeof item === 'object') {
+                modelBucket[key].amount += item.amount || 0;
+                modelBucket[key].quantity += item.quantity || 0;
+              } else {
+                // 兼容旧数据格式（纯数值）
+                modelBucket[key].amount += Number(item) || 0;
+                modelBucket[key].quantity += 1;
+              }
             });
           });
 
           // 转换为数组格式
           var pairs = Object.keys(modelBucket).map(function(modelName) {
-            return { name: modelName, value: modelBucket[modelName] };
+            return { name: modelName, value: modelBucket[modelName].amount, quantity: modelBucket[modelName].quantity };
           }).filter(function(x) { return x.value > 0; });
 
           pairs.sort(function(a, b) { return b.value - a.value; });
@@ -8421,12 +9195,18 @@
           var topN = 15;
           var show = pairs.slice(0, topN);
           var restSum = 0;
-          for (var i = topN; i < pairs.length; i++) restSum += pairs[i].value;
+          var restQuantity = 0;
+          for (var i = topN; i < pairs.length; i++) {
+            restSum += pairs[i].value;
+            restQuantity += pairs[i].quantity || 0;
+          }
           var names = show.map(function(p) { return p.name; });
           var vals = show.map(function(p) { return p.value; });
+          var quantities = show.map(function(p) { return p.quantity || 0; });
           if (restSum > 0) {
             names.push('其他');
             vals.push(restSum);
+            quantities.push(restQuantity);
           }
 
           var mode = window.newretailModelDistGsvViewMode || 'bar';
@@ -8437,7 +9217,9 @@
                   trigger: 'item',
                   formatter: function(p) {
                     var val = p && p.value != null ? Number(p.value) : 0;
-                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GSV: ' + val.toFixed(2) + ' 万<br/>占比: ' + Number(p.percent || 0).toFixed(2) + '%';
+                    var idx = names.indexOf(p.name);
+                    var qty = idx >= 0 ? quantities[idx] : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GSV: ' + val.toFixed(2) + ' 万<br/>数量: ' + qty + ' 台<br/>占比: ' + Number(p.percent || 0).toFixed(2) + '%';
                   },
                 },
                 series: [{
@@ -8447,7 +9229,10 @@
                   data: names.map(function(n, i) { return { name: n, value: vals[i] }; }),
                   label: {
                     formatter: function(p) {
-                      return (p.name || '') + ': ' + Number(p.percent || 0).toFixed(2) + '%';
+                      var idx = names.indexOf(p.name);
+                      var qty = idx >= 0 ? quantities[idx] : 0;
+                      var val = p && p.value != null ? Number(p.value) : 0;
+                      return (p.name || '') + '-' + Number(p.percent || 0).toFixed(0) + '%(' + val.toFixed(0) + '万,' + qty + '台)';
                     },
                   },
                 }],
@@ -8459,10 +9244,12 @@
                   axisPointer: { type: 'shadow' },
                   formatter: function(params) {
                     var p = params[0] || {};
-                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GSV: ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万';
+                    var idx = names.indexOf(p.name);
+                    var qty = idx >= 0 ? quantities[idx] : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GSV: ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万<br/>数量: ' + qty + ' 台';
                   },
                 },
-                grid: { left: 120, right: 48, top: 8, bottom: 8 },
+                grid: { left: 120, right: 140, top: 8, bottom: 8 },
                 xAxis: {
                   type: 'value',
                   axisLabel: {
@@ -8479,7 +9266,7 @@
                 },
                 series: [{
                   type: 'bar',
-                  data: vals,
+                  data: vals.map(function(v, i) { return { value: v, quantity: quantities[i] }; }),
                   name: 'GSV',
                   itemStyle: { color: '#10b981' },
                   label: {
@@ -8487,7 +9274,8 @@
                     position: 'right',
                     formatter: function(p) {
                       var v = p && p.value != null ? Number(p.value) : 0;
-                      return v.toFixed(2) + '万';
+                      var qty = p && p.data && p.data.quantity != null ? p.data.quantity : 0;
+                      return v.toFixed(2) + '万，' + qty + '台';
                     },
                   },
                 }],
@@ -8557,15 +9345,506 @@
           }
         }
 
+        // ==================== DP-沐成型号分布-GSV ====================
+        function renderModelDistDpMucheng() {
+          renderModelDistGeneric({
+            chartId: 'chartModelDistDpMucheng',
+            dataKey: 'modelDistDpMucheng',
+            startSelId: 'modelDistDpMuchengStart',
+            endSelId: 'modelDistDpMuchengEnd',
+            viewModeKey: 'modelDistDpMuchengViewMode',
+            metricName: 'GSV',
+            color: '#f59e0b'
+          });
+        }
+
+        function initModelDistDpMucheng() {
+          initModelDistGeneric({
+            startSelId: 'modelDistDpMuchengStart',
+            endSelId: 'modelDistDpMuchengEnd',
+            dataKey: 'modelDistDpMucheng',
+            renderFn: renderModelDistDpMucheng,
+            barBtnId: 'modelDistDpMuchengBarBtn',
+            pieBtnId: 'modelDistDpMuchengPieBtn',
+            viewModeKey: 'modelDistDpMuchengViewMode'
+          });
+        }
+
+        // ==================== DP-逐梦型号分布-GSV ====================
+        function renderModelDistDpZhumeng() {
+          renderModelDistGeneric({
+            chartId: 'chartModelDistDpZhumeng',
+            dataKey: 'modelDistDpZhumeng',
+            startSelId: 'modelDistDpZhumengStart',
+            endSelId: 'modelDistDpZhumengEnd',
+            viewModeKey: 'modelDistDpZhumengViewMode',
+            metricName: 'GSV',
+            color: '#8b5cf6'
+          });
+        }
+
+        function initModelDistDpZhumeng() {
+          initModelDistGeneric({
+            startSelId: 'modelDistDpZhumengStart',
+            endSelId: 'modelDistDpZhumengEnd',
+            dataKey: 'modelDistDpZhumeng',
+            renderFn: renderModelDistDpZhumeng,
+            barBtnId: 'modelDistDpZhumengBarBtn',
+            pieBtnId: 'modelDistDpZhumengPieBtn',
+            viewModeKey: 'modelDistDpZhumengViewMode'
+          });
+        }
+
+        // ==================== 达人型号分布-GSV（直对+服务商，支持达人筛选） ====================
+        function renderModelDistDaren() {
+          var el = document.getElementById('chartModelDistDaren');
+          if (!el) return;
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!charts.chartModelDistDaren) charts.chartModelDistDaren = echarts.init(el);
+
+          // 获取选择的达人昵称
+          var darenSelect = document.getElementById('modelDistDarenSelect');
+          var selectedDaren = darenSelect ? darenSelect.value : '';
+
+          var dailyData;
+          if (selectedDaren && raw && raw.modelDistDarenByDaren && raw.modelDistDarenByDaren.byDaren[selectedDaren]) {
+            // 如果选择了特定达人，使用该达人的数据
+            dailyData = raw.modelDistDarenByDaren.byDaren[selectedDaren].daily;
+          } else {
+            // 否则使用全部数据
+            dailyData = raw && raw.modelDistDaren ? raw.modelDistDaren.daily : [];
+          }
+
+          if (!dailyData || !dailyData.length) {
+            charts.chartModelDistDaren.setOption({
+              title: { text: selectedDaren ? '该达人暂无数据' : '暂无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+              series: []
+            }, true);
+            return;
+          }
+
+          var startVal = document.getElementById('modelDistDarenStart') && document.getElementById('modelDistDarenStart').value;
+          var endVal = document.getElementById('modelDistDarenEnd') && document.getElementById('modelDistDarenEnd').value;
+
+          var modelBucket = {};
+
+          dailyData.forEach(function(dayItem) {
+            var day = dayItem.date;
+            if (startVal && endVal && startVal <= endVal) {
+              if (day < startVal || day > endVal) return;
+            }
+            Object.keys(dayItem).forEach(function(key) {
+              if (key === 'date') return;
+              var item = dayItem[key];
+              if (!modelBucket[key]) {
+                modelBucket[key] = { amount: 0, quantity: 0 };
+              }
+              if (item && typeof item === 'object') {
+                modelBucket[key].amount += item.amount || 0;
+                modelBucket[key].quantity += item.quantity || 0;
+              } else {
+                modelBucket[key].amount += Number(item) || 0;
+                modelBucket[key].quantity += 1;
+              }
+            });
+          });
+
+          var pairs = Object.keys(modelBucket).map(function(modelName) {
+            return { name: modelName, value: modelBucket[modelName].amount, quantity: modelBucket[modelName].quantity };
+          }).filter(function(x) { return x.value > 0; });
+
+          pairs.sort(function(a, b) { return b.value - a.value; });
+
+          if (!pairs.length) {
+            charts.chartModelDistDaren.setOption({
+              title: { text: '所选区间内无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+              series: []
+            }, true);
+            return;
+          }
+
+          var topN = 15;
+          var show = pairs.slice(0, topN);
+          var restSum = 0, restQuantity = 0;
+          pairs.slice(topN).forEach(function(p) { restSum += p.value; restQuantity += p.quantity; });
+
+          if (restSum > 0) {
+            show.push({ name: '其他型号', value: restSum, quantity: restQuantity });
+          }
+
+          var names = show.map(function(p) { return p.name; });
+          var vals = show.map(function(p) { return Number(p.value.toFixed(2)); });
+          var quantities = show.map(function(p) { return p.quantity; });
+
+          var mode = window.modelDistDarenViewMode || 'bar';
+          var titleText = selectedDaren ? (selectedDaren + ' - 型号分布') : '达人型号分布-GSV';
+
+          var opt = mode === 'pie'
+            ? {
+                title: { text: titleText, left: 'center', top: 6, textStyle: { fontSize: 14, fontWeight: 'normal', color: '#666' } },
+                tooltip: {
+                  trigger: 'item',
+                  formatter: function(p) {
+                    var v = p.value != null ? Number(p.value) : 0;
+                    var qty = quantities[p.dataIndex] || 0;
+                    return p.name + '<br/>' + p.marker + 'GSV: ' + v.toFixed(2) + ' 万<br/>数量: ' + qty + ' 台<br/>占比: ' + p.percent + '%';
+                  }
+                },
+                series: [{
+                  type: 'pie',
+                  radius: ['35%', '60%'],
+                  center: ['50%', '55%'],
+                  data: show,
+                  emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } },
+                  label: { formatter: '{b}: {d}%' }
+                }]
+              }
+            : {
+                title: { text: titleText, left: 'center', top: 6, textStyle: { fontSize: 14, fontWeight: 'normal', color: '#666' } },
+                tooltip: {
+                  trigger: 'axis',
+                  axisPointer: { type: 'shadow' },
+                  formatter: function(params) {
+                    var p = params[0] || {};
+                    var idx = names.indexOf(p.name);
+                    var qty = idx >= 0 ? quantities[idx] : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + 'GSV: ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万<br/>数量: ' + qty + ' 台';
+                  }
+                },
+                grid: { left: 120, right: 140, top: 40, bottom: 8 },
+                xAxis: {
+                  type: 'value',
+                  axisLabel: { formatter: function(v) { return v >= 1e4 ? (v / 1e4).toFixed(0) + '万' : String(v); } }
+                },
+                yAxis: {
+                  type: 'category',
+                  data: names,
+                  inverse: true,
+                  axisLabel: { width: 110, overflow: 'truncate', ellipsis: '...' }
+                },
+                series: [{
+                  type: 'bar',
+                  data: vals.map(function(v, i) { return { value: v, quantity: quantities[i] }; }),
+                  name: 'GSV',
+                  itemStyle: { color: '#ec4899' },
+                  label: {
+                    show: true,
+                    position: 'right',
+                    formatter: function(p) {
+                      var v = p && p.value != null ? Number(p.value) : 0;
+                      var qty = p && p.data && p.data.quantity != null ? p.data.quantity : 0;
+                      return v.toFixed(2) + '万，' + qty + '台';
+                    }
+                  }
+                }]
+              };
+          charts.chartModelDistDaren.setOption(applyMobileChartOption(opt), true);
+        }
+
+        function initModelDistDaren() {
+          // 初始化日期选择器
+          initModelDistGeneric({
+            startSelId: 'modelDistDarenStart',
+            endSelId: 'modelDistDarenEnd',
+            dataKey: 'modelDistDaren',
+            renderFn: renderModelDistDaren,
+            barBtnId: 'modelDistDarenBarBtn',
+            pieBtnId: 'modelDistDarenPieBtn',
+            viewModeKey: 'modelDistDarenViewMode'
+          });
+
+          // 初始化达人筛选功能
+          initDarenFilter();
+        }
+
+        // 初始化达人筛选下拉框
+        function initDarenFilter() {
+          var select = document.getElementById('modelDistDarenSelect');
+          var searchInput = document.getElementById('modelDistDarenSearch');
+          if (!select) return;
+
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          var darenList = raw && raw.modelDistDarenByDaren ? raw.modelDistDarenByDaren.darenList : [];
+
+          // 平台名称映射和颜色配置
+          var platformConfig = {
+            'douyin': { name: '抖音', color: '#ff0050', bgColor: '#ff0050' },
+            'xiaohongshu': { name: '小红书', color: '#ff2442', bgColor: '#ff2442' },
+            'shipinhao': { name: '视频号', color: '#07c160', bgColor: '#07c160' },
+            'kuaishou': { name: '快手', color: '#ff6600', bgColor: '#ff6600' }
+          };
+
+          // 保存所有选项用于搜索
+          var allOptions = [{ name: '全部达人', id: '', platforms: [], totalAmount: 1 }].concat(darenList || []);
+          window.__DAREN_FILTER_OPTIONS__ = allOptions;
+
+          // 生成平台标签HTML
+          function generatePlatformTags(platforms) {
+            if (!platforms || platforms.length === 0) return '';
+            return platforms.map(function(p) {
+              var cfg = platformConfig[p] || { name: p, bgColor: '#999' };
+              return '<span style="display:inline-block;margin-left:4px;padding:1px 4px;border-radius:3px;font-size:11px;color:#fff;background:' + cfg.bgColor + ';">' + cfg.name + '</span>';
+            }).join('');
+          }
+
+          // 渲染下拉框选项
+          function renderOptions(filterText) {
+            var filtered = allOptions;
+            if (filterText) {
+              var lowerFilter = filterText.toLowerCase();
+              filtered = allOptions.filter(function(opt) {
+                return opt.name.toLowerCase().includes(lowerFilter);
+              });
+            }
+
+            var currentValue = select.value;
+            select.innerHTML = filtered.map(function(opt) {
+              // 使用达人昵称作为value（因为byDaren对象使用昵称作为key）
+              // "全部达人"使用空字符串作为value
+              var value = opt.name === '全部达人' ? '' : opt.name;
+              var platformTags = generatePlatformTags(opt.platforms || []);
+              // 注意：option的innerHTML不支持HTML，需要用纯文本
+              var displayText = opt.name + (platformTags ? '  [' + (opt.platforms || []).map(function(p) {
+                var cfg = platformConfig[p] || { name: p };
+                return cfg.name;
+              }).join(',') + ']' : '');
+              return '<option value="' + value + '">' + displayText + '</option>';
+            }).join('');
+
+            // 尝试恢复之前的选择
+            if (currentValue && filtered.some(function(opt) { return (opt.name === '全部达人' ? '' : opt.name) === currentValue; })) {
+              select.value = currentValue;
+            }
+          }
+
+          // 初始渲染
+          renderOptions();
+
+          // 绑定搜索输入事件
+          if (searchInput) {
+            searchInput.addEventListener('input', function() {
+              renderOptions(this.value);
+            });
+          }
+
+          // 绑定选择事件
+          select.addEventListener('change', function() {
+            renderModelDistDaren();
+          });
+        }
+
+        // ==================== 通用型号分布渲染函数 ====================
+        function renderModelDistGeneric(opts) {
+          var el = document.getElementById(opts.chartId);
+          if (!el) return;
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!charts[opts.chartId]) charts[opts.chartId] = echarts.init(el);
+          if (!raw || !raw[opts.dataKey] || !raw[opts.dataKey].daily || !raw[opts.dataKey].daily.length) {
+            charts[opts.chartId].setOption({
+              title: { text: '暂无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+              series: []
+            }, true);
+            return;
+          }
+
+          var startVal = document.getElementById(opts.startSelId) && document.getElementById(opts.startSelId).value;
+          var endVal = document.getElementById(opts.endSelId) && document.getElementById(opts.endSelId).value;
+
+          var dailyData = raw[opts.dataKey].daily;
+          var modelBucket = {};
+
+          dailyData.forEach(function(dayItem) {
+            var day = dayItem.date;
+            if (startVal && endVal && startVal <= endVal) {
+              if (day < startVal || day > endVal) return;
+            }
+            Object.keys(dayItem).forEach(function(key) {
+              if (key === 'date') return;
+              var item = dayItem[key];
+              if (!modelBucket[key]) {
+                modelBucket[key] = { amount: 0, quantity: 0 };
+              }
+              if (item && typeof item === 'object') {
+                modelBucket[key].amount += item.amount || 0;
+                modelBucket[key].quantity += item.quantity || 0;
+              } else {
+                modelBucket[key].amount += Number(item) || 0;
+                modelBucket[key].quantity += 1;
+              }
+            });
+          });
+
+          var pairs = Object.keys(modelBucket).map(function(modelName) {
+            return { name: modelName, value: modelBucket[modelName].amount, quantity: modelBucket[modelName].quantity };
+          }).filter(function(x) { return x.value > 0; });
+
+          pairs.sort(function(a, b) { return b.value - a.value; });
+
+          if (!pairs.length) {
+            charts[opts.chartId].setOption({
+              title: { text: '所选区间内无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+              series: []
+            }, true);
+            return;
+          }
+
+          var topN = 15;
+          var show = pairs.slice(0, topN);
+          var restSum = 0, restQuantity = 0;
+          for (var i = topN; i < pairs.length; i++) {
+            restSum += pairs[i].value;
+            restQuantity += pairs[i].quantity || 0;
+          }
+          var names = show.map(function(p) { return p.name; });
+          var vals = show.map(function(p) { return p.value; });
+          var quantities = show.map(function(p) { return p.quantity || 0; });
+          if (restSum > 0) {
+            names.push('其他');
+            vals.push(restSum);
+            quantities.push(restQuantity);
+          }
+
+          var mode = window[opts.viewModeKey] || 'bar';
+          var opt = mode === 'pie'
+            ? {
+                title: { show: false },
+                tooltip: {
+                  trigger: 'item',
+                  formatter: function(p) {
+                    var val = p && p.value != null ? Number(p.value) : 0;
+                    var idx = names.indexOf(p.name);
+                    var qty = idx >= 0 ? quantities[idx] : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + opts.metricName + ': ' + val.toFixed(2) + ' 万<br/>数量: ' + qty + ' 台<br/>占比: ' + Number(p.percent || 0).toFixed(2) + '%';
+                  }
+                },
+                series: [{
+                  type: 'pie',
+                  radius: ['35%', '68%'],
+                  center: ['50%', '54%'],
+                  data: names.map(function(n, i) { return { name: n, value: vals[i] }; }),
+                  label: {
+                    formatter: function(p) {
+                      var idx = names.indexOf(p.name);
+                      var qty = idx >= 0 ? quantities[idx] : 0;
+                      var val = p && p.value != null ? Number(p.value) : 0;
+                      return (p.name || '') + '-' + Number(p.percent || 0).toFixed(0) + '%(' + val.toFixed(0) + '万,' + qty + '台)';
+                    }
+                  }
+                }]
+              }
+            : {
+                title: { show: false },
+                tooltip: {
+                  trigger: 'axis',
+                  axisPointer: { type: 'shadow' },
+                  formatter: function(params) {
+                    var p = params[0] || {};
+                    var idx = names.indexOf(p.name);
+                    var qty = idx >= 0 ? quantities[idx] : 0;
+                    return (p.name || '') + '<br/>' + (p.marker || '') + opts.metricName + ': ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万<br/>数量: ' + qty + ' 台';
+                  }
+                },
+                grid: { left: 120, right: 140, top: 8, bottom: 8 },
+                xAxis: {
+                  type: 'value',
+                  axisLabel: { formatter: function(v) { return v >= 1e4 ? (v / 1e4).toFixed(0) + '万' : String(v); } }
+                },
+                yAxis: {
+                  type: 'category',
+                  data: names,
+                  inverse: true,
+                  axisLabel: { width: 110, overflow: 'truncate', ellipsis: '...' }
+                },
+                series: [{
+                  type: 'bar',
+                  data: vals.map(function(v, i) { return { value: v, quantity: quantities[i] }; }),
+                  name: opts.metricName,
+                  itemStyle: { color: opts.color },
+                  label: {
+                    show: true,
+                    position: 'right',
+                    formatter: function(p) {
+                      var v = p && p.value != null ? Number(p.value) : 0;
+                      var qty = p && p.data && p.data.quantity != null ? p.data.quantity : 0;
+                      return v.toFixed(2) + '万，' + qty + '台';
+                    }
+                  }
+                }]
+              };
+          charts[opts.chartId].setOption(applyMobileChartOption(opt), true);
+        }
+
+        function initModelDistGeneric(opts) {
+          var selS = document.getElementById(opts.startSelId);
+          var selE = document.getElementById(opts.endSelId);
+          if (!selS || !selE) return;
+
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!raw || !raw[opts.dataKey] || !raw[opts.dataKey].daily || !raw[opts.dataKey].daily.length) {
+            selS.innerHTML = '<option value="">-</option>';
+            selE.innerHTML = '<option value="">-</option>';
+            return;
+          }
+
+          var dates = raw[opts.dataKey].daily.map(function(p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+
+          var today = new Date('2026-04-05');
+          var yesterday = new Date(today);
+          yesterday.setDate(today.getDate() - 1);
+          var thirtyDaysAgo = new Date(yesterday);
+          thirtyDaysAgo.setDate(yesterday.getDate() - 30);
+          var defaultEnd = yesterday.toISOString().split('T')[0];
+          var defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+
+          if (defaultEnd > maxD) defaultEnd = maxD;
+          if (defaultStart < minD) defaultStart = minD;
+
+          var optsHtml = dates.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+          selS.innerHTML = '<option value="">全量</option>' + optsHtml;
+          selE.innerHTML = '<option value="">全量</option>' + optsHtml;
+
+          selS.value = dates.indexOf(defaultStart) >= 0 ? defaultStart : minD;
+          selE.value = dates.indexOf(defaultEnd) >= 0 ? defaultEnd : maxD;
+
+          selS.onchange = opts.renderFn;
+          selE.onchange = opts.renderFn;
+
+          var barBtn = document.getElementById(opts.barBtnId);
+          var pieBtn = document.getElementById(opts.pieBtnId);
+          if (barBtn && pieBtn && !barBtn.__bound__) {
+            barBtn.onclick = function() {
+              window[opts.viewModeKey] = 'bar';
+              barBtn.classList.add('active');
+              pieBtn.classList.remove('active');
+              opts.renderFn();
+            };
+            pieBtn.onclick = function() {
+              window[opts.viewModeKey] = 'pie';
+              pieBtn.classList.add('active');
+              barBtn.classList.remove('active');
+              opts.renderFn();
+            };
+            barBtn.__bound__ = true;
+            pieBtn.__bound__ = true;
+          }
+        }
+
         function fetchFourPlatformData() {
+          console.log('[fetchFourPlatformData] 开始');
           var stEl = document.getElementById('fourPlatformStatus');
           if (typeof XbsAuth === 'undefined' || !XbsAuth.getToken()) {
+            console.log('[fetchFourPlatformData] 未登录，直接返回');
             window.__FOUR_PLATFORM_DATA__ = null;
             window.__FOUR_PLATFORM_ERROR__ = '未登录：请先登录后再拉取数据。';
             if (stEl) stEl.textContent = window.__FOUR_PLATFORM_ERROR__;
             refreshFourPlatformCharts();
+            // 未登录时也刷新首页图表
+            renderMonthlyCumulativeAchievement();
             return Promise.resolve();
           }
+          console.log('[fetchFourPlatformData] 发送API请求');
           return XbsAuth.fetchFeishuNewretailDaily()
             .then(parseJsonRes)
             .then(function (o) {
@@ -8628,11 +9907,15 @@
                   if (stEl) stEl.textContent = window.__FOUR_PLATFORM_ERROR__;
                 }
                 refreshFourPlatformCharts();
+                // 同时刷新首页的月度累计达成图表（因为它也依赖 __FOUR_PLATFORM_DATA__）
+                renderMonthlyCumulativeAchievement();
               } catch (e) {
                 window.__FOUR_PLATFORM_DATA__ = null;
                 window.__FOUR_PLATFORM_ERROR__ = '数据解析失败：' + (e && e.message ? e.message : String(e));
                 if (stEl) stEl.textContent = window.__FOUR_PLATFORM_ERROR__;
                 refreshFourPlatformCharts();
+                // 即使出错也刷新首页图表（显示错误状态）
+                renderMonthlyCumulativeAchievement();
               }
             })
             .catch(function (err) {
@@ -8640,6 +9923,8 @@
               window.__FOUR_PLATFORM_ERROR__ = '请求失败：' + (err && err.message ? err.message : '网络或跨域错误');
               if (stEl) stEl.textContent = window.__FOUR_PLATFORM_ERROR__;
               refreshFourPlatformCharts();
+              // 即使出错也刷新首页图表（显示错误状态）
+              renderMonthlyCumulativeAchievement();
             });
         }
         Promise.all([
@@ -8657,6 +9942,8 @@
           fetchFourPlatformData(),
         ]).then(function () {
           initMainTabNav();
+          // 数据加载完成，显示主内容并隐藏骨架屏
+          showMainContent();
           if (typeof done === 'function') done();
           requestAnimationFrame(function () {
             requestAnimationFrame(function () {
@@ -8666,7 +9953,11 @@
         });
       }
 
-      window.__runAfterAuth__ = function () { loadDefaultData(hideLoading); };
+      window.__runAfterAuth__ = function () {
+        loadDefaultData(function() {
+          console.log('数据加载完成');
+        });
+      };
 
       /**
        * 版本记录（仅手动维护）：按时间由早到晚排列，新版本在数组**末尾**追加一行。

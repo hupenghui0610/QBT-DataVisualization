@@ -8,7 +8,10 @@
       "Bash(curl -s \"https://4ae54c19.qbt-datavisualization.pages.dev/api/data/feishu-newretail-daily\" -H \"Accept: application/json\")",
       "Bash(curl -s https://4ae54c19.qbt-datavisualization.pages.dev/api/data/feishu-newretail-daily -H 'Authorization: Bearer test' -H 'Accept: application/json')",
       "Bash(node -c charts.html)",
-      "Bash(node --check dist/charts.html)"
+      "Bash(node --check dist/charts.html)",
+      "Bash(npx serve:*)",
+      "Bash(git add:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
