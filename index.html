@@ -10917,7 +10917,8 @@
 
       function initMainTabNav() {
         var nav = document.querySelector('.main-nav-tabs');
-        if (!nav || nav.getAttribute('data-bound') === '1') return;
+        if (!nav) return;
+        // 不再使用data-bound限制，允许重新初始化以确保事件绑定正确
         nav.setAttribute('data-bound', '1');
         var panelIds = {
           home: 'main-tab-panel-home',
@@ -10927,15 +10928,23 @@
         };
         function activate(key) {
           if (!panelIds[key]) return;
+          // 更新按钮状态
           nav.querySelectorAll('.main-nav-tab').forEach(function (btn) {
             var k = btn.getAttribute('data-main-tab');
             var on = k === key;
             btn.classList.toggle('active', on);
             btn.setAttribute('aria-selected', on ? 'true' : 'false');
           });
+          // 更新面板显示状态
           Object.keys(panelIds).forEach(function (k) {
             var panel = document.getElementById(panelIds[k]);
-            if (panel) panel.classList.toggle('is-active', k === key);
+            if (panel) {
+              if (k === key) {
+                panel.classList.add('is-active');
+              } else {
+                panel.classList.remove('is-active');
+              }
+            }
           });
           requestAnimationFrame(function () {
             requestAnimationFrame(function () {
@@ -10948,11 +10957,21 @@
             });
           });
         }
-        nav.addEventListener('click', function (e) {
+        // 移除旧的事件监听器（如果有）
+        var oldHandler = nav._tabClickHandler;
+        if (oldHandler) {
+          nav.removeEventListener('click', oldHandler);
+        }
+        // 绑定新的事件监听器
+        var clickHandler = function (e) {
           var btn = e.target.closest('[data-main-tab]');
           if (!btn || !nav.contains(btn)) return;
-          activate(btn.getAttribute('data-main-tab'));
-        });
+          var key = btn.getAttribute('data-main-tab');
+          activate(key);
+        };
+        nav._tabClickHandler = clickHandler;
+        nav.addEventListener('click', clickHandler);
+        // 初始化默认Tab
         var defBtn = nav.querySelector('.main-nav-tab.active') || nav.querySelector('[data-main-tab]');
         activate(defBtn ? defBtn.getAttribute('data-main-tab') : 'home');
       }
