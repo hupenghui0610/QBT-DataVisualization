@@ -626,6 +626,191 @@ function aggregateFuwuByChannelWeekly(dailyPoints) {
   };
 }
 
+/** ==================== 按渠道聚合DP数据（日度）==================== */
+function aggregateDpByChannel(allOrders) {
+  const bucket = {};
+  const channels = new Set();
+
+  allOrders.forEach(order => {
+    // 只处理DP订单
+    if (order.category !== 'dp') return;
+
+    const day = order.date;
+    const channel = order.channel || '未知';
+
+    // 过滤掉"未知"渠道
+    if (channel === '未知') return;
+
+    channels.add(channel);
+
+    if (!bucket[day]) {
+      bucket[day] = {};
+    }
+    if (!bucket[day][channel]) {
+      bucket[day][channel] = 0;
+    }
+    bucket[day][channel] += order.amount;
+  });
+
+  // 转换为数组格式
+  const sortedDays = Object.keys(bucket).sort();
+  const sortedChannels = Array.from(channels).sort();
+
+  return {
+    days: sortedDays,
+    channels: sortedChannels,
+    data: sortedDays.map(day => {
+      const dayData = { date: day };
+      sortedChannels.forEach(channel => {
+        const amount = bucket[day][channel] || 0;
+        dayData[channel] = Number((amount / 10000).toFixed(2));
+      });
+      return dayData;
+    })
+  };
+}
+
+/** ==================== 月度聚合（DP按渠道） ==================== */
+function aggregateDpByChannelMonthly(dailyPoints) {
+  const bucket = {};
+  const channels = new Set();
+
+  dailyPoints.forEach(p => {
+    const month = p.date.substring(0, 7); // YYYY-MM
+    Object.keys(p).forEach(key => {
+      if (key === 'date') return;
+      channels.add(key);
+      if (!bucket[month]) {
+        bucket[month] = {};
+      }
+      if (!bucket[month][key]) {
+        bucket[month][key] = 0;
+      }
+      bucket[month][key] += p[key];
+    });
+  });
+
+  const sortedMonths = Object.keys(bucket).sort();
+  const sortedChannels = Array.from(channels).sort();
+
+  return {
+    days: sortedMonths,
+    channels: sortedChannels,
+    data: sortedMonths.map(month => {
+      const monthData = { date: month };
+      sortedChannels.forEach(channel => {
+        monthData[channel] = Number((bucket[month][channel] || 0).toFixed(2));
+      });
+      return monthData;
+    })
+  };
+}
+
+/** ==================== 周度聚合（DP按渠道） ==================== */
+function aggregateDpByChannelWeekly(dailyPoints) {
+  const bucket = {};
+  const channels = new Set();
+
+  dailyPoints.forEach(p => {
+    const week = weekStartFromDateStr(p.date);
+    if (!week) return;
+    Object.keys(p).forEach(key => {
+      if (key === 'date') return;
+      channels.add(key);
+      if (!bucket[week]) {
+        bucket[week] = {};
+      }
+      if (!bucket[week][key]) {
+        bucket[week][key] = 0;
+      }
+      bucket[week][key] += p[key];
+    });
+  });
+
+  const sortedWeeks = Object.keys(bucket).sort();
+  const sortedChannels = Array.from(channels).sort();
+
+  return {
+    days: sortedWeeks,
+    channels: sortedChannels,
+    data: sortedWeeks.map(week => {
+      const weekData = { date: week };
+      sortedChannels.forEach(channel => {
+        weekData[channel] = Number((bucket[week][channel] || 0).toFixed(2));
+      });
+      return weekData;
+    })
+  };
+}
+
+/** ==================== DP退款率计算（按渠道）==================== */
+function aggregateDpRefundRateByChannel(dpGmvData, dpGsvData) {
+  const data = [];
+  const gmvMap = {};
+  const gsvMap = {};
+
+  // 构建GMV映射
+  dpGmvData.data.forEach(p => {
+    gmvMap[p.date] = p;
+  });
+
+  // 构建GSV映射
+  dpGsvData.data.forEach(p => {
+    gsvMap[p.date] = p;
+  });
+
+  // 获取所有日期
+  const allDates = [...new Set([...Object.keys(gmvMap), ...Object.keys(gsvMap)])].sort();
+
+  allDates.forEach(date => {
+    const gmvRow = gmvMap[date] || {};
+    const gsvRow = gsvMap[date] || {};
+    const row = { date };
+
+    dpGmvData.channels.forEach(channel => {
+      const gmv = gmvRow[channel] || 0;
+      const gsv = gsvRow[channel] || 0;
+      // 退款率 = 1 - GSV/GMV
+      if (gmv > 0) {
+        row[channel] = Number((1 - gsv / gmv).toFixed(4));
+      } else {
+        row[channel] = null;
+      }
+    });
+
+    data.push(row);
+  });
+
+  return {
+    days: allDates,
+    channels: dpGmvData.channels,
+    data
+  };
+}
+
+/** ==================== 计算DP各渠道总计（用于退款率计算）==================== */
+function calculateDpTotalsByChannel(dpGmvData, dpGsvData) {
+  const totals = {};
+
+  dpGmvData.channels.forEach(ch => {
+    totals[ch] = { gmv: 0, gsv: 0 };
+  });
+
+  dpGmvData.data.forEach(p => {
+    dpGmvData.channels.forEach(ch => {
+      totals[ch].gmv += p[ch] || 0;
+    });
+  });
+
+  dpGsvData.data.forEach(p => {
+    dpGsvData.channels.forEach(ch => {
+      totals[ch].gsv += p[ch] || 0;
+    });
+  });
+
+  return totals;
+}
+
 /** ==================== 周度聚合 ==================== */
 function weekStartFromDateStr(ds) {
   const m = String(ds).match(/^(\d{4})-(\d{2})-(\d{2})$/);
