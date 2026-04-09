@@ -976,18 +976,61 @@
     }
     /* ========== 直播间转化漏斗多列布局 ========== */
     #livestreamFunnelGrid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 16px;
+      align-items: flex-start;
     }
     #livestreamFunnelGrid .livestream-funnel-card {
+      flex: 1;
+      min-width: 400px;
+      max-width: 100%;
+    }
+    /* 默认只有一个漏斗时，限制最大宽度避免梯形被压扁 */
+    #livestreamFunnelGrid .livestream-funnel-default {
+      flex: 0 1 520px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    /* 当有多个漏斗时，使用grid布局 */
+    #livestreamFunnelGrid:has(.livestream-funnel-card:nth-child(2)) {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    }
+    #livestreamFunnelGrid:has(.livestream-funnel-card:nth-child(2)) .livestream-funnel-card {
       min-width: 0;
     }
+    #livestreamFunnelGrid:has(.livestream-funnel-card:nth-child(2)) .livestream-funnel-default {
+      flex: none;
+      max-width: none;
+      margin: 0;
+    }
     html.mobile-client #livestreamFunnelGrid {
-      grid-template-columns: 1fr;
+      flex-direction: column;
+    }
+    html.mobile-client #livestreamFunnelGrid .livestream-funnel-card {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    html.mobile-client #livestreamFunnelGrid .livestream-funnel-default {
+      flex: 1 1 auto;
+      max-width: 100%;
+    }
+    .remove-funnel-btn {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 4px 10px;
+      font-size: 12px;
+      background: #fee2e2;
+      color: #dc2626;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
     .remove-funnel-btn:hover {
-      background: #fecaca !important;
+      background: #fecaca;
     }
   </style>
 </head>
@@ -1389,20 +1432,19 @@
       <div id="chartModelDistDaren" class="chart"></div>
     </div>
   </div>
-  <div class="grid" id="livestreamFunnelGrid" style="margin-top: 16px;">
+  <div id="livestreamFunnelGrid" style="margin-top: 16px;">
     <!-- 直播间转化漏斗容器 - 动态管理多个漏斗 -->
-    <div class="card livestream-funnel-card" data-funnel-id="0">
+    <div class="card livestream-funnel-card livestream-funnel-default" data-funnel-id="0">
       <h3 style="position: relative;">
         <i class="chart-title-icon fa fa-filter"></i><span>直播间转化漏斗</span>
-        <button type="button" class="remove-funnel-btn" data-funnel-id="0" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 4px 10px; font-size: 12px; background: #fee2e2; color: #dc2626; border: none; border-radius: 4px; cursor: pointer; display: none;">删除</button>
       </h3>
       <span class="livestream-funnel-status daily-feishu-status" style="font-size: 12px; color: #64748b;"></span>
       <div class="date-range">主播：<select class="livestream-funnel-anchor"><option value="">请选择主播</option></select></div>
       <div class="chart livestream-funnel-chart"></div>
+      <div class="funnel-actions" style="display: flex; justify-content: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+        <button type="button" id="addFunnelBtn" class="view-btn" style="padding: 6px 16px; font-size: 13px;">+ 增加对比</button>
+      </div>
     </div>
-  </div>
-  <div style="text-align: center; margin-top: 12px;">
-    <button type="button" id="addFunnelBtn" class="view-btn" style="padding: 8px 20px; font-size: 14px;">+ 增加对比</button>
   </div>
   </div>
   </div>
@@ -7923,7 +7965,7 @@
         card.innerHTML =
           '<h3 style="position: relative;">' +
             '<i class="chart-title-icon fa fa-filter"></i><span>直播间转化漏斗</span>' +
-            '<button type="button" class="remove-funnel-btn" data-funnel-id="' + newId + '" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 4px 10px; font-size: 12px; background: #fee2e2; color: #dc2626; border: none; border-radius: 4px; cursor: pointer;">删除</button>' +
+            '<button type="button" class="remove-funnel-btn" data-funnel-id="' + newId + '">删除</button>' +
           '</h3>' +
           '<span class="livestream-funnel-status daily-feishu-status" style="font-size: 12px; color: #64748b;"></span>' +
           '<div class="date-range">主播：<select class="livestream-funnel-anchor"><option value="">请选择主播</option></select></div>' +
@@ -7931,16 +7973,19 @@
         grid.appendChild(card);
 
         initLivestreamFunnelSelect(card, window.livestreamFunnelAnchorsCached);
-        updateRemoveButtons();
+        renderLivestreamFunnel(newId);
 
+        // 当达到3个时禁用增加按钮
         if (addBtn) addBtn.disabled = cards.length + 1 >= 3;
+        // 移除第一个漏斗的默认样式类，使其可以自适应
+        var defaultCard = grid.querySelector('.livestream-funnel-default');
+        if (defaultCard) defaultCard.classList.remove('livestream-funnel-default');
       }
 
       function removeLivestreamFunnel(funnelId) {
         var grid = document.getElementById('livestreamFunnelGrid');
         var addBtn = document.getElementById('addFunnelBtn');
-        var cards = grid.querySelectorAll('.livestream-funnel-card');
-        if (cards.length <= 1) return;
+        if (!grid) return;
 
         var card = grid.querySelector('.livestream-funnel-card[data-funnel-id="' + funnelId + '"]');
         if (!card) return;
@@ -7951,20 +7996,15 @@
         }
         window.livestreamFunnelInstances = window.livestreamFunnelInstances.filter(function(inst) { return inst.id !== funnelId; });
         card.remove();
-        updateRemoveButtons();
 
+        // 启用增加按钮
         if (addBtn) addBtn.disabled = false;
-      }
 
-      function updateRemoveButtons() {
-        var grid = document.getElementById('livestreamFunnelGrid');
-        if (!grid) return;
-        var cards = grid.querySelectorAll('.livestream-funnel-card');
-        var showDelete = cards.length > 1;
-        cards.forEach(function(card) {
-          var btn = card.querySelector('.remove-funnel-btn');
-          if (btn) btn.style.display = showDelete ? 'block' : 'none';
-        });
+        // 如果只剩一个漏斗，给它加上默认样式类
+        var remainingCards = grid.querySelectorAll('.livestream-funnel-card');
+        if (remainingCards.length === 1) {
+          remainingCards[0].classList.add('livestream-funnel-default');
+        }
       }
 
       function refreshLivestreamFunnelFromFeishu() {
