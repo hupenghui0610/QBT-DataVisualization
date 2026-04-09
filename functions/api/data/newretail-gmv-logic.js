@@ -1366,13 +1366,3 @@ export {
   calculateTotalsByCategory,
   calculateFuwuTotalsByChannel
 };
-  aggregateModelDistributionByDayFiltered,
-  aggregateModelDistributionByDaren,
-  parseExcelSerial,
-  aggregateRefundRateByDayAndCategory,
-  aggregateRefundRateByWeek,
-  aggregateRefundRateByMonth,
-  aggregateFuwuRefundRateByChannel,
-  calculateTotalsByCategory,
-  calculateFuwuTotalsByChannel
-};
