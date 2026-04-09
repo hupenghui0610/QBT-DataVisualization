@@ -13,6 +13,9 @@ import {
   aggregateFuwuByChannel,
   aggregateFuwuByChannelWeekly,
   aggregateFuwuByChannelMonthly,
+  aggregateDpByChannel,
+  aggregateDpByChannelWeekly,
+  aggregateDpByChannelMonthly,
   aggregateDpByDarenMonthly,
   aggregateModelDistributionByDay,
   aggregateModelDistributionByDayFiltered,
@@ -21,8 +24,10 @@ import {
   aggregateRefundRateByWeek,
   aggregateRefundRateByMonth,
   aggregateFuwuRefundRateByChannel,
+  aggregateDpRefundRateByChannel,
   calculateTotalsByCategory,
-  calculateFuwuTotalsByChannel
+  calculateFuwuTotalsByChannel,
+  calculateDpTotalsByChannel
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -235,7 +240,25 @@ export async function onRequestGet(context) {
     console.log('[GSV服务商统计] channels:', fuwuByChannelGsv.channels);
     console.log('[GSV服务商统计] data长度:', fuwuByChannelGsv.data.length);
 
-    // 4d. DP类按渠道月度汇总
+    // 4g. DP按渠道汇总（仿照服务商）
+    var dpByChannel = aggregateDpByChannel(allOrdersGmv);
+    var dpByChannelWeekly = aggregateDpByChannelWeekly(dpByChannel.data);
+    var dpByChannelMonthly = aggregateDpByChannelMonthly(dpByChannel.data);
+    var dpByChannelGsv = aggregateDpByChannel(allOrdersGsv);
+    var dpByChannelGsvWeekly = aggregateDpByChannelWeekly(dpByChannelGsv.data);
+    var dpByChannelGsvMonthly = aggregateDpByChannelMonthly(dpByChannelGsv.data);
+
+    // 4h. DP退款率（按渠道计算）
+    var dpRefundRateDaily = aggregateDpRefundRateByChannel(dpByChannel, dpByChannelGsv);
+    var dpRefundRateWeekly = aggregateDpRefundRateByChannel(dpByChannelWeekly, dpByChannelGsvWeekly);
+    var dpRefundRateMonthly = aggregateDpRefundRateByChannel(dpByChannelMonthly, dpByChannelGsvMonthly);
+
+    // 4i. DP各渠道总计
+    var dpTotalsDaily = calculateDpTotalsByChannel(dpByChannel, dpByChannelGsv);
+    var dpTotalsWeekly = calculateDpTotalsByChannel(dpByChannelWeekly, dpByChannelGsvWeekly);
+    var dpTotalsMonthly = calculateDpTotalsByChannel(dpByChannelMonthly, dpByChannelGsvMonthly);
+
+    // 4j. DP类按达人月度汇总（原有功能）
     var dpByDarenMonthly = aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv);
 
     // 4e. 读取产品型号映射表并聚合型号分布
@@ -347,11 +370,29 @@ export async function onRequestGet(context) {
         weekly: fuwuRefundRateWeekly,
         monthly: fuwuRefundRateMonthly
       },
+      dpGmv: {
+        daily: dpByChannel,
+        weekly: dpByChannelWeekly,
+        monthly: dpByChannelMonthly
+      },
+      dpGsv: {
+        daily: dpByChannelGsv,
+        weekly: dpByChannelGsvWeekly,
+        monthly: dpByChannelGsvMonthly
+      },
+      dpRefundRate: {
+        daily: dpRefundRateDaily,
+        weekly: dpRefundRateWeekly,
+        monthly: dpRefundRateMonthly
+      },
       totals: {
         fourPlatform: fourPlatformTotals,
         fuwuDaily: fuwuTotalsDaily,
         fuwuWeekly: fuwuTotalsWeekly,
-        fuwuMonthly: fuwuTotalsMonthly
+        fuwuMonthly: fuwuTotalsMonthly,
+        dpDaily: dpTotalsDaily,
+        dpWeekly: dpTotalsWeekly,
+        dpMonthly: dpTotalsMonthly
       },
       dpGmvGsv: {
         monthly: dpByDarenMonthly
