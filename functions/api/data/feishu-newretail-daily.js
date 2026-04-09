@@ -16,7 +16,13 @@ import {
   aggregateDpByDarenMonthly,
   aggregateModelDistributionByDay,
   aggregateModelDistributionByDayFiltered,
-  aggregateModelDistributionByDaren
+  aggregateModelDistributionByDaren,
+  aggregateRefundRateByDayAndCategory,
+  aggregateRefundRateByWeek,
+  aggregateRefundRateByMonth,
+  aggregateFuwuRefundRateByChannel,
+  calculateTotalsByCategory,
+  calculateFuwuTotalsByChannel
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -199,13 +205,29 @@ export async function onRequestGet(context) {
     var weeklyPointsGsv = aggregateByWeek(dailyPointsGsv);
     var monthlyPointsGsv = aggregateByMonth(dailyPointsGsv);
 
-    // 4c. 服务商按渠道汇总
+    // 4c. 计算退款率（四平台合并）
+    var dailyRefundRate = aggregateRefundRateByDayAndCategory(dailyPointsGmv, dailyPointsGsv);
+    var weeklyRefundRate = aggregateRefundRateByWeek(dailyPointsGmv, dailyPointsGsv);
+    var monthlyRefundRate = aggregateRefundRateByMonth(dailyPointsGmv, dailyPointsGsv);
+
+    // 4d. 服务商按渠道汇总
     var fuwuByChannel = aggregateFuwuByChannel(allOrdersGmv);
     var fuwuByChannelWeekly = aggregateFuwuByChannelWeekly(fuwuByChannel.data);
     var fuwuByChannelMonthly = aggregateFuwuByChannelMonthly(fuwuByChannel.data);
     var fuwuByChannelGsv = aggregateFuwuByChannel(allOrdersGsv);
     var fuwuByChannelGsvWeekly = aggregateFuwuByChannelWeekly(fuwuByChannelGsv.data);
     var fuwuByChannelGsvMonthly = aggregateFuwuByChannelMonthly(fuwuByChannelGsv.data);
+
+    // 4e. 服务商退款率（使用日度/周度/月度GMV和GSV分别计算）
+    var fuwuRefundRateDaily = aggregateFuwuRefundRateByChannel(fuwuByChannel, fuwuByChannelGsv);
+    var fuwuRefundRateWeekly = aggregateFuwuRefundRateByChannel(fuwuByChannelWeekly, fuwuByChannelGsvWeekly);
+    var fuwuRefundRateMonthly = aggregateFuwuRefundRateByChannel(fuwuByChannelMonthly, fuwuByChannelGsvMonthly);
+
+    // 4f. 计算总计（用于前端正确计算总退款率）
+    var fourPlatformTotals = calculateTotalsByCategory(dailyPointsGmv, dailyPointsGsv);
+    var fuwuTotalsDaily = calculateFuwuTotalsByChannel(fuwuByChannel, fuwuByChannelGsv);
+    var fuwuTotalsWeekly = calculateFuwuTotalsByChannel(fuwuByChannelWeekly, fuwuByChannelGsvWeekly);
+    var fuwuTotalsMonthly = calculateFuwuTotalsByChannel(fuwuByChannelMonthly, fuwuByChannelGsvMonthly);
 
     // 调试：输出GSV服务商订单统计
     var fuwuOrdersGsv = allOrdersGsv.filter(function(o) { return o.category === 'fuwu'; });
@@ -305,6 +327,11 @@ export async function onRequestGet(context) {
         weekly: weeklyPointsGsv,
         monthly: monthlyPointsGsv,
       },
+      refundRate: {
+        daily: dailyRefundRate,
+        weekly: weeklyRefundRate,
+        monthly: monthlyRefundRate,
+      },
       fuwuGmv: {
         daily: fuwuByChannel,
         weekly: fuwuByChannelWeekly,
@@ -314,6 +341,17 @@ export async function onRequestGet(context) {
         daily: fuwuByChannelGsv,
         weekly: fuwuByChannelGsvWeekly,
         monthly: fuwuByChannelGsvMonthly
+      },
+      fuwuRefundRate: {
+        daily: fuwuRefundRateDaily,
+        weekly: fuwuRefundRateWeekly,
+        monthly: fuwuRefundRateMonthly
+      },
+      totals: {
+        fourPlatform: fourPlatformTotals,
+        fuwuDaily: fuwuTotalsDaily,
+        fuwuWeekly: fuwuTotalsWeekly,
+        fuwuMonthly: fuwuTotalsMonthly
       },
       dpGmvGsv: {
         monthly: dpByDarenMonthly

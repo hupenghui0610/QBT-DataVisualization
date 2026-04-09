@@ -520,6 +520,10 @@ function aggregateFuwuByChannel(allOrders) {
 
     const day = order.date;
     const channel = order.channel || '未知';
+
+    // 过滤掉"未知"渠道
+    if (channel === '未知') return;
+
     channels.add(channel);
 
     if (!bucket[day]) {
@@ -1089,6 +1093,245 @@ function aggregateModelDistributionByDaren(allOrders, modelMapping, filterFn, ex
   return { byDaren: result, darenList };
 }
 
+/** ==================== 按日期和类别计算退款率 ====================
+ * 退款率 = 1 - GSV / GMV
+ * 输入: GMV日度数据 和 GSV日度数据
+ * 输出: 每天的退款率（dp、zhidui、fuwu三类）
+ */
+function aggregateRefundRateByDayAndCategory(dailyPointsGmv, dailyPointsGsv) {
+  // 构建GMV数据映射
+  const gmvMap = {};
+  dailyPointsGmv.forEach(p => {
+    gmvMap[p.date] = { dp: p.dp || 0, zhidui: p.zhidui || 0, fuwu: p.fuwu || 0 };
+  });
+
+  // 计算每日退款率
+  return dailyPointsGsv.map(p => {
+    const gmv = gmvMap[p.date] || { dp: 0, zhidui: 0, fuwu: 0 };
+    const rate = { date: p.date };
+
+    // 计算各类退款率（退款率 = 1 - GSV/GMV），GMV为0时返回null
+    rate.dp = gmv.dp > 0 ? Number((1 - p.dp / gmv.dp).toFixed(4)) : null;
+    rate.zhidui = gmv.zhidui > 0 ? Number((1 - p.zhidui / gmv.zhidui).toFixed(4)) : null;
+    rate.fuwu = gmv.fuwu > 0 ? Number((1 - p.fuwu / gmv.fuwu).toFixed(4)) : null;
+
+    // 总体退款率（退款率 = 1 - 总GSV/总GMV）
+    const totalGmv = gmv.dp + gmv.zhidui + gmv.fuwu;
+    const totalGsv = p.dp + p.zhidui + p.fuwu;
+    rate.total = totalGmv > 0 ? Number((1 - totalGsv / totalGmv).toFixed(4)) : null;
+
+    return rate;
+  });
+}
+
+/** ==================== 周度退款率聚合 ====================
+ * 周度退款率 = 1 - 周度GSV总和 / 周度GMV总和
+ */
+function aggregateRefundRateByWeek(dailyPointsGmv, dailyPointsGsv) {
+  // 按周聚合GMV
+  const gmvBucket = {};
+  dailyPointsGmv.forEach(p => {
+    const ws = weekStartFromDateStr(p.date);
+    if (!ws) return;
+    if (!gmvBucket[ws]) {
+      gmvBucket[ws] = { dp: 0, zhidui: 0, fuwu: 0 };
+    }
+    gmvBucket[ws].dp += p.dp;
+    gmvBucket[ws].zhidui += p.zhidui;
+    gmvBucket[ws].fuwu += p.fuwu;
+  });
+
+  // 按周聚合GSV
+  const gsvBucket = {};
+  dailyPointsGsv.forEach(p => {
+    const ws = weekStartFromDateStr(p.date);
+    if (!ws) return;
+    if (!gsvBucket[ws]) {
+      gsvBucket[ws] = { dp: 0, zhidui: 0, fuwu: 0 };
+    }
+    gsvBucket[ws].dp += p.dp;
+    gsvBucket[ws].zhidui += p.zhidui;
+    gsvBucket[ws].fuwu += p.fuwu;
+  });
+
+  // 计算周退款率
+  return Object.keys(gmvBucket).sort().map(ws => {
+    const gmv = gmvBucket[ws];
+    const gsv = gsvBucket[ws] || { dp: 0, zhidui: 0, fuwu: 0 };
+    const rate = { date: ws };
+
+    rate.dp = gmv.dp > 0 ? Number((1 - gsv.dp / gmv.dp).toFixed(4)) : null;
+    rate.zhidui = gmv.zhidui > 0 ? Number((1 - gsv.zhidui / gmv.zhidui).toFixed(4)) : null;
+    rate.fuwu = gmv.fuwu > 0 ? Number((1 - gsv.fuwu / gmv.fuwu).toFixed(4)) : null;
+
+    const totalGmv = gmv.dp + gmv.zhidui + gmv.fuwu;
+    const totalGsv = gsv.dp + gsv.zhidui + gsv.fuwu;
+    rate.total = totalGmv > 0 ? Number((1 - totalGsv / totalGmv).toFixed(4)) : null;
+
+    return rate;
+  });
+}
+
+/** ==================== 月度退款率聚合 ====================
+ * 月度退款率 = 1 - 月度GSV总和 / 月度GMV总和
+ */
+function aggregateRefundRateByMonth(dailyPointsGmv, dailyPointsGsv) {
+  // 按月聚合GMV
+  const gmvBucket = {};
+  dailyPointsGmv.forEach(p => {
+    const month = monthFromDateStr(p.date);
+    if (!month) return;
+    if (!gmvBucket[month]) {
+      gmvBucket[month] = { dp: 0, zhidui: 0, fuwu: 0 };
+    }
+    gmvBucket[month].dp += p.dp;
+    gmvBucket[month].zhidui += p.zhidui;
+    gmvBucket[month].fuwu += p.fuwu;
+  });
+
+  // 按月聚合GSV
+  const gsvBucket = {};
+  dailyPointsGsv.forEach(p => {
+    const month = monthFromDateStr(p.date);
+    if (!month) return;
+    if (!gsvBucket[month]) {
+      gsvBucket[month] = { dp: 0, zhidui: 0, fuwu: 0 };
+    }
+    gsvBucket[month].dp += p.dp;
+    gsvBucket[month].zhidui += p.zhidui;
+    gsvBucket[month].fuwu += p.fuwu;
+  });
+
+  // 计算月退款率
+  return Object.keys(gmvBucket).sort().map(m => {
+    const gmv = gmvBucket[m];
+    const gsv = gsvBucket[m] || { dp: 0, zhidui: 0, fuwu: 0 };
+    const rate = { date: m };
+
+    rate.dp = gmv.dp > 0 ? Number((1 - gsv.dp / gmv.dp).toFixed(4)) : null;
+    rate.zhidui = gmv.zhidui > 0 ? Number((1 - gsv.zhidui / gmv.zhidui).toFixed(4)) : null;
+    rate.fuwu = gmv.fuwu > 0 ? Number((1 - gsv.fuwu / gmv.fuwu).toFixed(4)) : null;
+
+    const totalGmv = gmv.dp + gmv.zhidui + gmv.fuwu;
+    const totalGsv = gsv.dp + gsv.zhidui + gsv.fuwu;
+    rate.total = totalGmv > 0 ? Number((1 - totalGsv / totalGmv).toFixed(4)) : null;
+
+    return rate;
+  });
+}
+
+/** ==================== 服务商按渠道计算退款率（按日/周/月） ====================
+ * 退款率 = 1 - GSV / GMV
+ * 适用于日度、周度、月度数据
+ */
+function aggregateFuwuRefundRateByChannel(fuwuGmvData, fuwuGsvData) {
+  // fuwuGmvData 和 fuwuGsvData 格式: { days, channels, data }
+  const days = fuwuGmvData.days || [];
+  // 合并两个数据集的渠道列表，确保一致性
+  const channels = Array.from(new Set([
+    ...(fuwuGmvData.channels || []),
+    ...(fuwuGsvData.channels || [])
+  ])).sort();
+
+  // 构建GMV和GSV数据映射
+  const gmvMap = {};
+  fuwuGmvData.data.forEach(row => {
+    gmvMap[row.date] = row;
+  });
+  const gsvMap = {};
+  fuwuGsvData.data.forEach(row => {
+    gsvMap[row.date] = row;
+  });
+
+  // 计算每个渠道的退款率
+  const refundData = days.map(date => {
+    const gmvRow = gmvMap[date] || {};
+    const gsvRow = gsvMap[date] || {};
+    const rateRow = { date: date };
+
+    channels.forEach(ch => {
+      const gmvVal = gmvRow[ch] || 0;
+      const gsvVal = gsvRow[ch] || 0;
+      // GMV为0时返回null，否则返回退款率（1 - GSV/GMV）
+      rateRow[ch] = gmvVal > 0 ? Number((1 - gsvVal / gmvVal).toFixed(4)) : null;
+    });
+
+    return rateRow;
+  });
+
+  return {
+    days: days,
+    channels: channels,
+    data: refundData
+  };
+}
+
+/** ==================== 计算四平台合并的总计（用于前端计算总退款率） ====================
+ * 返回: { dp: {gmv, gsv}, zhidui: {gmv, gsv}, fuwu: {gmv, gsv} }
+ */
+function calculateTotalsByCategory(dailyPointsGmv, dailyPointsGsv) {
+  const totals = {
+    dp: { gmv: 0, gsv: 0 },
+    zhidui: { gmv: 0, gsv: 0 },
+    fuwu: { gmv: 0, gsv: 0 }
+  };
+
+  // 汇总GMV（数据已经是万元）
+  dailyPointsGmv.forEach(p => {
+    totals.dp.gmv += p.dp || 0;
+    totals.zhidui.gmv += p.zhidui || 0;
+    totals.fuwu.gmv += p.fuwu || 0;
+  });
+
+  // 汇总GSV
+  dailyPointsGsv.forEach(p => {
+    totals.dp.gsv += p.dp || 0;
+    totals.zhidui.gsv += p.zhidui || 0;
+    totals.fuwu.gsv += p.fuwu || 0;
+  });
+
+  // 计算总退款率
+  totals.dp.refundRate = totals.dp.gmv > 0 ? Number((1 - totals.dp.gsv / totals.dp.gmv).toFixed(4)) : null;
+  totals.zhidui.refundRate = totals.zhidui.gmv > 0 ? Number((1 - totals.zhidui.gsv / totals.zhidui.gmv).toFixed(4)) : null;
+  totals.fuwu.refundRate = totals.fuwu.gmv > 0 ? Number((1 - totals.fuwu.gsv / totals.fuwu.gmv).toFixed(4)) : null;
+
+  return totals;
+}
+
+/** ==================== 计算服务商各渠道的总计（用于前端计算总退款率） ====================
+ * 返回: { 渠道名: {gmv, gsv, refundRate}, ... }
+ */
+function calculateFuwuTotalsByChannel(fuwuGmvData, fuwuGsvData) {
+  const totals = {};
+  const channels = fuwuGmvData.channels || [];
+
+  // 初始化各渠道
+  channels.forEach(ch => {
+    totals[ch] = { gmv: 0, gsv: 0, refundRate: null };
+  });
+
+  // 汇总GMV
+  fuwuGmvData.data.forEach(row => {
+    channels.forEach(ch => {
+      totals[ch].gmv += row[ch] || 0;
+    });
+  });
+
+  // 汇总GSV
+  fuwuGsvData.data.forEach(row => {
+    channels.forEach(ch => {
+      totals[ch].gsv += row[ch] || 0;
+    });
+  });
+
+  // 计算各渠道总退款率
+  channels.forEach(ch => {
+    totals[ch].refundRate = totals[ch].gmv > 0 ? Number((1 - totals[ch].gsv / totals[ch].gmv).toFixed(4)) : null;
+  });
+
+  return totals;
+}
+
 // ==================== 导出 ====================
 export {
   PLATFORM_CONFIG,
@@ -1110,5 +1353,11 @@ export {
   aggregateModelDistributionByDay,
   aggregateModelDistributionByDayFiltered,
   aggregateModelDistributionByDaren,
-  parseExcelSerial
+  parseExcelSerial,
+  aggregateRefundRateByDayAndCategory,
+  aggregateRefundRateByWeek,
+  aggregateRefundRateByMonth,
+  aggregateFuwuRefundRateByChannel,
+  calculateTotalsByCategory,
+  calculateFuwuTotalsByChannel
 };

@@ -1133,6 +1133,7 @@
         <span class="chart-view-switch metric-switch" id="fourPlatformMetricSwitch" style="margin-right:8px">
           <button type="button" class="view-btn active" data-metric="gmv">GMV</button>
           <button type="button" class="view-btn" data-metric="gsv">GSV</button>
+          <button type="button" class="view-btn" data-metric="refundRate">退款率</button>
         </span>
         <span class="chart-view-switch" id="fourPlatformModeSwitch">
           <button type="button" class="view-btn active" data-mode="daily">日度</button>
@@ -1160,6 +1161,7 @@
         <span class="chart-view-switch metric-switch" id="fuwuGmvGsvModeSwitch" style="margin-right:8px">
           <button type="button" class="view-btn active" data-fuwu-metric="gmv">GMV</button>
           <button type="button" class="view-btn" data-fuwu-metric="gsv">GSV</button>
+          <button type="button" class="view-btn" data-fuwu-metric="refundRate">退款率</button>
         </span>
         <span class="chart-view-switch" id="fuwuGmvModeSwitch">
           <button type="button" class="view-btn active" data-fuwu-gmv-mode="daily">日度</button>
@@ -1259,6 +1261,13 @@
         </div>
       </div>
       <div id="chartModelDistDaren" class="chart"></div>
+    </div>
+    <!-- 直播间转化漏斗 -->
+    <div class="card wide">
+      <h3><i class="chart-title-icon fa fa-filter"></i><span>直播间转化漏斗</span></h3>
+      <span id="livestreamFunnelStatus" class="daily-feishu-status"></span>
+      <div class="date-range">主播：<select id="livestreamFunnelAnchor"><option value="">请选择主播</option></select></div>
+      <div id="chartLivestreamFunnel" class="chart"></div>
     </div>
   </div>
   </div>
@@ -7561,10 +7570,10 @@
         }
         var sumExp = hit.exposure != null ? Number(hit.exposure) : 0;
         var sumView = hit.view != null ? Number(hit.view) : 0;
-        var sumClick = hit.click != null ? Number(hit.click) : 0;
+        var sumProductExp = hit.productExposure != null ? Number(hit.productExposure) : 0;
+        var sumProductClick = hit.productClick != null ? Number(hit.productClick) : 0;
         var sumOrder = hit.order != null ? Number(hit.order) : 0;
-        var sumGmv = hit.gmv != null ? Number(hit.gmv) : 0;
-        if (sumExp + sumView + sumClick + sumOrder <= 0) {
+        if (sumExp + sumView + sumProductExp + sumProductClick + sumOrder <= 0) {
           charts.chartLivestreamFunnel.setOption(
             {
               title: { text: '该主播汇总无有效数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
@@ -7574,18 +7583,17 @@
           );
           return;
         }
-        var rateClick = sumView > 0 ? (sumClick / sumView) * 100 : 0;
-        var rateOrderFromClick = sumClick > 0 ? (sumOrder / sumClick) * 100 : 0;
-        var bottomStr =
-          '直播间GMV：' +
-          (isFinite(sumGmv)
-            ? sumGmv.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-            : '0');
+        // 转化率计算
+        var rateViewToExp = sumExp > 0 ? (sumView / sumExp) * 100 : 0;
+        var rateProductExpToView = sumView > 0 ? (sumProductExp / sumView) * 100 : 0;
+        var rateProductClickToProductExp = sumProductExp > 0 ? (sumProductClick / sumProductExp) * 100 : 0;
+        var rateOrderToProductClick = sumProductClick > 0 ? (sumOrder / sumProductClick) * 100 : 0;
         var funnelData = [
-          { value: sumExp, name: '直播间曝光次数', color: '#3b82f6' },
-          { value: sumView, name: '直播间观看次数', color: '#6366f1' },
-          { value: sumClick, name: '直播间商品点击次数', color: '#8b5cf6' },
-          { value: sumOrder, name: '直播间成交订单数', color: '#10b981' },
+          { value: sumExp, name: '直播间曝光人数', color: '#3b82f6' },
+          { value: sumView, name: '直播间观看人数', color: '#0ea5e9' },
+          { value: sumProductExp, name: '直播间商品曝光人数', color: '#6366f1' },
+          { value: sumProductClick, name: '直播间商品点击人数', color: '#8b5cf6' },
+          { value: sumOrder, name: '直播间成交人数', color: '#10b981' },
         ];
         var opt = {
           title: { show: false },
@@ -7630,8 +7638,10 @@
                 var cx = gx + cw / 2;
                 var row = funnelData[idx];
                 var color = row && row.color ? row.color : '#4a69bd';
-                var labelText =
-                  (row ? row.name : '') + '\n' + (row && row.value != null ? Number(row.value).toLocaleString('zh-CN') : '-');
+                var rowName = row ? row.name : '';
+                var rowValue = row && row.value != null ? Number(row.value).toLocaleString('zh-CN') : '-';
+                var centerY = (y0 + y1) / 2;
+                var lineHeight = 6; // 两行之间的间距
                 var children = [
                   {
                     type: 'polygon',
@@ -7651,26 +7661,62 @@
                       shadowColor: 'rgba(0,0,0,0.1)',
                     },
                   },
+                  // 第一行：名称
                   {
                     type: 'text',
                     style: {
-                      text: labelText,
+                      text: rowName,
                       x: cx,
-                      y: (y0 + y1) / 2,
+                      y: centerY - lineHeight / 2,
                       textAlign: 'center',
-                      textVerticalAlign: 'middle',
+                      textVerticalAlign: 'bottom',
+                      fill: '#fff',
+                      font: 'bold 12px Microsoft YaHei,sans-serif',
+                    },
+                  },
+                  // 第二行：数值
+                  {
+                    type: 'text',
+                    style: {
+                      text: rowValue,
+                      x: cx,
+                      y: centerY + lineHeight / 2,
+                      textAlign: 'center',
+                      textVerticalAlign: 'top',
                       fill: '#fff',
                       font: 'bold 12px Microsoft YaHei,sans-serif',
                     },
                   },
                 ];
-                if (idx === 1) {
+                // 在层级之间显示转化率
+                var n = funnelData.length;
+                // 根据当前层级位置计算漏斗半宽，用于定位转化率文字
+                var textOffsetX = 12; // 文字距离漏斗右侧的偏移量
+                if (idx === 0) {
+                  var rateViewToExp = sumExp > 0 ? (sumView / sumExp) * 100 : 0;
+                  var halfW0 = halfW((idx + 0.5) / n); // 第0层和第1层中间的宽度
                   children.push({
                     type: 'text',
                     style: {
-                      text: '点击率：' + rateClick.toFixed(2) + '%',
-                      x: cx + halfW(0.5) + 12,
-                      y: gy + 0.5 * ch,
+                      text: '曝光-观看率：' + rateViewToExp.toFixed(2) + '%',
+                      x: cx + halfW0 + textOffsetX,
+                      y: gy + ((idx + 1) / n) * ch,
+                      textAlign: 'left',
+                      textVerticalAlign: 'middle',
+                      fill: '#334155',
+                      font: '12px Microsoft YaHei,sans-serif',
+                    },
+                  });
+                }
+                if (idx === 1) {
+                  var rateProductExpToView = sumView > 0 ? (sumProductExp / sumView) * 100 : 0;
+                  var halfW1 = halfW((idx + 0.5) / n); // 第1层和第2层中间的宽度
+                  children.push({
+                    type: 'text',
+                    style: {
+                      text: '商品曝光率：' + rateProductExpToView.toFixed(2) + '%',
+                      x: cx + halfW1 + textOffsetX,
+                      y: gy + ((idx + 1) / n) * ch,
                       textAlign: 'left',
                       textVerticalAlign: 'middle',
                       fill: '#334155',
@@ -7679,12 +7725,14 @@
                   });
                 }
                 if (idx === 2) {
+                  var rateProductClickToExp = sumProductExp > 0 ? (sumProductClick / sumProductExp) * 100 : 0;
+                  var halfW2 = halfW((idx + 0.5) / n); // 第2层和第3层中间的宽度
                   children.push({
                     type: 'text',
                     style: {
-                      text: '下单转化：' + rateOrderFromClick.toFixed(2) + '%',
-                      x: cx + halfW(0.75) + 12,
-                      y: gy + 0.75 * ch,
+                      text: '商品曝光点击率：' + rateProductClickToExp.toFixed(2) + '%',
+                      x: cx + halfW2 + textOffsetX,
+                      y: gy + ((idx + 1) / n) * ch,
                       textAlign: 'left',
                       textVerticalAlign: 'middle',
                       fill: '#334155',
@@ -7693,14 +7741,16 @@
                   });
                 }
                 if (idx === 3) {
+                  var rateOrderToClick = sumProductClick > 0 ? (sumOrder / sumProductClick) * 100 : 0;
+                  var halfW3 = halfW((idx + 0.5) / n); // 第3层和第4层中间的宽度
                   children.push({
                     type: 'text',
                     style: {
-                      text: bottomStr,
-                      x: cx,
-                      y: y1 + 12,
-                      textAlign: 'center',
-                      textVerticalAlign: 'top',
+                      text: '点击-成交率：' + rateOrderToClick.toFixed(2) + '%',
+                      x: cx + halfW3 + textOffsetX,
+                      y: gy + ((idx + 1) / n) * ch,
+                      textAlign: 'left',
+                      textVerticalAlign: 'middle',
                       fill: '#334155',
                       font: '12px Microsoft YaHei,sans-serif',
                     },
@@ -8219,8 +8269,9 @@
           if (!charts.chartFourPlatform) charts.chartFourPlatform = echarts.init(el);
 
           var metric = window.fourPlatformMetric || 'gmv';
-          var dataKey = metric === 'gsv' ? 'gsv' : 'gmv';
-          var metricName = metric === 'gsv' ? 'GSV' : 'GMV';
+          var isRefundRate = metric === 'refundRate';
+          var dataKey = isRefundRate ? 'refundRate' : (metric === 'gsv' ? 'gsv' : 'gmv');
+          var metricName = isRefundRate ? '退款率' : (metric === 'gsv' ? 'GSV' : 'GMV');
 
           if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.length) {
             var err = window.__FOUR_PLATFORM_ERROR__ || '';
@@ -8285,9 +8336,14 @@
           }
 
           var x = fullDates;
-          var yDp = fullDates.map(function (d) { var p = dataMap[d]; return p && p.dp != null ? p.dp : 0; });
-          var yZhidui = fullDates.map(function (d) { var p = dataMap[d]; return p && p.zhidui != null ? p.zhidui : 0; });
-          var yFuwu = fullDates.map(function (d) { var p = dataMap[d]; return p && p.fuwu != null ? p.fuwu : 0; });
+          // 退款率使用百分比格式
+          var formatValue = function(v) {
+            if (v == null || isNaN(v)) return isRefundRate ? '-' : '0';
+            return isRefundRate ? (v * 100).toFixed(2) : Number(v).toFixed(2);
+          };
+          var yDp = fullDates.map(function (d) { var p = dataMap[d]; return p && p.dp != null ? p.dp : (isRefundRate ? null : 0); });
+          var yZhidui = fullDates.map(function (d) { var p = dataMap[d]; return p && p.zhidui != null ? p.zhidui : (isRefundRate ? null : 0); });
+          var yFuwu = fullDates.map(function (d) { var p = dataMap[d]; return p && p.fuwu != null ? p.fuwu : (isRefundRate ? null : 0); });
           var opt = {
             tooltip: {
               trigger: 'axis',
@@ -8295,7 +8351,9 @@
                 var p0 = params[0] || {};
                 var html = (p0.axisValue || '') + '<br/>';
                 params.forEach(function (p) {
-                  html += (p.marker || '') + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) : '-') + ' 万<br/>';
+                  var val = p.value != null ? Number(p.value) : null;
+                  var displayVal = isRefundRate ? (val != null ? (val * 100).toFixed(2) + '%' : '-') : (val != null ? val.toFixed(2) : '-');
+                  html += (p.marker || '') + p.seriesName + ': ' + displayVal + (isRefundRate ? '' : ' 万') + '<br/>';
                 });
                 return html;
               },
@@ -8303,7 +8361,17 @@
             legend: { data: ['DP', '直对', '服务商'], top: 6, left: 'center' },
             grid: { left: 56, right: 40, top: 40, bottom: 60 },
             xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
-            yAxis: { type: 'value', name: metricName + '（万）', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '万'; } } },
+            yAxis: {
+              type: 'value',
+              name: isRefundRate ? '退款率（%）' : metricName + '（万）',
+              axisLabel: {
+                formatter: function (v) {
+                  if (isRefundRate) return (v * 100).toFixed(0) + '%';
+                  return Number(v).toFixed(0) + '万';
+                }
+              },
+              max: isRefundRate ? 1 : undefined
+            },
             series: [
               { name: 'DP', type: 'line', smooth: true, data: yDp, showSymbol: x.length <= 40, connectNulls: false },
               { name: '直对', type: 'line', smooth: true, data: yZhidui, showSymbol: x.length <= 40, connectNulls: false },
@@ -8313,10 +8381,10 @@
           charts.chartFourPlatform.setOption(applyMobileChartOption(opt), true);
           // 构建完整数据用于计算总计
           var fullData = fullDates.map(function(d) { return dataMap[d] || { date: d, dp: 0, zhidui: 0, fuwu: 0 }; });
-          renderFourPlatformPeriodTotals(fullData, metricName);
+          renderFourPlatformPeriodTotals(fullData, metricName, isRefundRate);
         }
 
-        function renderFourPlatformPeriodTotals(rows, metricName) {
+        function renderFourPlatformPeriodTotals(rows, metricName, isRefundRate) {
           var wrap = document.getElementById('fourPlatformPeriodTotals');
           if (!wrap) return;
           var colors = ['#5470c6', '#91cc75', '#fac858'];
@@ -8335,6 +8403,78 @@
               .join('');
             return;
           }
+
+          // 退款率模式下显示选中时间段的合计退款率（1 - 选中时间段总GSV/总GMV）
+          if (isRefundRate) {
+            var raw = window.__FOUR_PLATFORM_DATA__;
+            var mode = window.fourPlatformMode || 'daily';
+
+            // 获取选中的日期范围
+            var selStart = document.getElementById('fourPlatformStart');
+            var selEnd = document.getElementById('fourPlatformEnd');
+            var startDate = selStart && selStart.value ? selStart.value : null;
+            var endDate = selEnd && selEnd.value ? selEnd.value : null;
+
+            // 根据模式获取原始数据
+            var gmvData = raw && raw.gmv && raw.gmv.daily ? raw.gmv.daily : [];
+            var gsvData = raw && raw.gsv && raw.gsv.daily ? raw.gsv.daily : [];
+
+            if (mode === 'weekly') {
+              gmvData = raw && raw.gmv && raw.gmv.weekly ? raw.gmv.weekly : [];
+              gsvData = raw && raw.gsv && raw.gsv.weekly ? raw.gsv.weekly : [];
+            } else if (mode === 'monthly') {
+              gmvData = raw && raw.gmv && raw.gmv.monthly ? raw.gmv.monthly : [];
+              gsvData = raw && raw.gsv && raw.gsv.monthly ? raw.gsv.monthly : [];
+            }
+
+            // 过滤选中日期范围的数据
+            var filteredGmv = gmvData;
+            var filteredGsv = gsvData;
+            if (startDate && endDate) {
+              filteredGmv = gmvData.filter(function(p) { return p.date >= startDate && p.date <= endDate; });
+              filteredGsv = gsvData.filter(function(p) { return p.date >= startDate && p.date <= endDate; });
+            }
+
+            // 计算选中时间段的总GMV和总GSV
+            var totals = { dp: { gmv: 0, gsv: 0 }, zhidui: { gmv: 0, gsv: 0 }, fuwu: { gmv: 0, gsv: 0 } };
+            filteredGmv.forEach(function(p) {
+              totals.dp.gmv += p.dp || 0;
+              totals.zhidui.gmv += p.zhidui || 0;
+              totals.fuwu.gmv += p.fuwu || 0;
+            });
+            filteredGsv.forEach(function(p) {
+              totals.dp.gsv += p.dp || 0;
+              totals.zhidui.gsv += p.zhidui || 0;
+              totals.fuwu.gsv += p.fuwu || 0;
+            });
+
+            // 计算总退款率
+            var items = [
+              { label: 'DP', refundRate: totals.dp.gmv > 0 ? 1 - totals.dp.gsv / totals.dp.gmv : null, gmv: totals.dp.gmv, gsv: totals.dp.gsv },
+              { label: '直对', refundRate: totals.zhidui.gmv > 0 ? 1 - totals.zhidui.gsv / totals.zhidui.gmv : null, gmv: totals.zhidui.gmv, gsv: totals.zhidui.gsv },
+              { label: '服务商', refundRate: totals.fuwu.gmv > 0 ? 1 - totals.fuwu.gsv / totals.fuwu.gmv : null, gmv: totals.fuwu.gmv, gsv: totals.fuwu.gsv },
+            ];
+
+            wrap.innerHTML = items
+              .map(function (it, i) {
+                var displayVal = it.refundRate != null ? (it.refundRate * 100).toFixed(2) + '%' : '—';
+                var tooltip = it.gmv > 0 ? 'GMV: ' + it.gmv.toFixed(2) + '万, GSV: ' + it.gsv.toFixed(2) + '万' : '';
+                return (
+                  '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                  colors[i] +
+                  '" title="' + tooltip +
+                  '"><div class="all-channel-gmv-period-totals__label">' +
+                  it.label +
+                  ' 合计退款率</div><div class="all-channel-gmv-period-totals__value">' +
+                  displayVal +
+                  '</div></div>'
+                );
+              })
+              .join('');
+            return;
+          }
+
+          // GMV/GSV模式下显示总计
           var acc = { dp: 0, zhidui: 0, fuwu: 0 };
           rows.forEach(function (p) {
             if (!p) return;
@@ -8369,7 +8509,7 @@
           if (!selStart || !selEnd) return;
 
           var metric = window.fourPlatformMetric || 'gmv';
-          var dataKey = metric === 'gsv' ? 'gsv' : 'gmv';
+          var dataKey = metric === 'refundRate' ? 'refundRate' : (metric === 'gsv' ? 'gsv' : 'gmv');
 
           if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.length) {
             selStart.innerHTML = '<option value="">-</option>';
@@ -8425,7 +8565,7 @@
               var btn = e.target.closest && e.target.closest('[data-metric]');
               if (!btn) return;
               var newMetric = btn.getAttribute('data-metric');
-              if (newMetric !== 'gmv' && newMetric !== 'gsv') return;
+              if (newMetric !== 'gmv' && newMetric !== 'gsv' && newMetric !== 'refundRate') return;
               window.fourPlatformMetric = newMetric;
               Array.from(metricSw.querySelectorAll('[data-metric]')).forEach(function(b) {
                 b.classList.toggle('active', b.getAttribute('data-metric') === newMetric);
@@ -8530,8 +8670,9 @@
           if (!charts.chartFuwuGmv) charts.chartFuwuGmv = echarts.init(el);
 
           var metric = window.fuwuMetric || 'gmv';
-          var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
-          var metricName = metric === 'gsv' ? 'GSV' : 'GMV';
+          var isRefundRate = metric === 'refundRate';
+          var dataKey = isRefundRate ? 'fuwuRefundRate' : (metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv');
+          var metricName = isRefundRate ? '退款率' : (metric === 'gsv' ? 'GSV' : 'GMV');
 
           if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.data || !raw[dataKey].daily.data.length) {
             var err = window.__FOUR_PLATFORM_ERROR__ || '';
@@ -8602,7 +8743,10 @@
               name: ch,
               type: 'line',
               smooth: true,
-              data: fullDates.map(function (d) { var p = dataMap[d]; return p && p[ch] != null ? p[ch] : 0; }),
+              data: fullDates.map(function (d) {
+                var p = dataMap[d];
+                return p && p[ch] != null ? p[ch] : (isRefundRate ? null : 0);
+              }),
               showSymbol: x.length <= 40,
               connectNulls: false
             };
@@ -8617,7 +8761,8 @@
                   var val = p.value != null ? Number(p.value) : null;
                   var isZero = val === 0 || val === null || isNaN(val);
                   var lineStyle = isZero ? ' style="color:#999"' : '';
-                  html += '<span' + lineStyle + '>' + (p.marker || '') + p.seriesName + ': ' + (val != null && !isNaN(val) ? val.toFixed(2) : '-') + ' 万</span><br/>';
+                  var displayVal = isRefundRate ? (val != null ? (val * 100).toFixed(2) + '%' : '-') : (val != null && !isNaN(val) ? val.toFixed(2) : '-');
+                  html += '<span' + lineStyle + '>' + (p.marker || '') + p.seriesName + ': ' + displayVal + (isRefundRate ? '' : ' 万') + '</span><br/>';
                 });
                 return html;
               },
@@ -8625,7 +8770,17 @@
             legend: { data: channels, top: 6, left: 'center', type: 'scroll' },
             grid: { left: 56, right: 40, top: 40, bottom: 60 },
             xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
-            yAxis: { type: 'value', name: metricName + '（万）', axisLabel: { formatter: function (v) { return Number(v).toFixed(0) + '万'; } } },
+            yAxis: {
+              type: 'value',
+              name: isRefundRate ? '退款率（%）' : metricName + '（万）',
+              axisLabel: {
+                formatter: function (v) {
+                  if (isRefundRate) return (v * 100).toFixed(0) + '%';
+                  return Number(v).toFixed(0) + '万';
+                }
+              },
+              max: isRefundRate ? 1 : undefined
+            },
             series: series,
           };
           charts.chartFuwuGmv.setOption(applyMobileChartOption(opt), true);
@@ -8638,10 +8793,10 @@
             channels.forEach(function(ch) { zeroObj[ch] = 0; });
             return zeroObj;
           });
-          renderFuwuGmvPeriodTotals(fullData, channels, metricName);
+          renderFuwuGmvPeriodTotals(fullData, channels, metricName, isRefundRate);
         }
 
-        function renderFuwuGmvPeriodTotals(rows, channels, metricName) {
+        function renderFuwuGmvPeriodTotals(rows, channels, metricName, isRefundRate) {
           var wrap = document.getElementById('fuwuGmvPeriodTotals');
           if (!wrap) return;
           if (!rows || !rows.length || !channels || !channels.length) {
@@ -8650,6 +8805,77 @@
           }
           // 生成颜色（使用eCharts默认颜色循环）
           var defaultColors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+
+          // 退款率模式下显示选中时间段的合计退款率（基于选中时间段总GMV和总GSV计算）
+          if (isRefundRate) {
+            var raw = window.__FOUR_PLATFORM_DATA__;
+            var mode = window.fuwuGmvMode || 'daily';
+
+            // 获取选中的日期范围
+            var selStart = document.getElementById('fuwuGmvStart');
+            var selEnd = document.getElementById('fuwuGmvEnd');
+            var startDate = selStart && selStart.value ? selStart.value : null;
+            var endDate = selEnd && selEnd.value ? selEnd.value : null;
+
+            // 获取原始GMV和GSV数据（日度）
+            var gmvData = raw && raw.fuwuGmv && raw.fuwuGmv.daily && raw.fuwuGmv.daily.data ? raw.fuwuGmv.daily.data : [];
+            var gsvData = raw && raw.fuwuGsv && raw.fuwuGsv.daily && raw.fuwuGsv.daily.data ? raw.fuwuGsv.daily.data : [];
+            var allChannels = raw && raw.fuwuGmv && raw.fuwuGmv.daily && raw.fuwuGmv.daily.channels ? raw.fuwuGmv.daily.channels : [];
+
+            // 过滤选中日期范围的数据
+            var filteredGmv = gmvData;
+            var filteredGsv = gsvData;
+            if (startDate && endDate) {
+              filteredGmv = gmvData.filter(function(p) { return p.date >= startDate && p.date <= endDate; });
+              filteredGsv = gsvData.filter(function(p) { return p.date >= startDate && p.date <= endDate; });
+            }
+
+            // 计算各渠道的合计GMV和GSV
+            var totals = {};
+            allChannels.forEach(function(ch) {
+              totals[ch] = { gmv: 0, gsv: 0 };
+            });
+
+            filteredGmv.forEach(function(p) {
+              allChannels.forEach(function(ch) {
+                totals[ch].gmv += p[ch] || 0;
+              });
+            });
+
+            filteredGsv.forEach(function(p) {
+              allChannels.forEach(function(ch) {
+                totals[ch].gsv += p[ch] || 0;
+              });
+            });
+
+            // 计算各渠道合计退款率并排序
+            var items = allChannels.map(function (ch, i) {
+              var t = totals[ch];
+              var refundRate = t.gmv > 0 ? 1 - t.gsv / t.gmv : null;
+              return { label: ch, val: refundRate, gmv: t.gmv, gsv: t.gsv, color: defaultColors[i % defaultColors.length] };
+            }).filter(function (it) { return it.val != null; })
+              .sort(function (a, b) { return b.val - a.val; })
+              .slice(0, 8);
+
+            wrap.innerHTML = items
+              .map(function (it) {
+                var tooltip = it.gmv > 0 ? 'GMV: ' + it.gmv.toFixed(2) + '万, GSV: ' + it.gsv.toFixed(2) + '万' : '';
+                return (
+                  '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                  it.color +
+                  '" title="' + tooltip +
+                  '"><div class="all-channel-gmv-period-totals__label">' +
+                  it.label +
+                  ' 合计退款率</div><div class="all-channel-gmv-period-totals__value">' +
+                  (it.val * 100).toFixed(2) + '%' +
+                  '</div></div>'
+                );
+              })
+              .join('');
+            return;
+          }
+
+          // GMV/GSV模式下显示总计
           // 计算每个渠道的总计
           var acc = {};
           channels.forEach(function (ch) {
@@ -8689,7 +8915,7 @@
           if (!selStart || !selEnd) return;
 
           var metric = window.fuwuMetric || 'gmv';
-          var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+          var dataKey = metric === 'refundRate' ? 'fuwuRefundRate' : (metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv');
 
           if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.data || !raw[dataKey].daily.data.length) {
             selStart.innerHTML = '<option value="">-</option>';
@@ -8746,14 +8972,14 @@
           selStart.onchange = renderFuwuGmv;
           selEnd.onchange = renderFuwuGmv;
 
-          // 绑定GMV/GSV切换
+          // 绑定GMV/GSV/退款率切换
           var gmvGsvSw = document.getElementById('fuwuGmvGsvModeSwitch');
           if (gmvGsvSw && !gmvGsvSw.__bound__) {
             gmvGsvSw.addEventListener('click', function(e) {
               var btn = e.target.closest && e.target.closest('[data-fuwu-metric]');
               if (!btn) return;
               var metric = btn.getAttribute('data-fuwu-metric');
-              if (metric !== 'gmv' && metric !== 'gsv') return;
+              if (metric !== 'gmv' && metric !== 'gsv' && metric !== 'refundRate') return;
               // 保存当前日期选择（在改变window.fuwuMetric之前）
               var currentStart = selStart.value;
               var currentEnd = selEnd.value;
@@ -8767,7 +8993,7 @@
               if (currentStart && currentEnd) {
                 var fuwuMode = window.fuwuGmvMode || 'daily';
                 var newMetric = window.fuwuMetric || 'gmv';
-                var dataKey = newMetric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+                var dataKey = newMetric === 'refundRate' ? 'fuwuRefundRate' : (newMetric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv');
                 var raw = window.__FOUR_PLATFORM_DATA__;
                 var dates = [];
                 if (raw && raw[dataKey]) {
@@ -8816,7 +9042,7 @@
               // 检查数据是否已加载
               var raw = window.__FOUR_PLATFORM_DATA__;
               var metric = window.fuwuMetric || 'gmv';
-              var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+              var dataKey = metric === 'refundRate' ? 'fuwuRefundRate' : (metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv');
               var modeDataAvailable = false;
               if (raw && raw[dataKey]) {
                 if (mode === 'daily' && raw[dataKey].daily) {
@@ -8871,7 +9097,7 @@
                 if (currentStart && currentEnd) {
                   var fuwuMode = window.fuwuGmvMode || 'daily';
                   var metric = window.fuwuMetric || 'gmv';
-                  var dataKey = metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv';
+                  var dataKey = metric === 'refundRate' ? 'fuwuRefundRate' : (metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv');
                   var raw = window.__FOUR_PLATFORM_DATA__;
                   var dates = [];
                   if (raw && raw[dataKey]) {

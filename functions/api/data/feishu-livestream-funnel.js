@@ -4,15 +4,15 @@ import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
 
 /** 与 wiki WNp4wbOI3ib7J7kiX2fcZf6Fn8b、抖音日度趋势（feishu-douyin-daily-trend）同源电子表；可用 FEISHU_LIVESTREAM_FUNNEL_SPREADSHEET_TOKEN 覆盖 */
 var DEFAULT_SPREADSHEET_TOKEN = 'P1zusUMg2haMGctskH6cydLqn5e';
-/** wiki 链接 ?sheet=fBPMjm 对应 sheet_id；列 B/H/K/X/Y/Z */
-var DEFAULT_RANGE = 'fBPMjm!A1:Z20000';
+/** wiki 链接 ?sheet=fBPMjm 对应 sheet_id；列 B/G/I/U/V/AD */
+var DEFAULT_RANGE = 'fBPMjm!A1:AD20000';
 
-var COL_B = 1;
-var COL_H = 7;
-var COL_K = 10;
-var COL_X = 23;
-var COL_Y = 24;
-var COL_Z = 25;
+var COL_B = 1;   // 主播昵称
+var COL_G = 6;   // 直播间曝光人数
+var COL_I = 8;   // 直播间观看人数
+var COL_U = 20;  // 直播间商品曝光人数
+var COL_V = 21;  // 直播间商品点击人数
+var COL_AD = 29; // 直播间成交人数
 
 function parseNumberCell(v) {
   if (v == null || v === '') return 0;
@@ -34,7 +34,7 @@ function isHeaderRow(row) {
 
 /**
  * @param {unknown[][]} values
- * @returns {{ name: string, exposure: number, view: number, click: number, order: number, gmv: number }[]}
+ * @returns {{ name: string, exposure: number, view: number, productExposure: number, productClick: number, order: number }[]}
  */
 function aggregateByAnchor(values) {
   var map = Object.create(null);
@@ -45,20 +45,21 @@ function aggregateByAnchor(values) {
     if (!row || !row.length) continue;
     var name = String(row[COL_B] != null ? row[COL_B] : '').trim();
     if (!name) continue;
-    var exp = parseNumberCell(row[COL_H]);
-    var view = parseNumberCell(row[COL_K]);
-    var click = parseNumberCell(row[COL_X]);
-    var order = parseNumberCell(row[COL_Y]);
-    var gmv = parseNumberCell(row[COL_Z]);
+    // 漏斗五层数据
+    var exposure = parseNumberCell(row[COL_G]);        // 直播间曝光人数
+    var view = parseNumberCell(row[COL_I]);            // 直播间观看人数
+    var productExposure = parseNumberCell(row[COL_U]); // 直播间商品曝光人数
+    var productClick = parseNumberCell(row[COL_V]);    // 直播间商品点击人数
+    var order = parseNumberCell(row[COL_AD]);          // 直播间成交人数
     if (!map[name]) {
-      map[name] = { name: name, exposure: 0, view: 0, click: 0, order: 0, gmv: 0 };
+      map[name] = { name: name, exposure: 0, view: 0, productExposure: 0, productClick: 0, order: 0 };
     }
     var m = map[name];
-    m.exposure += exp;
+    m.exposure += exposure;
     m.view += view;
-    m.click += click;
+    m.productExposure += productExposure;
+    m.productClick += productClick;
     m.order += order;
-    m.gmv += gmv;
   }
   var list = Object.keys(map).map(function (k) {
     return map[k];

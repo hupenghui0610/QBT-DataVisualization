@@ -6608,10 +6608,10 @@
         }
         var sumExp = hit.exposure != null ? Number(hit.exposure) : 0;
         var sumView = hit.view != null ? Number(hit.view) : 0;
-        var sumClick = hit.click != null ? Number(hit.click) : 0;
+        var sumProductExp = hit.productExposure != null ? Number(hit.productExposure) : 0;
+        var sumProductClick = hit.productClick != null ? Number(hit.productClick) : 0;
         var sumOrder = hit.order != null ? Number(hit.order) : 0;
-        var sumGmv = hit.gmv != null ? Number(hit.gmv) : 0;
-        if (sumExp + sumView + sumClick + sumOrder <= 0) {
+        if (sumExp + sumView + sumProductExp + sumProductClick + sumOrder <= 0) {
           charts.chartLivestreamFunnel.setOption(
             {
               title: { text: '该主播汇总无有效数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
@@ -6621,18 +6621,17 @@
           );
           return;
         }
-        var rateClick = sumView > 0 ? (sumClick / sumView) * 100 : 0;
-        var rateOrderFromClick = sumClick > 0 ? (sumOrder / sumClick) * 100 : 0;
-        var bottomStr =
-          '直播间GMV：' +
-          (isFinite(sumGmv)
-            ? sumGmv.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-            : '0');
+        // 转化率计算
+        var rateViewToExp = sumExp > 0 ? (sumView / sumExp) * 100 : 0;
+        var rateProductExpToView = sumView > 0 ? (sumProductExp / sumView) * 100 : 0;
+        var rateProductClickToProductExp = sumProductExp > 0 ? (sumProductClick / sumProductExp) * 100 : 0;
+        var rateOrderToProductClick = sumProductClick > 0 ? (sumOrder / sumProductClick) * 100 : 0;
         var funnelData = [
-          { value: sumExp, name: '直播间曝光次数', color: '#3b82f6' },
-          { value: sumView, name: '直播间观看次数', color: '#6366f1' },
-          { value: sumClick, name: '直播间商品点击次数', color: '#8b5cf6' },
-          { value: sumOrder, name: '直播间成交订单数', color: '#10b981' },
+          { value: sumExp, name: '直播间曝光人数', color: '#3b82f6' },
+          { value: sumView, name: '直播间观看人数', color: '#0ea5e9' },
+          { value: sumProductExp, name: '直播间商品曝光人数', color: '#6366f1' },
+          { value: sumProductClick, name: '直播间商品点击人数', color: '#8b5cf6' },
+          { value: sumOrder, name: '直播间成交人数', color: '#10b981' },
         ];
         var opt = {
           title: { show: false },
@@ -6676,8 +6675,10 @@
                 var cx = gx + cw / 2;
                 var row = funnelData[idx];
                 var color = row && row.color ? row.color : '#4a69bd';
-                var labelText =
-                  (row ? row.name : '') + '\n' + (row && row.value != null ? Number(row.value).toLocaleString('zh-CN') : '-');
+                var rowName = row ? row.name : '';
+                var rowValue = row && row.value != null ? Number(row.value).toLocaleString('zh-CN') : '-';
+                var centerY = (y0 + y1) / 2;
+                var lineHeight = 6; // 两行之间的间距
                 var children = [
                   {
                     type: 'polygon',
@@ -6697,26 +6698,62 @@
                       shadowColor: 'rgba(0,0,0,0.1)',
                     },
                   },
+                  // 第一行：名称
                   {
                     type: 'text',
                     style: {
-                      text: labelText,
+                      text: rowName,
                       x: cx,
-                      y: (y0 + y1) / 2,
+                      y: centerY - lineHeight / 2,
                       textAlign: 'center',
-                      textVerticalAlign: 'middle',
+                      textVerticalAlign: 'bottom',
+                      fill: '#fff',
+                      font: 'bold 12px Microsoft YaHei,sans-serif',
+                    },
+                  },
+                  // 第二行：数值
+                  {
+                    type: 'text',
+                    style: {
+                      text: rowValue,
+                      x: cx,
+                      y: centerY + lineHeight / 2,
+                      textAlign: 'center',
+                      textVerticalAlign: 'top',
                       fill: '#fff',
                       font: 'bold 12px Microsoft YaHei,sans-serif',
                     },
                   },
                 ];
-                if (idx === 1) {
+                // 在层级之间显示转化率
+                var n = funnelData.length;
+                // 根据当前层级位置计算漏斗半宽，用于定位转化率文字
+                var textOffsetX = 12; // 文字距离漏斗右侧的偏移量
+                if (idx === 0) {
+                  var rateViewToExp = sumExp > 0 ? (sumView / sumExp) * 100 : 0;
+                  var halfW0 = halfW((idx + 0.5) / n); // 第0层和第1层中间的宽度
                   children.push({
                     type: 'text',
                     style: {
-                      text: '点击率：' + rateClick.toFixed(2) + '%',
-                      x: cx + halfW(0.5) + 12,
-                      y: gy + 0.5 * ch,
+                      text: '曝光-观看率：' + rateViewToExp.toFixed(2) + '%',
+                      x: cx + halfW0 + textOffsetX,
+                      y: gy + ((idx + 1) / n) * ch,
+                      textAlign: 'left',
+                      textVerticalAlign: 'middle',
+                      fill: '#334155',
+                      font: '12px Microsoft YaHei,sans-serif',
+                    },
+                  });
+                }
+                if (idx === 1) {
+                  var rateProductExpToView = sumView > 0 ? (sumProductExp / sumView) * 100 : 0;
+                  var halfW1 = halfW((idx + 0.5) / n); // 第1层和第2层中间的宽度
+                  children.push({
+                    type: 'text',
+                    style: {
+                      text: '商品曝光率：' + rateProductExpToView.toFixed(2) + '%',
+                      x: cx + halfW1 + textOffsetX,
+                      y: gy + ((idx + 1) / n) * ch,
                       textAlign: 'left',
                       textVerticalAlign: 'middle',
                       fill: '#334155',
@@ -6725,12 +6762,14 @@
                   });
                 }
                 if (idx === 2) {
+                  var rateProductClickToExp = sumProductExp > 0 ? (sumProductClick / sumProductExp) * 100 : 0;
+                  var halfW2 = halfW((idx + 0.5) / n); // 第2层和第3层中间的宽度
                   children.push({
                     type: 'text',
                     style: {
-                      text: '下单转化：' + rateOrderFromClick.toFixed(2) + '%',
-                      x: cx + halfW(0.75) + 12,
-                      y: gy + 0.75 * ch,
+                      text: '商品曝光点击率：' + rateProductClickToExp.toFixed(2) + '%',
+                      x: cx + halfW2 + textOffsetX,
+                      y: gy + ((idx + 1) / n) * ch,
                       textAlign: 'left',
                       textVerticalAlign: 'middle',
                       fill: '#334155',
@@ -6739,14 +6778,16 @@
                   });
                 }
                 if (idx === 3) {
+                  var rateOrderToClick = sumProductClick > 0 ? (sumOrder / sumProductClick) * 100 : 0;
+                  var halfW3 = halfW((idx + 0.5) / n); // 第3层和第4层中间的宽度
                   children.push({
                     type: 'text',
                     style: {
-                      text: bottomStr,
-                      x: cx,
-                      y: y1 + 12,
-                      textAlign: 'center',
-                      textVerticalAlign: 'top',
+                      text: '点击-成交率：' + rateOrderToClick.toFixed(2) + '%',
+                      x: cx + halfW3 + textOffsetX,
+                      y: gy + ((idx + 1) / n) * ch,
+                      textAlign: 'left',
+                      textVerticalAlign: 'middle',
                       fill: '#334155',
                       font: '12px Microsoft YaHei,sans-serif',
                     },
