@@ -976,21 +976,15 @@
     }
     /* ========== 直播间转化漏斗样式 ========== */
     #livestreamFunnelGrid {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
     }
     #livestreamFunnelGrid .livestream-funnel-card {
-      flex: 1 1 400px;
-      min-width: 400px;
-      max-width: calc(50% - 8px);
+      min-width: 0;
     }
     html.mobile-client #livestreamFunnelGrid {
-      flex-direction: column;
-    }
-    html.mobile-client #livestreamFunnelGrid .livestream-funnel-card {
-      min-width: 0;
-      max-width: 100%;
+      grid-template-columns: 1fr;
     }
     .remove-funnel-btn {
       position: absolute;
