@@ -1418,6 +1418,7 @@
     </div>
   </div>
   </div>
+  </div>
   <div id="main-tab-panel-industry" class="main-tab-panel" role="tabpanel" aria-labelledby="main-tab-btn-industry">
   <div class="section-block section-dapan">
   <div class="section-title">大盘数据</div>
@@ -2459,7 +2460,11 @@
           var r = byDate[dt];
           return r ? r.销量 : null;
         });
-        var s3 = x.map(function (dt) {
+        var s4 = x.map(function (dt) {
+          var r = byDate[dt];
+          if (!r || !r.销量 || r.销量 === 0) return null;
+          return r.销售额 / r.销量;  // 客单价 = 销售额 / 销量
+        });
           var r = byDate[dt];
           if (!r) return { value: null };
           var v = r.销量同比 != null ? (r.销量同比 * 100) : null;
@@ -2480,6 +2485,8 @@
                 if (val != null && typeof val === 'object' && 'value' in val) val = val.value;
                 if (p.seriesName === '同比增长率') {
                   line += p.marker + p.seriesName + ': ' + (val != null && isFinite(val) ? Number(val).toFixed(2) + '%' : '-') + '<br/>';
+                } else if (p.seriesName === '客单价') {
+                  line += p.marker + p.seriesName + ': ' + (val != null ? Math.round(val).toLocaleString() + '元' : '-') + '<br/>';
                 } else {
                   line += p.marker + p.seriesName + ': ' + (val != null ? formatNum(val) : '-') + '<br/>';
                 }
@@ -2487,12 +2494,13 @@
               return line;
             }
           },
-          legend: { data: ['销量', '同比增长率'], top: 6, left: 'center' },
+          legend: { data: ['销量', '同比增长率', '客单价'], top: 6, left: 'center' },
           grid: { left: 56, right: 56, top: 40, bottom: 72 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
           yAxis: [
             { type: 'value', name: '销量', axisLabel: { formatter: formatAxisNumInt } },
-            { type: 'value', name: '同比%', axisLabel: { formatter: formatAxisPercentInt }, splitLine: { show: false } }
+            { type: 'value', name: '', axisLabel: { show: false }, splitLine: { show: false }, axisTick: { show: false } },
+            { type: 'value', name: '客单价(元)', position: 'right', offset: 50, axisLabel: { formatter: function(v) { return Math.round(v).toLocaleString(); } }, splitLine: { show: false } }
           ],
           series: [
             { name: '销量', type: 'line', data: s1, smooth: true, connectNulls: false },
@@ -2506,7 +2514,8 @@
                 if (v == null || !isFinite(v)) return undefined;
                 return v > 0 ? '#67c23a' : (v < 0 ? '#ee6666' : '#909399');
               } },
-              markLine: { silent: true, symbol: 'none', data: [{ yAxis: 0 }], lineStyle: { type: 'dashed', color: '#999' } } }
+              markLine: { silent: true, symbol: 'none', data: [{ yAxis: 0 }], lineStyle: { type: 'dashed', color: '#999' } } },
+            { name: '客单价', type: 'line', yAxisIndex: 2, data: s4, smooth: true, connectNulls: false, itemStyle: { color: '#fac858' } }
           ]
         };
         if (!charts.chart3) charts.chart3 = echarts.init(document.getElementById('chart3'));
