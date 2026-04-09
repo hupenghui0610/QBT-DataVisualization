@@ -7765,7 +7765,7 @@
               xAxisIndex: 0,
               yAxisIndex: 0,
               data: funnelData.map(function (d, i) {
-                return [0.3, (i + 0.5) / funnelData.length];
+                return [0.45, (i + 0.5) / funnelData.length];
               }),
               renderItem: function (params, api) {
                 var idx = params.dataIndex;
@@ -7780,7 +7780,7 @@
                 var t1 = (idx + 1) / n;
                 var topW = cw * 0.66;
                 // 获取数据点坐标（x=0.3, y=(idx+0.5)/n）
-                var point = api.coord([0.3, (idx + 0.5) / n]);
+                var point = api.coord([0.45, (idx + 0.5) / n]);
                 var cx = point[0];
                 function widthFrac(t) {
                   return 1 - 0.5 * t;
