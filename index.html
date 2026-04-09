@@ -1154,6 +1154,34 @@
       <div id="fourPlatformPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期合计"></div>
     </div>
 
+    <!-- 四平台合并型号分布-GMV -->
+    <div class="card">
+      <h3>
+        <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GMV</span>
+        <span class="chart-view-switch" id="newretailModelDistModeSwitch" role="group" aria-label="型号分布视图切换">
+          <button type="button" class="view-btn active" id="newretailModelDistBarBtn">柱状图</button>
+          <button type="button" class="view-btn" id="newretailModelDistPieBtn">饼图</button>
+        </span>
+      </h3>
+      <span id="newretailModelDistStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="newretailModelDistStart"></select> 结束：<select id="newretailModelDistEnd"></select></div>
+      <div id="chartNewretailModelDist" class="chart"></div>
+    </div>
+
+    <!-- 四平台合并型号分布-GSV -->
+    <div class="card">
+      <h3>
+        <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GSV</span>
+        <span class="chart-view-switch" id="newretailModelDistGsvModeSwitch" role="group" aria-label="型号分布GSV视图切换">
+          <button type="button" class="view-btn active" id="newretailModelDistGsvBarBtn">柱状图</button>
+          <button type="button" class="view-btn" id="newretailModelDistGsvPieBtn">饼图</button>
+        </span>
+      </h3>
+      <span id="newretailModelDistGsvStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="newretailModelDistGsvStart"></select> 结束：<select id="newretailModelDistGsvEnd"></select></div>
+      <div id="chartNewretailModelDistGsv" class="chart"></div>
+    </div>
+
     <!-- 服务商图表（按渠道拆分） -->
     <div class="card wide">
       <h3>
@@ -1208,34 +1236,6 @@
         </div>
       </div>
       <div id="dpGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期DP合计"></div>
-    </div>
-
-    <!-- 四平台合并型号分布-GMV -->
-    <div class="card">
-      <h3>
-        <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GMV</span>
-        <span class="chart-view-switch" id="newretailModelDistModeSwitch" role="group" aria-label="型号分布视图切换">
-          <button type="button" class="view-btn active" id="newretailModelDistBarBtn">柱状图</button>
-          <button type="button" class="view-btn" id="newretailModelDistPieBtn">饼图</button>
-        </span>
-      </h3>
-      <span id="newretailModelDistStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="newretailModelDistStart"></select> 结束：<select id="newretailModelDistEnd"></select></div>
-      <div id="chartNewretailModelDist" class="chart"></div>
-    </div>
-
-    <!-- 四平台合并型号分布-GSV -->
-    <div class="card">
-      <h3>
-        <i class="chart-title-icon fa fa-bar-chart"></i><span>四平台合并型号分布-GSV</span>
-        <span class="chart-view-switch" id="newretailModelDistGsvModeSwitch" role="group" aria-label="型号分布GSV视图切换">
-          <button type="button" class="view-btn active" id="newretailModelDistGsvBarBtn">柱状图</button>
-          <button type="button" class="view-btn" id="newretailModelDistGsvPieBtn">饼图</button>
-        </span>
-      </h3>
-      <span id="newretailModelDistGsvStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="newretailModelDistGsvStart"></select> 结束：<select id="newretailModelDistGsvEnd"></select></div>
-      <div id="chartNewretailModelDistGsv" class="chart"></div>
     </div>
 
     <!-- DP-沐成型号分布-GSV -->
