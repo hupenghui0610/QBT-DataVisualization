@@ -10940,6 +10940,11 @@
           requestAnimationFrame(function () {
             requestAnimationFrame(function () {
               if (typeof window.resizeCharts === 'function') window.resizeCharts();
+              // 切换到行业数据Tab时，如果数据已加载但图表未渲染，重新渲染
+              if (key === 'industry' && dataSource) {
+                if (typeof renderAll === 'function') renderAll();
+                if (typeof renderBrandAll === 'function') renderBrandAll();
+              }
             });
           });
         }
