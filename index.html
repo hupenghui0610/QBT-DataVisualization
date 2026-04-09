@@ -2465,6 +2465,7 @@
           if (!r || !r.销量 || r.销量 === 0) return null;
           return r.销售额 / r.销量;  // 客单价 = 销售额 / 销量
         });
+        var s3 = x.map(function (dt) {
           var r = byDate[dt];
           if (!r) return { value: null };
           var v = r.销量同比 != null ? (r.销量同比 * 100) : null;
