@@ -1122,7 +1122,7 @@
       <button type="button" class="main-nav-tab active" role="tab" aria-selected="true" aria-controls="main-tab-panel-home" id="main-tab-btn-home" data-main-tab="home">首页</button>
       <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-shelf" id="main-tab-btn-shelf" data-main-tab="shelf">货架电商</button>
       <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-newretail" id="main-tab-btn-newretail" data-main-tab="newretail">新零售</button>
-      <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-industry" id="main-tab-btn-industry" data-main-tab="industry">行业数据</button>
+      <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-industry" id="main-tab-btn-industry" data-main-tab="industry" onclick="window.activateMainTab && window.activateMainTab('industry')">行业数据</button>
     </nav>
   </div>
   <div class="main-tab-panels">
@@ -10971,7 +10971,8 @@
         };
         nav._tabClickHandler = clickHandler;
         nav.addEventListener('click', clickHandler);
-        // 初始化默认Tab
+        // 将activate函数暴露到全局，以便onclick可以调用
+        window.activateMainTab = activate;
         var defBtn = nav.querySelector('.main-nav-tab.active') || nav.querySelector('[data-main-tab]');
         activate(defBtn ? defBtn.getAttribute('data-main-tab') : 'home');
       }
