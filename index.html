@@ -974,6 +974,21 @@
     html.mobile-client #global-loading .loading-text {
       font-size: 13px;
     }
+    /* ========== 直播间转化漏斗多列布局 ========== */
+    #livestreamFunnelGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 16px;
+    }
+    #livestreamFunnelGrid .livestream-funnel-card {
+      min-width: 0;
+    }
+    html.mobile-client #livestreamFunnelGrid {
+      grid-template-columns: 1fr;
+    }
+    .remove-funnel-btn:hover {
+      background: #fecaca !important;
+    }
   </style>
 </head>
 <body>
@@ -1374,14 +1389,20 @@
       <div id="chartModelDistDaren" class="chart"></div>
     </div>
   </div>
-  <div class="grid" style="margin-top: 16px;">
-    <!-- 直播间转化漏斗 -->
-    <div class="card">
-      <h3><i class="chart-title-icon fa fa-filter"></i><span>直播间转化漏斗</span></h3>
-      <span id="livestreamFunnelStatus" class="daily-feishu-status"></span>
-      <div class="date-range">主播：<select id="livestreamFunnelAnchor"><option value="">请选择主播</option></select></div>
-      <div id="chartLivestreamFunnel" class="chart"></div>
+  <div class="grid" id="livestreamFunnelGrid" style="margin-top: 16px;">
+    <!-- 直播间转化漏斗容器 - 动态管理多个漏斗 -->
+    <div class="card livestream-funnel-card" data-funnel-id="0">
+      <h3 style="position: relative;">
+        <i class="chart-title-icon fa fa-filter"></i><span>直播间转化漏斗</span>
+        <button type="button" class="remove-funnel-btn" data-funnel-id="0" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 4px 10px; font-size: 12px; background: #fee2e2; color: #dc2626; border: none; border-radius: 4px; cursor: pointer; display: none;">删除</button>
+      </h3>
+      <span class="livestream-funnel-status daily-feishu-status" style="font-size: 12px; color: #64748b;"></span>
+      <div class="date-range">主播：<select class="livestream-funnel-anchor"><option value="">请选择主播</option></select></div>
+      <div class="chart livestream-funnel-chart"></div>
     </div>
+  </div>
+  <div style="text-align: center; margin-top: 12px;">
+    <button type="button" id="addFunnelBtn" class="view-btn" style="padding: 8px 20px; font-size: 14px;">+ 增加对比</button>
   </div>
   </div>
   </div>
@@ -7623,10 +7644,15 @@
         return false;
       }
       function livestreamFunnelLocalDemoAnchors() {
-        return [{ name: '示例主播', exposure: 236010, view: 14319, click: 2938, order: 56, gmv: 128900.5 }];
+        return [{ name: '示例主播', exposure: 236010, view: 14319, productExposure: 12000, productClick: 3500, order: 890 }];
       }
-      function initLivestreamFunnelSelect(anchors) {
-        var sel = document.getElementById('livestreamFunnelAnchor');
+
+      // ==================== 直播间转化漏斗多实例管理 ====================
+      window.livestreamFunnelInstances = [];
+      window.livestreamFunnelNextId = 1;
+
+      function initLivestreamFunnelSelect(card, anchors) {
+        var sel = card.querySelector('.livestream-funnel-anchor');
         if (!sel) return;
         var prev = sel.value;
         sel.innerHTML = '<option value="">请选择主播</option>';
@@ -7637,7 +7663,9 @@
           o.textContent = a.name;
           sel.appendChild(o);
         });
-        sel.onchange = renderLivestreamFunnel;
+        sel.onchange = function() {
+          renderLivestreamFunnel(card.dataset.funnelId);
+        };
         if (prev) {
           var has = Array.prototype.some.call(sel.options, function (opt) {
             return opt.value === prev;
@@ -7645,15 +7673,26 @@
           if (has) sel.value = prev;
         }
       }
-      function renderLivestreamFunnel() {
-        var el = document.getElementById('chartLivestreamFunnel');
+
+      function renderLivestreamFunnel(funnelId) {
+        var card = document.querySelector('.livestream-funnel-card[data-funnel-id="' + funnelId + '"]');
+        if (!card) return;
+        var el = card.querySelector('.livestream-funnel-chart');
         var list = window.livestreamFunnelAnchorsCached;
         if (!el) return;
-        if (!charts.chartLivestreamFunnel) charts.chartLivestreamFunnel = echarts.init(el);
-        var sel = document.getElementById('livestreamFunnelAnchor');
+
+        var instance = window.livestreamFunnelInstances.find(function(inst) { return inst.id === funnelId; });
+        if (!instance) {
+          instance = { id: funnelId, chart: echarts.init(el) };
+          window.livestreamFunnelInstances.push(instance);
+        } else if (!instance.chart) {
+          instance.chart = echarts.init(el);
+        }
+
+        var sel = card.querySelector('.livestream-funnel-anchor');
         var name = sel && sel.value ? String(sel.value).trim() : '';
         if (!name || !list || !list.length) {
-          charts.chartLivestreamFunnel.setOption(
+          instance.chart.setOption(
             {
               title: {
                 text: name ? '未找到该主播数据' : '请选择主播',
@@ -7675,7 +7714,7 @@
           }
         }
         if (!hit) {
-          charts.chartLivestreamFunnel.setOption(
+          instance.chart.setOption(
             { title: { text: '未找到该主播数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, series: [] },
             true
           );
@@ -7687,7 +7726,7 @@
         var sumProductClick = hit.productClick != null ? Number(hit.productClick) : 0;
         var sumOrder = hit.order != null ? Number(hit.order) : 0;
         if (sumExp + sumView + sumProductExp + sumProductClick + sumOrder <= 0) {
-          charts.chartLivestreamFunnel.setOption(
+          instance.chart.setOption(
             {
               title: { text: '该主播汇总无有效数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
               series: [],
@@ -7711,7 +7750,6 @@
         var opt = {
           title: { show: false },
           animationDuration: 280,
-          /** 与京东-学习机转化漏斗 renderJdConversion 一致：grid 与 topW=0.75*cw */
           grid: { left: '8%', right: '8%', top: '10%', bottom: '14%', containLabel: false },
           xAxis: { type: 'value', show: false, min: 0, max: 1 },
           yAxis: { type: 'value', show: false, min: 0, max: 1 },
@@ -7754,7 +7792,7 @@
                 var rowName = row ? row.name : '';
                 var rowValue = row && row.value != null ? Number(row.value).toLocaleString('zh-CN') : '-';
                 var centerY = (y0 + y1) / 2;
-                var lineHeight = 6; // 两行之间的间距
+                var lineHeight = 6;
                 var children = [
                   {
                     type: 'polygon',
@@ -7774,7 +7812,6 @@
                       shadowColor: 'rgba(0,0,0,0.1)',
                     },
                   },
-                  // 第一行：名称
                   {
                     type: 'text',
                     style: {
@@ -7787,7 +7824,6 @@
                       font: 'bold 12px Microsoft YaHei,sans-serif',
                     },
                   },
-                  // 第二行：数值
                   {
                     type: 'text',
                     style: {
@@ -7801,13 +7837,9 @@
                     },
                   },
                 ];
-                // 在层级之间显示转化率
-                var n = funnelData.length;
-                // 根据当前层级位置计算漏斗半宽，用于定位转化率文字
-                var textOffsetX = 12; // 文字距离漏斗右侧的偏移量
+                var textOffsetX = 12;
                 if (idx === 0) {
-                  var rateViewToExp = sumExp > 0 ? (sumView / sumExp) * 100 : 0;
-                  var halfW0 = halfW((idx + 0.5) / n); // 第0层和第1层中间的宽度
+                  var halfW0 = halfW((idx + 0.5) / n);
                   children.push({
                     type: 'text',
                     style: {
@@ -7822,8 +7854,7 @@
                   });
                 }
                 if (idx === 1) {
-                  var rateProductExpToView = sumView > 0 ? (sumProductExp / sumView) * 100 : 0;
-                  var halfW1 = halfW((idx + 0.5) / n); // 第1层和第2层中间的宽度
+                  var halfW1 = halfW((idx + 0.5) / n);
                   children.push({
                     type: 'text',
                     style: {
@@ -7838,12 +7869,11 @@
                   });
                 }
                 if (idx === 2) {
-                  var rateProductClickToExp = sumProductExp > 0 ? (sumProductClick / sumProductExp) * 100 : 0;
-                  var halfW2 = halfW((idx + 0.5) / n); // 第2层和第3层中间的宽度
+                  var halfW2 = halfW((idx + 0.5) / n);
                   children.push({
                     type: 'text',
                     style: {
-                      text: '商品曝光点击率：' + rateProductClickToExp.toFixed(2) + '%',
+                      text: '商品曝光点击率：' + rateProductClickToProductExp.toFixed(2) + '%',
                       x: cx + halfW2 + textOffsetX,
                       y: gy + ((idx + 1) / n) * ch,
                       textAlign: 'left',
@@ -7854,12 +7884,11 @@
                   });
                 }
                 if (idx === 3) {
-                  var rateOrderToClick = sumProductClick > 0 ? (sumOrder / sumProductClick) * 100 : 0;
-                  var halfW3 = halfW((idx + 0.5) / n); // 第3层和第4层中间的宽度
+                  var halfW3 = halfW((idx + 0.5) / n);
                   children.push({
                     type: 'text',
                     style: {
-                      text: '点击-成交率：' + rateOrderToClick.toFixed(2) + '%',
+                      text: '点击-成交率：' + rateOrderToProductClick.toFixed(2) + '%',
                       x: cx + halfW3 + textOffsetX,
                       y: gy + ((idx + 1) / n) * ch,
                       textAlign: 'left',
@@ -7877,35 +7906,126 @@
             },
           ],
         };
-        charts.chartLivestreamFunnel.setOption(applyMobileChartOption(opt), true);
+        instance.chart.setOption(applyMobileChartOption(opt), true);
       }
+
+      function addLivestreamFunnel() {
+        var grid = document.getElementById('livestreamFunnelGrid');
+        var addBtn = document.getElementById('addFunnelBtn');
+        if (!grid) return;
+        var cards = grid.querySelectorAll('.livestream-funnel-card');
+        if (cards.length >= 3) return;
+
+        var newId = String(window.livestreamFunnelNextId++);
+        var card = document.createElement('div');
+        card.className = 'card livestream-funnel-card';
+        card.dataset.funnelId = newId;
+        card.innerHTML =
+          '<h3 style="position: relative;">' +
+            '<i class="chart-title-icon fa fa-filter"></i><span>直播间转化漏斗</span>' +
+            '<button type="button" class="remove-funnel-btn" data-funnel-id="' + newId + '" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 4px 10px; font-size: 12px; background: #fee2e2; color: #dc2626; border: none; border-radius: 4px; cursor: pointer;">删除</button>' +
+          '</h3>' +
+          '<span class="livestream-funnel-status daily-feishu-status" style="font-size: 12px; color: #64748b;"></span>' +
+          '<div class="date-range">主播：<select class="livestream-funnel-anchor"><option value="">请选择主播</option></select></div>' +
+          '<div class="chart livestream-funnel-chart"></div>';
+        grid.appendChild(card);
+
+        initLivestreamFunnelSelect(card, window.livestreamFunnelAnchorsCached);
+        updateRemoveButtons();
+
+        if (addBtn) addBtn.disabled = cards.length + 1 >= 3;
+      }
+
+      function removeLivestreamFunnel(funnelId) {
+        var grid = document.getElementById('livestreamFunnelGrid');
+        var addBtn = document.getElementById('addFunnelBtn');
+        var cards = grid.querySelectorAll('.livestream-funnel-card');
+        if (cards.length <= 1) return;
+
+        var card = grid.querySelector('.livestream-funnel-card[data-funnel-id="' + funnelId + '"]');
+        if (!card) return;
+
+        var instance = window.livestreamFunnelInstances.find(function(inst) { return inst.id === funnelId; });
+        if (instance && instance.chart) {
+          instance.chart.dispose();
+        }
+        window.livestreamFunnelInstances = window.livestreamFunnelInstances.filter(function(inst) { return inst.id !== funnelId; });
+        card.remove();
+        updateRemoveButtons();
+
+        if (addBtn) addBtn.disabled = false;
+      }
+
+      function updateRemoveButtons() {
+        var grid = document.getElementById('livestreamFunnelGrid');
+        if (!grid) return;
+        var cards = grid.querySelectorAll('.livestream-funnel-card');
+        var showDelete = cards.length > 1;
+        cards.forEach(function(card) {
+          var btn = card.querySelector('.remove-funnel-btn');
+          if (btn) btn.style.display = showDelete ? 'block' : 'none';
+        });
+      }
+
       function refreshLivestreamFunnelFromFeishu() {
-        var st = document.getElementById('livestreamFunnelStatus');
+        var grid = document.getElementById('livestreamFunnelGrid');
+        if (!grid) return;
         var err = window.__QBT_FEISHU_LIVESTREAM_FUNNEL_ERROR__ || '';
         var data = window.__QBT_FEISHU_LIVESTREAM_FUNNEL__;
         var anchors = data && Array.isArray(data.anchors) ? data.anchors : [];
+
         if (anchors.length === 0 && isLivestreamLocalPreview()) {
           anchors = livestreamFunnelLocalDemoAnchors();
           window.livestreamFunnelAnchorsCached = anchors;
-          if (st) st.textContent = '本地预览：示例数据（登录后可拉取飞书）';
-          initLivestreamFunnelSelect(anchors);
-          var sel0 = document.getElementById('livestreamFunnelAnchor');
-          if (sel0 && anchors[0] && !sel0.value) sel0.value = anchors[0].name;
-          renderLivestreamFunnel();
+          var cards = grid.querySelectorAll('.livestream-funnel-card');
+          cards.forEach(function(card, idx) {
+            var status = card.querySelector('.livestream-funnel-status');
+            if (status) status.textContent = idx === 0 ? '本地预览：示例数据（登录后可拉取飞书）' : '';
+            initLivestreamFunnelSelect(card, anchors);
+            var sel = card.querySelector('.livestream-funnel-anchor');
+            if (sel && anchors[0] && !sel.value) sel.value = anchors[0].name;
+            renderLivestreamFunnel(card.dataset.funnelId);
+          });
           return;
         }
         if (!data || !Array.isArray(data.anchors)) {
           window.livestreamFunnelAnchorsCached = [];
-          if (st) st.textContent = err || '';
-          initLivestreamFunnelSelect([]);
-          renderLivestreamFunnel();
+          var cards = grid.querySelectorAll('.livestream-funnel-card');
+          cards.forEach(function(card, idx) {
+            var status = card.querySelector('.livestream-funnel-status');
+            if (status) status.textContent = idx === 0 ? (err || '') : '';
+            initLivestreamFunnelSelect(card, []);
+            renderLivestreamFunnel(card.dataset.funnelId);
+          });
           return;
         }
         window.livestreamFunnelAnchorsCached = data.anchors;
-        if (st) st.textContent = '';
-        initLivestreamFunnelSelect(data.anchors);
-        renderLivestreamFunnel();
+        var cards = grid.querySelectorAll('.livestream-funnel-card');
+        cards.forEach(function(card) {
+          var status = card.querySelector('.livestream-funnel-status');
+          if (status) status.textContent = '';
+          initLivestreamFunnelSelect(card, data.anchors);
+          renderLivestreamFunnel(card.dataset.funnelId);
+        });
       }
+
+      // 绑定增加对比按钮
+      document.addEventListener('DOMContentLoaded', function() {
+        var addBtn = document.getElementById('addFunnelBtn');
+        if (addBtn) {
+          addBtn.addEventListener('click', addLivestreamFunnel);
+        }
+        var grid = document.getElementById('livestreamFunnelGrid');
+        if (grid) {
+          grid.addEventListener('click', function(e) {
+            var btn = e.target.closest('.remove-funnel-btn');
+            if (btn) {
+              var funnelId = btn.dataset.funnelId;
+              removeLivestreamFunnel(funnelId);
+            }
+          });
+        }
+      });
       function refreshJdDailyFromFeishu() {
         var raw = window.__QBT_FEISHU_DAILY_SALES__;
         var errMsg = window.__QBT_FEISHU_DAILY_SALES_ERROR__ || '';
