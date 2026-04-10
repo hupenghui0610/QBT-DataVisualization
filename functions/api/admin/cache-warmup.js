@@ -344,39 +344,138 @@ async function fetchRawFeishuTmallSales(env) {
 }
 
 async function fetchRawFeishuDouyinSales(env) {
-  // 直接复用 feishu-douyin-sales.js 的完整逻辑，保持数据结构一致
-  const mod = await import('../data/feishu-douyin-sales.js');
+  // 直接复制 feishu-douyin-sales.js 的核心逻辑，避免认证层
+  const { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } = await import('../../_lib/feishu.js');
+  const DEFAULT_SPREADSHEET_TOKEN = 'X2jWseyDuh5invtFhgGcfgnCnWf';
+  const spreadsheetToken = env.FEISHU_DOUYIN_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
 
-  // 创建模拟请求上下文，添加认证头
-  const mockRequest = new Request('http://localhost/api/data/feishu-douyin-sales', {
-    headers: {
-      'Authorization': 'Bearer admin-token',
-      'Content-Type': 'application/json',
-    },
-  });
-  const mockContext = {
-    request: mockRequest,
-    env: env,
-  };
-
-  // 调用 onRequestGet 获取完整处理后的数据
-  const response = await mod.onRequestGet(mockContext);
-
-  // 检查响应状态
-  if (response.status !== 200) {
-    const errorBody = await response.text();
-    throw new Error(`抖音数据获取失败: HTTP ${response.status} - ${errorBody}`);
+  // 辅助函数：合并 FormattedValue 和 UnformattedValue
+  function isFormulaText(v) {
+    return typeof v === 'string' && /^[\s\u00a0]*[=＝]/.test(v);
   }
 
-  // 解析响应体
-  const responseBody = await response.text();
-  const data = JSON.parse(responseBody);
+  function mergeFmtUnfValueRanges(vf, vu) {
+    const rows = Math.max(vf.length, vu.length);
+    const out = [];
+    for (let r = 0; r < rows; r++) {
+      const fr = vf[r] || [];
+      const ur = vu[r] || [];
+      const cols = Math.max(fr.length, ur.length);
+      const row = [];
+      for (let c = 0; c < cols; c++) {
+        const f = fr[c];
+        const u = ur[c];
+        if (c === 0) {
+          row[c] = f != null && f !== '' ? f : u;
+          continue;
+        }
+        if (!isFormulaText(f) && f != null && f !== '') {
+          row[c] = f;
+        } else if (!isFormulaText(u) && u != null && u !== '') {
+          row[c] = u;
+        } else {
+          row[c] = f != null && f !== '' ? f : u;
+        }
+      }
+      out.push(row);
+    }
+    return out;
+  }
 
-  // 移除缓存标记
-  delete data._cached;
-  delete data._updatedAt;
+  async function fetchSheetRangeMerged(token, range) {
+    const fmt = await fetchSheetValuesV2(env, token, range, { valueRenderOption: 'FormattedValue' });
+    const unf = await fetchSheetValuesV2(env, token, range, { valueRenderOption: 'UnformattedValue' });
+    if (fmt.code !== 0) return { feishuJson: fmt, values: null };
+    const vf = (fmt.data && fmt.data.valueRange && fmt.data.valueRange.values) || [];
+    if (unf.code !== 0) return { feishuJson: fmt, values: vf };
+    const vu = (unf.data && unf.data.valueRange && unf.data.valueRange.values) || [];
+    return { feishuJson: fmt, values: mergeFmtUnfValueRanges(vf, vu) };
+  }
 
-  return data;
+  function sortSheetsByUiIndex(sheets) {
+    const arr = (sheets || []).slice();
+    const hasAny = arr.some(s => s && typeof s.index === 'number' && isFinite(s.index));
+    if (!hasAny) return arr;
+    arr.sort((a, b) => (a && typeof a.index === 'number' ? a.index : 1e9) - (b && typeof b.index === 'number' ? b.index : 1e9));
+    return arr;
+  }
+
+  // 获取 sheet 列表
+  const sheetsJson = await fetchSpreadsheetSheetsV3(env, spreadsheetToken);
+  if (!sheetsJson || sheetsJson.code !== 0) {
+    throw new Error(sheetsJson?.msg || '抖音表工作表解析失败');
+  }
+
+  const sheets = sortSheetsByUiIndex((sheetsJson.data && sheetsJson.data.sheets) || []);
+  if (sheets.length < 3) {
+    throw new Error('抖音表 sheet 数量不足 3 个');
+  }
+
+  const s1 = sheets[0] && sheets[0].sheet_id ? String(sheets[0].sheet_id) : '';
+  const s2 = sheets[1] && sheets[1].sheet_id ? String(sheets[1].sheet_id) : '';
+  const s3 = sheets[2] && sheets[2].sheet_id ? String(sheets[2].sheet_id) : '';
+
+  if (!s1 || !s2 || !s3) {
+    throw new Error('抖音表缺少 sheet_id');
+  }
+
+  const range1 = s1 + '!A1:J20000';
+  const range2 = s2 + '!A1:K20000';
+  const range3 = s3 + '!A1:K20000';
+
+  // 获取三个 sheet 数据
+  const [m1, m2, m3] = await Promise.all([
+    fetchSheetRangeMerged(spreadsheetToken, range1),
+    fetchSheetRangeMerged(spreadsheetToken, range2),
+    fetchSheetRangeMerged(spreadsheetToken, range3),
+  ]);
+
+  if (!m1.feishuJson || m1.feishuJson.code !== 0) {
+    throw new Error(m1.feishuJson?.msg || '抖音sheet1读取失败');
+  }
+  if (!m2.feishuJson || m2.feishuJson.code !== 0) {
+    throw new Error(m2.feishuJson?.msg || '抖音sheet2读取失败');
+  }
+  if (!m3.feishuJson || m3.feishuJson.code !== 0) {
+    throw new Error(m3.feishuJson?.msg || '抖音sheet3读取失败');
+  }
+
+  const d1 = m1.feishuJson.data || {};
+  const d2 = m2.feishuJson.data || {};
+  const d3 = m3.feishuJson.data || {};
+  const vr1 = d1.valueRange || {};
+  const vr2 = d2.valueRange || {};
+  const vr3 = d3.valueRange || {};
+
+  return {
+    spreadsheetToken: spreadsheetToken,
+    range: range1,
+    range2: range2,
+    range3: range3,
+    sheetMeta: [
+      { title: sheets[0].title || '', sheet_id: s1, index: sheets[0].index },
+      { title: sheets[1].title || '', sheet_id: s2, index: sheets[1].index },
+      { title: sheets[2].title || '', sheet_id: s3, index: sheets[2].index },
+    ],
+    revision: d1.revision,
+    revision2: d2.revision,
+    revision3: d3.revision,
+    valueRange: {
+      range: vr1.range || range1,
+      majorDimension: 'ROWS',
+      values: m1.values || [],
+    },
+    valueRange2: {
+      range: vr2.range || range2,
+      majorDimension: 'ROWS',
+      values: m2.values || [],
+    },
+    valueRange3: {
+      range: vr3.range || range3,
+      majorDimension: 'ROWS',
+      values: m3.values || [],
+    },
+  };
 }
 
 async function fetchRawFeishuDouyinDailyTrend(env) {
@@ -497,39 +596,175 @@ async function fetchRawFeishuLivestreamFunnel(env) {
 }
 
 async function fetchRawFeishuNewretailDaily(env) {
-  // 直接复用 feishu-newretail-daily.js 的完整逻辑，保持数据结构一致
-  const mod = await import('../data/feishu-newretail-daily.js');
+  // 直接复制 feishu-newretail-daily.js 的核心逻辑
+  const { fetchSheetValuesV2 } = await import('../../_lib/feishu.js');
+  const {
+    PLATFORM_CONFIG, CHANNEL_MAP_CONFIG, buildChannelMaps,
+    processPlatformOrders, processPlatformOrdersGsv,
+    aggregateByDayAndCategory, aggregateByWeek, aggregateByMonth,
+    aggregateFuwuByChannel, aggregateFuwuByChannelWeekly, aggregateFuwuByChannelMonthly,
+    aggregateDpByChannel, aggregateDpByChannelWeekly, aggregateDpByChannelMonthly,
+    aggregateDpByDarenMonthly, aggregateModelDistributionByDay, aggregateModelDistributionByDayFiltered,
+    aggregateModelDistributionByDaren, aggregateRefundRateByDayAndCategory,
+    aggregateRefundRateByWeek, aggregateRefundRateByMonth, aggregateFuwuRefundRateByChannel,
+    aggregateDpRefundRateByChannel, calculateTotalsByCategory, calculateFuwuTotalsByChannel,
+    calculateDpTotalsByChannel
+  } = await import('../data/newretail-gmv-logic.js');
 
-  // 创建模拟请求上下文，添加管理员认证头
-  const mockRequest = new Request('http://localhost/api/data/feishu-newretail-daily', {
-    headers: {
-      'Authorization': 'Bearer admin-token',
-      'Content-Type': 'application/json',
-    },
-  });
-  const mockContext = {
-    request: mockRequest,
-    env: env,
-  };
+  const DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
+  const spreadsheetToken = env.FEISHU_NEWRETAIL_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
+  const maxRows = 20000;
 
-  // 调用 onRequestGet 获取完整处理后的数据
-  const response = await mod.onRequestGet(mockContext);
-
-  // 检查响应状态
-  if (response.status !== 200) {
-    const errorBody = await response.text();
-    throw new Error(`新零售数据获取失败: HTTP ${response.status} - ${errorBody}`);
+  function numToColLetter(n) {
+    let s = '';
+    while (n >= 0) {
+      s = String.fromCharCode(65 + (n % 26)) + s;
+      n = Math.floor(n / 26) - 1;
+    }
+    return s || 'A';
   }
 
-  // 解析响应体
-  const responseBody = await response.text();
-  const data = JSON.parse(responseBody);
+  globalThis.__unmatchedDarenIds = new Set();
+  globalThis.__unmatchedDarenStats = {};
 
-  // 移除缓存标记
-  delete data._cached;
-  delete data._updatedAt;
+  const chRange = CHANNEL_MAP_CONFIG.sheetId + '!A1:E2000';
+  const chJson = await fetchSheetValuesV2(env, spreadsheetToken, chRange, { valueRenderOption: 'FormattedValue' });
+  if (!chJson || chJson.code !== 0) throw new Error(chJson?.msg || '渠道映射表读取失败');
 
-  return data;
+  const chValues = chJson.data?.valueRange?.values || [];
+  const channelMaps = buildChannelMaps(chValues);
+
+  const darenNicknamesFromChannelMap = [];
+  const darenIdToDarenNameMap = {};
+  const shipinhaoNameToDarenNameMap = {};
+  for (let r = 1; r < chValues.length; r++) {
+    const row = chValues[r] || [];
+    const channelName = String(row[0] || '').trim();
+    const platform = String(row[1] || '').trim();
+    const darenName = String(row[3] || '').trim();
+    const darenId = String(row[4] || '').trim();
+    if (channelName && !channelName.startsWith('直营') && !channelName.startsWith('自营')) {
+      if (darenName) {
+        darenNicknamesFromChannelMap.push(darenName);
+        if (platform === '视频号' && darenId) shipinhaoNameToDarenNameMap[darenId] = darenName;
+        else if (darenId) darenIdToDarenNameMap[darenId] = darenName;
+      }
+    }
+  }
+  const uniqueDarenNicknames = darenNicknamesFromChannelMap.filter((item, idx, arr) => arr.indexOf(item) === idx).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+
+  const platformKeys = ['douyin', 'xiaohongshu', 'shipinhao', 'kuaishou'];
+  const platformPromises = platformKeys.map(async (platform) => {
+    const cfg = PLATFORM_CONFIG[platform];
+    if (!cfg) return { platform, values: [] };
+    const maxCol = Math.max(...Object.values(cfg.cols));
+    const colLetter = numToColLetter(maxCol);
+    const range = cfg.sheetId + '!A1:' + colLetter + maxRows;
+    try {
+      const result = await fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'FormattedValue' });
+      return { platform, values: (result && result.code === 0) ? result.data?.valueRange?.values || [] : [] };
+    } catch (e) { return { platform, values: [] }; }
+  });
+
+  const platformResults = await Promise.all(platformPromises);
+
+  let allOrdersGmv = [];
+  const platformStatsGmv = {};
+  platformResults.forEach((result) => {
+    if (result.values && result.values.length > 0) {
+      const gmvResult = processPlatformOrders(result.values, result.platform, channelMaps);
+      allOrdersGmv = allOrdersGmv.concat(gmvResult.orders);
+      platformStatsGmv[result.platform] = { totalRows: result.values.length - 1, validOrders: gmvResult.orders.length };
+    }
+  });
+
+  let allOrdersGsv = [];
+  const platformStatsGsv = {};
+  platformResults.forEach((result) => {
+    if (result.values && result.values.length > 0) {
+      const gsvResult = processPlatformOrdersGsv(result.values, result.platform, channelMaps);
+      allOrdersGsv = allOrdersGsv.concat(gsvResult.orders);
+      platformStatsGsv[result.platform] = { totalRows: result.values.length - 1, validOrders: gsvResult.orders.length, skippedCount: gsvResult.skipCount };
+    }
+  });
+
+  const dailyPointsGmv = aggregateByDayAndCategory(allOrdersGmv);
+  const weeklyPointsGmv = aggregateByWeek(dailyPointsGmv);
+  const monthlyPointsGmv = aggregateByMonth(dailyPointsGmv);
+  const dailyPointsGsv = aggregateByDayAndCategory(allOrdersGsv);
+  const weeklyPointsGsv = aggregateByWeek(dailyPointsGsv);
+  const monthlyPointsGsv = aggregateByMonth(dailyPointsGsv);
+  const dailyRefundRate = aggregateRefundRateByDayAndCategory(dailyPointsGmv, dailyPointsGsv);
+  const weeklyRefundRate = aggregateRefundRateByWeek(dailyPointsGmv, dailyPointsGsv);
+  const monthlyRefundRate = aggregateRefundRateByMonth(dailyPointsGmv, dailyPointsGsv);
+  const fuwuByChannel = aggregateFuwuByChannel(allOrdersGmv);
+  const fuwuByChannelWeekly = aggregateFuwuByChannelWeekly(fuwuByChannel.data);
+  const fuwuByChannelMonthly = aggregateFuwuByChannelMonthly(fuwuByChannel.data);
+  const fuwuByChannelGsv = aggregateFuwuByChannel(allOrdersGsv);
+  const fuwuByChannelGsvWeekly = aggregateFuwuByChannelWeekly(fuwuByChannelGsv.data);
+  const fuwuByChannelGsvMonthly = aggregateFuwuByChannelMonthly(fuwuByChannelGsv.data);
+  const fuwuRefundRateDaily = aggregateFuwuRefundRateByChannel(fuwuByChannel, fuwuByChannelGsv);
+  const fuwuRefundRateWeekly = aggregateFuwuRefundRateByChannel(fuwuByChannelWeekly, fuwuByChannelGsvWeekly);
+  const fuwuRefundRateMonthly = aggregateFuwuRefundRateByChannel(fuwuByChannelMonthly, fuwuByChannelGsvMonthly);
+  const fourPlatformTotals = calculateTotalsByCategory(dailyPointsGmv, dailyPointsGsv);
+  const fuwuTotalsDaily = calculateFuwuTotalsByChannel(fuwuByChannel, fuwuByChannelGsv);
+  const fuwuTotalsWeekly = calculateFuwuTotalsByChannel(fuwuByChannelWeekly, fuwuByChannelGsvWeekly);
+  const fuwuTotalsMonthly = calculateFuwuTotalsByChannel(fuwuByChannelMonthly, fuwuByChannelGsvMonthly);
+  const dpByChannel = aggregateDpByChannel(allOrdersGmv);
+  const dpByChannelWeekly = aggregateDpByChannelWeekly(dpByChannel.data);
+  const dpByChannelMonthly = aggregateDpByChannelMonthly(dpByChannel.data);
+  const dpByChannelGsv = aggregateDpByChannel(allOrdersGsv);
+  const dpByChannelGsvWeekly = aggregateDpByChannelWeekly(dpByChannelGsv.data);
+  const dpByChannelGsvMonthly = aggregateDpByChannelMonthly(dpByChannelGsv.data);
+  const dpRefundRateDaily = aggregateDpRefundRateByChannel(dpByChannel, dpByChannelGsv);
+  const dpRefundRateWeekly = aggregateDpRefundRateByChannel(dpByChannelWeekly, dpByChannelGsvWeekly);
+  const dpRefundRateMonthly = aggregateDpRefundRateByChannel(dpByChannelMonthly, dpByChannelGsvMonthly);
+  const dpTotalsDaily = calculateDpTotalsByChannel(dpByChannel, dpByChannelGsv);
+  const dpTotalsWeekly = calculateDpTotalsByChannel(dpByChannelWeekly, dpByChannelGsvWeekly);
+  const dpTotalsMonthly = calculateDpTotalsByChannel(dpByChannelMonthly, dpByChannelGsvMonthly);
+  const dpByDarenMonthly = aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv);
+
+  const modelMappingRange = 'NYYiAs!A1:B1000';
+  const modelMappingJson = await fetchSheetValuesV2(env, spreadsheetToken, modelMappingRange, { valueRenderOption: 'FormattedValue' });
+  const modelMapping = [];
+  if (modelMappingJson && modelMappingJson.code === 0) {
+    const modelValues = modelMappingJson.data?.valueRange?.values || [];
+    for (let i = 1; i < modelValues.length; i++) {
+      const row = modelValues[i] || [];
+      const keyword = String(row[0] || '').trim();
+      const model = String(row[1] || '').trim();
+      if (keyword && model) modelMapping.push({ keyword, model });
+    }
+  }
+
+  const modelDistributionResult = aggregateModelDistributionByDay(allOrdersGmv, modelMapping);
+  const modelDistributionGsvResult = aggregateModelDistributionByDay(allOrdersGsv, modelMapping);
+  const modelDistDpMuchengResult = aggregateModelDistributionByDayFiltered(allOrdersGsv, modelMapping, (o) => o.category === 'dp' && o.channel && o.channel.includes('沐成'));
+  const modelDistDpZhumengResult = aggregateModelDistributionByDayFiltered(allOrdersGsv, modelMapping, (o) => o.category === 'dp' && o.channel && o.channel.includes('逐梦'));
+  const modelDistDarenResult = aggregateModelDistributionByDayFiltered(allOrdersGsv, modelMapping, (o) => o.category === 'zhidui' || o.category === 'fuwu');
+  const modelDistDarenByDaren = aggregateModelDistributionByDaren(allOrdersGsv, modelMapping, (o) => o.category === 'zhidui' || o.category === 'fuwu' || o.category === 'dp', uniqueDarenNicknames, darenIdToDarenNameMap, shipinhaoNameToDarenNameMap);
+
+  return {
+    mode: 'daily',
+    gmv: { daily: dailyPointsGmv, weekly: weeklyPointsGmv, monthly: monthlyPointsGmv },
+    gsv: { daily: dailyPointsGsv, weekly: weeklyPointsGsv, monthly: monthlyPointsGsv },
+    refundRate: { daily: dailyRefundRate, weekly: weeklyRefundRate, monthly: monthlyRefundRate },
+    fuwuGmv: { daily: fuwuByChannel, weekly: fuwuByChannelWeekly, monthly: fuwuByChannelMonthly },
+    fuwuGsv: { daily: fuwuByChannelGsv, weekly: fuwuByChannelGsvWeekly, monthly: fuwuByChannelGsvMonthly },
+    fuwuRefundRate: { daily: fuwuRefundRateDaily, weekly: fuwuRefundRateWeekly, monthly: fuwuRefundRateMonthly },
+    dpGmv: { daily: dpByChannel, weekly: dpByChannelWeekly, monthly: dpByChannelMonthly },
+    dpGsv: { daily: dpByChannelGsv, weekly: dpByChannelGsvWeekly, monthly: dpByChannelGsvMonthly },
+    dpRefundRate: { daily: dpRefundRateDaily, weekly: dpRefundRateWeekly, monthly: dpRefundRateMonthly },
+    totals: { fourPlatform: fourPlatformTotals, fuwuDaily: fuwuTotalsDaily, fuwuWeekly: fuwuTotalsWeekly, fuwuMonthly: fuwuTotalsMonthly, dpDaily: dpTotalsDaily, dpWeekly: dpTotalsWeekly, dpMonthly: dpTotalsMonthly },
+    dpGmvGsv: { monthly: dpByDarenMonthly },
+    modelDistribution: modelDistributionResult,
+    modelDistributionGsv: modelDistributionGsvResult,
+    modelDistDpMucheng: modelDistDpMuchengResult,
+    modelDistDpZhumeng: modelDistDpZhumengResult,
+    modelDistDaren: modelDistDarenResult,
+    modelDistDarenByDaren: modelDistDarenByDaren,
+    meta: { spreadsheetToken, totalOrdersGmv: allOrdersGmv.length, totalOrdersGsv: allOrdersGsv.length, platformStatsGmv, platformStatsGsv, platforms: platformKeys, cached: false }
+  };
 }
 
 // 复制自 feishu-livestream-funnel.js
