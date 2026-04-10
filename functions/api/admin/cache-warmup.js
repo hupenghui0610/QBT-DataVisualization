@@ -485,26 +485,28 @@ async function fetchRawFeishuLivestreamFunnel(env) {
 }
 
 async function fetchRawFeishuNewretailDaily(env) {
-  const { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } = await import('../../_lib/feishu.js');
-  const token = env.FEISHU_NEWRETAIL_SPREADSHEET_TOKEN || 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
+  // 直接复用 feishu-newretail-daily.js 的完整逻辑，保持数据结构一致
+  const mod = await import('../data/feishu-newretail-daily.js');
 
-  // 获取所有sheets
-  const sheetsRes = await fetchSpreadsheetSheetsV3(env, token);
-  const sheets = sheetsRes.data?.sheets || [];
+  // 创建模拟请求上下文
+  const mockRequest = new Request('http://localhost/api/data/feishu-newretail-daily');
+  const mockContext = {
+    request: mockRequest,
+    env: env,
+  };
 
-  const result = { spreadsheetToken: token, sheets: {} };
-  for (const sheet of sheets) {
-    const range = `${sheet.sheet_id}!A1:ZZ20000`;
-    const resp = await fetchSheetValuesV2(env, token, range);
-    result.sheets[sheet.title || sheet.sheet_id] = {
-      sheetId: sheet.sheet_id,
-      range: range,
-      code: resp.code,
-      data: resp.data,
-      error: resp.code !== 0 ? resp.msg : null,
-    };
-  }
-  return result;
+  // 调用 onRequestGet 获取完整处理后的数据
+  const response = await mod.onRequestGet(mockContext);
+
+  // 解析响应体
+  const responseBody = await response.text();
+  const data = JSON.parse(responseBody);
+
+  // 移除缓存标记
+  delete data._cached;
+  delete data._updatedAt;
+
+  return data;
 }
 
 // 复制自 feishu-livestream-funnel.js
