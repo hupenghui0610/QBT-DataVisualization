@@ -1410,7 +1410,7 @@
         <i class="chart-title-icon fa fa-filter"></i><span>直播间转化漏斗</span>
       </h3>
       <span class="livestream-funnel-status daily-feishu-status" style="font-size: 12px; color: #64748b;"></span>
-      <div class="date-range">主播：<select class="livestream-funnel-anchor"><option value="">请选择主播</option></select></div>
+      <div class="date-range">主播：<select class="livestream-funnel-anchor"><option value="">请选择主播</option></select> 起始：<select class="livestream-funnel-start-date" disabled><option value="">全部</option></select> 结束：<select class="livestream-funnel-end-date" disabled><option value="">全部</option></select></div>
       <div class="chart livestream-funnel-chart"></div>
       <div class="funnel-actions" style="display: flex; justify-content: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
         <button type="button" id="addFunnelBtn" class="view-btn" style="padding: 6px 16px; font-size: 13px;">+ 增加对比</button>
@@ -7666,7 +7666,7 @@
         return false;
       }
       function livestreamFunnelLocalDemoAnchors() {
-        return [{ name: '示例主播', exposure: 236010, view: 14319, productExposure: 12000, productClick: 3500, order: 890 }];
+        return [{ name: '示例主播', exposure: 236010, view: 14319, productExposure: 12000, productClick: 3500, order: 890, dates: ['2024-01-15', '2024-01-16', '2024-01-17'] }];
       }
 
       // ==================== 直播间转化漏斗多实例管理 ====================
@@ -7685,22 +7685,135 @@
           o.textContent = a.name;
           sel.appendChild(o);
         });
+
+        // 主播选择变化时更新日期选项
         sel.onchange = function() {
+          updateLivestreamFunnelDateOptions(card);
           renderLivestreamFunnel(card.dataset.funnelId);
         };
+
         if (prev) {
           var has = Array.prototype.some.call(sel.options, function (opt) {
             return opt.value === prev;
           });
           if (has) sel.value = prev;
         }
+
+        // 初始化日期选择器
+        updateLivestreamFunnelDateOptions(card);
+      }
+
+      // 更新直播间转化漏斗的日期选项
+      function updateLivestreamFunnelDateOptions(card) {
+        var anchorSel = card.querySelector('.livestream-funnel-anchor');
+        var startSel = card.querySelector('.livestream-funnel-start-date');
+        var endSel = card.querySelector('.livestream-funnel-end-date');
+        if (!anchorSel || !startSel || !endSel) return;
+
+        var anchorName = anchorSel.value;
+        if (!anchorName) {
+          startSel.innerHTML = '<option value="">全部</option>';
+          endSel.innerHTML = '<option value="">全部</option>';
+          startSel.disabled = true;
+          endSel.disabled = true;
+          return;
+        }
+
+        var anchors = window.livestreamFunnelAnchorsCached;
+        if (!anchors || !Array.isArray(anchors)) {
+          startSel.innerHTML = '<option value="">全部</option>';
+          endSel.innerHTML = '<option value="">全部</option>';
+          startSel.disabled = true;
+          endSel.disabled = true;
+          return;
+        }
+
+        var anchorData = null;
+        for (var i = 0; i < anchors.length; i++) {
+          var anchorItem = anchors[i];
+          if (anchorItem && anchorItem.name && anchorItem.name === anchorName) {
+            anchorData = anchorItem;
+            break;
+          }
+        }
+
+        // 保存当前选择
+        var prevStart = startSel.value;
+        var prevEnd = endSel.value;
+
+        // 重置选项
+        startSel.innerHTML = '<option value="">全部</option>';
+        endSel.innerHTML = '<option value="">全部</option>';
+
+        // Debug: 输出调试信息
+        console.log('[updateLivestreamFunnelDateOptions] 调试:', {
+          anchorName: anchorName,
+          anchorsCount: anchors.length,
+          anchorData: anchorData,
+          hasDates: anchorData ? !!anchorData.dates : false,
+          datesArray: anchorData ? Array.isArray(anchorData.dates) : false,
+          datesLength: anchorData && anchorData.dates ? anchorData.dates.length : 0,
+          datesContent: anchorData ? anchorData.dates : null
+        });
+
+        if (!anchorData || !anchorData.dates || !Array.isArray(anchorData.dates) || anchorData.dates.length === 0) {
+          startSel.disabled = true;
+          endSel.disabled = true;
+          return;
+        }
+
+        // 启用选择器
+        startSel.disabled = false;
+        endSel.disabled = false;
+
+        // 填充日期选项
+        anchorData.dates.forEach(function(dateKey) {
+          var optStart = document.createElement('option');
+          optStart.value = dateKey;
+          optStart.textContent = dateKey;
+          startSel.appendChild(optStart);
+
+          var optEnd = document.createElement('option');
+          optEnd.value = dateKey;
+          optEnd.textContent = dateKey;
+          endSel.appendChild(optEnd);
+        });
+
+        // 恢复之前的选择（如果可用）
+        if (prevStart) {
+          var hasStart = Array.prototype.some.call(startSel.options, function(opt) {
+            return opt.value === prevStart;
+          });
+          if (hasStart) startSel.value = prevStart;
+        }
+        if (prevEnd) {
+          var hasEnd = Array.prototype.some.call(endSel.options, function(opt) {
+            return opt.value === prevEnd;
+          });
+          if (hasEnd) endSel.value = prevEnd;
+        }
+
+        // 绑定日期变化事件
+        startSel.onchange = function() {
+          // 确保结束日期不早于起始日期
+          if (startSel.value && endSel.value && startSel.value > endSel.value) {
+            endSel.value = startSel.value;
+          }
+          renderLivestreamFunnel(card.dataset.funnelId);
+        };
+        endSel.onchange = function() {
+          // 确保结束日期不早于起始日期
+          if (startSel.value && endSel.value && endSel.value < startSel.value) {
+            startSel.value = endSel.value;
+          }
+          renderLivestreamFunnel(card.dataset.funnelId);
+        };
       }
 
       function renderLivestreamFunnel(funnelId) {
         var card = document.querySelector('.livestream-funnel-card[data-funnel-id="' + funnelId + '"]');
         if (!card) return;
         var el = card.querySelector('.livestream-funnel-chart');
-        var list = window.livestreamFunnelAnchorsCached;
         if (!el) return;
 
         var instance = window.livestreamFunnelInstances.find(function(inst) { return inst.id === funnelId; });
@@ -7715,12 +7828,17 @@
         instance.chart.resize();
 
         var sel = card.querySelector('.livestream-funnel-anchor');
+        var startSel = card.querySelector('.livestream-funnel-start-date');
+        var endSel = card.querySelector('.livestream-funnel-end-date');
         var name = sel && sel.value ? String(sel.value).trim() : '';
-        if (!name || !list || !list.length) {
+        var startDate = startSel && startSel.value ? startSel.value : '';
+        var endDate = endSel && endSel.value ? endSel.value : '';
+
+        if (!name) {
           instance.chart.setOption(
             {
               title: {
-                text: name ? '未找到该主播数据' : '请选择主播',
+                text: '请选择主播',
                 left: 'center',
                 top: 'middle',
                 textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' },
@@ -7731,13 +7849,88 @@
           );
           return;
         }
-        var hit = null;
-        for (var i = 0; i < list.length; i++) {
-          if (list[i] && list[i].name === name) {
-            hit = list[i];
-            break;
+
+        // 检查是否需要按日期筛选（如果选择了日期范围，需要重新获取数据）
+        if (startDate || endDate) {
+          // 显示计算中状态
+          instance.chart.setOption(
+            {
+              title: {
+                text: '计算中...',
+                left: 'center',
+                top: 'middle',
+                textStyle: { fontSize: 14, fontWeight: 'normal', color: '#64748b' },
+              },
+              series: [],
+            },
+            true
+          );
+          // 需要重新获取筛选后的数据
+          fetchLivestreamFunnelWithDateRange(startDate, endDate).then(function(data) {
+            if (!data || !data.anchors) {
+              instance.chart.setOption(
+                { title: { text: '获取筛选数据失败', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, series: [] },
+                true
+              );
+              return;
+            }
+            var hit = null;
+            for (var i = 0; i < data.anchors.length; i++) {
+              if (data.anchors[i] && data.anchors[i].name === name) {
+                hit = data.anchors[i];
+                break;
+              }
+            }
+            renderLivestreamFunnelData(instance, hit);
+          }).catch(function(err) {
+            instance.chart.setOption(
+              { title: { text: '获取筛选数据失败', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, series: [] },
+              true
+            );
+          });
+        } else {
+          // 使用缓存数据
+          var list = window.livestreamFunnelAnchorsCached;
+          var hit = null;
+          for (var i = 0; i < list.length; i++) {
+            if (list[i] && list[i].name === name) {
+              hit = list[i];
+              break;
+            }
+          }
+          renderLivestreamFunnelData(instance, hit);
+        }
+      }
+
+      // 获取带日期筛选的直播间漏斗数据
+      function fetchLivestreamFunnelWithDateRange(startDate, endDate) {
+        var cacheKey = 'funnel_' + (startDate || 'all') + '_' + (endDate || 'all');
+        var now = Date.now();
+        // 简单的内存缓存（5分钟）
+        if (window.__livestreamFunnelDateCache && window.__livestreamFunnelDateCache.key === cacheKey) {
+          if (now - window.__livestreamFunnelDateCache.time < 5 * 60 * 1000) {
+            return Promise.resolve(window.__livestreamFunnelDateCache.data);
           }
         }
+
+        var url = '/api/data/feishu-livestream-funnel';
+        var params = [];
+        if (startDate) params.push('startDate=' + encodeURIComponent(startDate));
+        if (endDate) params.push('endDate=' + encodeURIComponent(endDate));
+        if (params.length > 0) url += '?' + params.join('&');
+
+        return fetch(url, {
+          headers: {
+            'Authorization': 'Bearer ' + (XbsAuth.getToken() || '')
+          }
+        }).then(function(r) { return r.json(); }).then(function(data) {
+          window.__livestreamFunnelDateCache = { key: cacheKey, time: now, data: data };
+          return data;
+        });
+      }
+
+      // 渲染直播间转化漏斗数据
+      function renderLivestreamFunnelData(instance, hit) {
         if (!hit) {
           instance.chart.setOption(
             { title: { text: '未找到该主播数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, series: [] },
@@ -7772,10 +7965,12 @@
           { value: sumProductClick, name: '直播间商品点击人数', color: '#8b5cf6' },
           { value: sumOrder, name: '直播间成交人数', color: '#10b981' },
         ];
+        // 移动端检测：将整个漏斗向左移动，让右侧转化率文字有更多显示空间
+        var isMobile = document.documentElement.classList.contains('mobile-client');
         var opt = {
           title: { show: false },
           animationDuration: 280,
-          grid: { left: '8%', right: '8%', top: '10%', bottom: '14%', containLabel: false },
+          grid: { left: isMobile ? '-10%' : '8%', right: '8%', top: '10%', bottom: '14%', containLabel: false },
           xAxis: { type: 'value', show: false, min: 0, max: 1 },
           yAxis: { type: 'value', show: false, min: 0, max: 1 },
           tooltip: { show: false },
@@ -7953,7 +8148,7 @@
             '<button type="button" class="remove-funnel-btn" data-funnel-id="' + newId + '">删除</button>' +
           '</h3>' +
           '<span class="livestream-funnel-status daily-feishu-status" style="font-size: 12px; color: #64748b;"></span>' +
-          '<div class="date-range">主播：<select class="livestream-funnel-anchor"><option value="">请选择主播</option></select></div>' +
+          '<div class="date-range">主播：<select class="livestream-funnel-anchor"><option value="">请选择主播</option></select> 起始：<select class="livestream-funnel-start-date" disabled><option value="">全部</option></select> 结束：<select class="livestream-funnel-end-date" disabled><option value="">全部</option></select></div>' +
           '<div class="chart livestream-funnel-chart"></div>';
         grid.appendChild(card);
 
@@ -8472,6 +8667,13 @@
                 if (validPayload) {
                   window.__QBT_FEISHU_LIVESTREAM_FUNNEL__ = o.data;
                   window.__QBT_FEISHU_LIVESTREAM_FUNNEL_ERROR__ = '';
+                  // Debug: 输出调试信息
+                  console.log('[LivestreamFunnel] API返回数据:', {
+                    anchorsCount: o.data.anchors.length,
+                    firstAnchor: o.data.anchors[0] ? o.data.anchors[0].name : null,
+                    firstAnchorDates: o.data.anchors[0] ? o.data.anchors[0].dates : null,
+                    debug: o.data.debug
+                  });
                 } else {
                   window.__QBT_FEISHU_LIVESTREAM_FUNNEL__ = null;
                   var msg =

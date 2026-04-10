@@ -11,7 +11,20 @@
       "Bash(node --check dist/charts.html)",
       "Bash(npx serve:*)",
       "Bash(git add:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(node:*)",
+      "Bash(wrangler:*)",
+      "Bash(npm install:*)",
+      "Bash(awk:*)",
+      "Bash(ls functions/api/data/*.js)",
+      "Bash(grep:*)",
+      "Bash(curl -s -X POST \"https://qbt-datavisualization.pages.dev/api/admin/cache-warmup\" -H \"Content-Type: application/json\" -d '{\"token\": \"test\"}')",
+      "Bash(curl -s \"https://qbt-datavisualization.pages.dev/api/data/feishu-gmv-combined\")",
+      "Bash(curl -s \"https://2b28edcf.qbt-datavisualization.pages.dev/api/admin/cache-warmup\" -X GET)",
+      "Bash(curl -s -X POST \"https://2b28edcf.qbt-datavisualization.pages.dev/api/admin/cache-warmup\" -H \"Content-Type: application/json\" -d '{\"token\":\"test\"}' -v)",
+      "Bash(git reset:*)",
+      "WebFetch(domain:68bb23f9.qbt-datavisualization.pages.dev)",
+      "Bash(curl -s \"https://24804f4c.qbt-datavisualization.pages.dev/api/data/feishu-livestream-funnel\" -H \"Authorization: Bearer test\")"
     ]
   }
 }
