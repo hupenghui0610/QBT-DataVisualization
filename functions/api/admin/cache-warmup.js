@@ -387,32 +387,230 @@ async function fetchRawFeishuDouyinModelDistribution(env) {
 }
 
 async function fetchRawFeishuGmvCombined(env) {
-  const { fetchSheetValuesV2 } = await import('../../_lib/feishu.js');
+  // 直接调用 feishu-gmv-combined.js 的完整逻辑，保持数据结构一致
+  const mod = await import('../data/feishu-gmv-combined.js');
 
-  // 京东数据
+  // 模拟一个请求上下文
+  const mockRequest = new Request('http://localhost/api/data/feishu-gmv-combined');
+  // 添加一个特殊的 header 来跳过缓存读取
+  mockRequest.headers.set('X-Skip-Cache', '1');
+
+  const mockContext = {
+    request: mockRequest,
+    env: env,
+  };
+
+  // 调用 onRequestGet，但需要在调用前手动清除缓存逻辑
+  // 由于 onRequestGet 会读取缓存，我们需要直接调用数据获取逻辑
+  // 这里我们改为直接调用内部的 fetch 函数
+
+  // 复制 feishu-gmv-combined.js 的核心数据获取逻辑
+  const { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } = await import('../../_lib/feishu.js');
+
+  // 天猫配置
+  const tmallToken = env.FEISHU_TMALL_SPREADSHEET_TOKEN || 'WkFuwdxnhio6AckVEeQcohMAnpc';
+  const tmallRangeRaw = env.FEISHU_TMALL_GMV_RANGE || '2joAvv!A1:M20000';
+
+  // 京东配置
   const jdToken = env.FEISHU_SPREADSHEET_TOKEN || 'EBwmsjjArhutvWtM2E9cLUMGnYd';
-  const jdRange = '0VWscb!A1:F20000';
-  const jdResult = await fetchSheetValuesV2(env, jdToken, jdRange);
 
-  // 天猫数据
-  const tmToken = env.FEISHU_TMALL_GMV_SPREADSHEET_TOKEN || 'WkFuwdxnhio6AckVEeQcohMAnpc';
-  const tmRange = env.FEISHU_TMALL_GMV_RANGE || '2joAvv!A1:G20000';
-  const tmResult = await fetchSheetValuesV2(env, tmToken, tmRange);
+  // 辅助函数
+  function expandRangeEndColumnToH(range) {
+    const s = String(range || '');
+    const i = s.indexOf('!');
+    if (i < 0) return range;
+    const addr = s.slice(i + 1);
+    const m = addr.match(/^([A-Za-z]+)(\d+):([A-Za-z]+)(\d+)$/);
+    if (!m) return range;
+    const c2 = m[3].toUpperCase();
+    if (c2 === 'G') {
+      return s.slice(0, i + 1) + addr.replace(':G', ':H');
+    }
+    return range;
+  }
 
+  function splitRange(range) {
+    const i = String(range || '').indexOf('!');
+    if (i < 0) return { sheetPart: String(range || ''), addrPart: 'A1:H20000' };
+    return { sheetPart: String(range || '').slice(0, i), addrPart: String(range || '').slice(i + 1) || 'A1:H20000' };
+  }
+
+  function shrinkRangeMaxRows(range, maxRows) {
+    const parsed = splitRange(range);
+    const addr = String(parsed.addrPart || '');
+    const m = addr.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i);
+    if (!m) return null;
+    const c1 = m[1], r1 = parseInt(m[2], 10), c2 = m[3], r2 = parseInt(m[4], 10);
+    if (!isFinite(r1) || !isFinite(r2) || r2 <= 0 || maxRows <= 0) return null;
+    let target = Math.min(r2, maxRows);
+    if (target >= r2) return null;
+    if (target <= r1) target = r1 + 1;
+    return String(parsed.sheetPart || '') + '!' + c1 + String(r1) + ':' + c2 + String(target);
+  }
+
+  function isDataExceeded(feishuJson) {
+    const msg = String((feishuJson && feishuJson.msg) || '');
+    return msg.indexOf('data exceeded') >= 0 && msg.indexOf('10485760') >= 0;
+  }
+
+  // 获取天猫数据（Formatted + Unformatted 合并）
+  const tmallRange = expandRangeEndColumnToH(tmallRangeRaw);
+  let tmFmt = await fetchSheetValuesV2(env, tmallToken, tmallRange, { valueRenderOption: 'FormattedValue' });
+  let tmUnf = await fetchSheetValuesV2(env, tmallToken, tmallRange, { valueRenderOption: 'UnformattedValue' });
+
+  // 处理数据超限
+  if (tmFmt.code !== 0 && isDataExceeded(tmFmt)) {
+    const caps = [12000, 8000, 6000, 4000, 3000, 2000];
+    for (const cap of caps) {
+      const smaller = shrinkRangeMaxRows(tmallRange, cap);
+      if (!smaller) continue;
+      const retry = await fetchSheetValuesV2(env, tmallToken, smaller, { valueRenderOption: 'FormattedValue' });
+      if (retry.code === 0) { tmFmt = retry; break; }
+      if (!isDataExceeded(retry)) break;
+    }
+  }
+
+  // 获取京东数据（第三张表 A:F）
+  const sheetsJson = await fetchSpreadsheetSheetsV3(env, jdToken);
+  const sheets = ((sheetsJson.data && sheetsJson.data.sheets) || []).sort((a, b) => (a.index || 1e9) - (b.index || 1e9));
+  const jdRange = sheets.length >= 3 ? `${sheets[2].sheet_id}!A1:F20000` : '0VWscb!A1:F20000';
+
+  let jdFmt = await fetchSheetValuesV2(env, jdToken, jdRange, { valueRenderOption: 'FormattedValue' });
+  let jdUnf = await fetchSheetValuesV2(env, jdToken, jdRange, { valueRenderOption: 'UnformattedValue' });
+
+  // 获取京东第一张表（G列 - 学习机 GSV）
+  const jdSheet1Range = sheets.length >= 1 ? `${sheets[0].sheet_id}!A1:G20000` : '0VWscb!A1:G20000';
+  let jd1Fmt = await fetchSheetValuesV2(env, jdToken, jdSheet1Range, { valueRenderOption: 'FormattedValue' });
+  let jd1Unf = await fetchSheetValuesV2(env, jdToken, jdSheet1Range, { valueRenderOption: 'UnformattedValue' });
+
+  // 获取京东第二张表（G列 - 亲子屏 GSV）
+  const jdSheet2Range = sheets.length >= 2 ? `${sheets[1].sheet_id}!A1:G20000` : '0VWscb!A1:G20000';
+  let jd2Fmt = await fetchSheetValuesV2(env, jdToken, jdSheet2Range, { valueRenderOption: 'FormattedValue' });
+  let jd2Unf = await fetchSheetValuesV2(env, jdToken, jdSheet2Range, { valueRenderOption: 'UnformattedValue' });
+
+  // 数据处理函数
+  function isFormulaText(v) {
+    return typeof v === 'string' && /^[\s\u00a0]*[=＝]/.test(v);
+  }
+
+  function numFromCell(v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'string' && /^[\s\u00a0]*[=＝]/.test(v)) return null;
+    if (typeof v === 'number' && isFinite(v)) return v;
+    const s = String(v).replace(/[,，\s\u00a0]/g, '');
+    const wan = s.match(/^([\d.]+)\s*万/);
+    if (wan) {
+      const w = parseFloat(wan[1]);
+      return isFinite(w) ? w * 10000 : null;
+    }
+    const n = parseFloat(s);
+    return isFinite(n) ? n : null;
+  }
+
+  function mergeValueRanges(fmtValues, unfValues) {
+    if (!fmtValues && !unfValues) return [];
+    if (!fmtValues) return unfValues;
+    if (!unfValues) return fmtValues;
+    const rows = Math.max(fmtValues.length, unfValues.length);
+    const out = [];
+    for (let r = 0; r < rows; r++) {
+      const fr = fmtValues[r] || [];
+      const ur = unfValues[r] || [];
+      const cols = Math.max(fr.length, ur.length);
+      const row = [];
+      for (let c = 0; c < cols; c++) {
+        const f = fr[c];
+        const u = ur[c];
+        if (c === 0) {
+          row[c] = f != null && f !== '' ? f : u;
+          continue;
+        }
+        const fn = isFormulaText(f) ? null : numFromCell(f);
+        const un = isFormulaText(u) ? null : numFromCell(u);
+        if (fn != null && un != null) {
+          row[c] = Math.abs(fn) >= Math.abs(un) ? f : u;
+        } else if (fn != null) {
+          row[c] = f;
+        } else if (un != null) {
+          row[c] = u;
+        } else if (!isFormulaText(f) && f != null && f !== '') {
+          row[c] = f;
+        } else if (!isFormulaText(u) && u != null && u !== '') {
+          row[c] = u;
+        } else {
+          row[c] = f != null && f !== '' ? f : u;
+        }
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  // 合并数据
+  const tmFmtOk = tmFmt && tmFmt.code === 0;
+  const tmUnfOk = tmUnf && tmUnf.code === 0;
+  const tmFmtValues = tmFmtOk && tmFmt.data && tmFmt.data.valueRange && tmFmt.data.valueRange.values ? tmFmt.data.valueRange.values : [];
+  const tmUnfValues = tmUnfOk && tmUnf.data && tmUnf.data.valueRange && tmUnf.data.valueRange.values ? tmUnf.data.valueRange.values : [];
+  const mergedTmall = mergeValueRanges(tmFmtValues, tmUnfValues);
+
+  const jdFmtOk = jdFmt && jdFmt.code === 0;
+  const jdUnfOk = jdUnf && jdUnf.code === 0;
+  const jdFmtValues = jdFmtOk && jdFmt.data && jdFmt.data.valueRange && jdFmt.data.valueRange.values ? jdFmt.data.valueRange.values : [];
+  const jdUnfValues = jdUnfOk && jdUnf.data && jdUnf.data.valueRange && jdUnf.data.valueRange.values ? jdUnf.data.valueRange.values : [];
+  const mergedJd = mergeValueRanges(jdFmtValues, jdUnfValues);
+
+  const jd1FmtOk = jd1Fmt && jd1Fmt.code === 0;
+  const jd1UnfOk = jd1Unf && jd1Unf.code === 0;
+  const jd1FmtValues = jd1FmtOk && jd1Fmt.data && jd1Fmt.data.valueRange && jd1Fmt.data.valueRange.values ? jd1Fmt.data.valueRange.values : [];
+  const jd1UnfValues = jd1UnfOk && jd1Unf.data && jd1Unf.data.valueRange && jd1Unf.data.valueRange.values ? jd1Unf.data.valueRange.values : [];
+  const mergedJd1 = mergeValueRanges(jd1FmtValues, jd1UnfValues);
+
+  const jd2FmtOk = jd2Fmt && jd2Fmt.code === 0;
+  const jd2UnfOk = jd2Unf && jd2Unf.code === 0;
+  const jd2FmtValues = jd2FmtOk && jd2Fmt.data && jd2Fmt.data.valueRange && jd2Fmt.data.valueRange.values ? jd2Fmt.data.valueRange.values : [];
+  const jd2UnfValues = jd2UnfOk && jd2Unf.data && jd2Unf.data.valueRange && jd2Unf.data.valueRange.values ? jd2Unf.data.valueRange.values : [];
+  const mergedJd2 = mergeValueRanges(jd2FmtValues, jd2UnfValues);
+
+  // 构建与 feishu-gmv-combined.js 完全一致的数据结构
   return {
-    jd: {
-      spreadsheetToken: jdToken,
-      range: jdRange,
-      code: jdResult.code,
-      data: jdResult.data,
-      error: jdResult.code !== 0 ? jdResult.msg : null,
+    tmallSpreadsheetToken: tmallToken,
+    tmallRange: tmallRange,
+    tmallValueRange: {
+      range: tmallRange,
+      majorDimension: 'ROWS',
+      values: mergedTmall,
     },
-    tmall: {
-      spreadsheetToken: tmToken,
-      range: tmRange,
-      code: tmResult.code,
-      data: tmResult.data,
-      error: tmResult.code !== 0 ? tmResult.msg : null,
+    tmallValuesMeta: {
+      rowCount: mergedTmall.length,
+      maxRowLength: mergedTmall.reduce((mx, r) => Math.max(mx, r ? r.length : 0), 0),
+    },
+    jdSpreadsheetToken: jdToken,
+    jdRange: jdRange,
+    jdValueRange: {
+      range: jdRange,
+      majorDimension: 'ROWS',
+      values: mergedJd,
+    },
+    jdValuesMeta: {
+      rowCount: mergedJd.length,
+    },
+    jdSheet1Range: jdSheet1Range,
+    jdSheet1ValueRange: {
+      range: jdSheet1Range,
+      majorDimension: 'ROWS',
+      values: mergedJd1,
+    },
+    jdSheet1ValuesMeta: {
+      rowCount: mergedJd1.length,
+    },
+    jdSheet2Range: jdSheet2Range,
+    jdSheet2ValueRange: {
+      range: jdSheet2Range,
+      majorDimension: 'ROWS',
+      values: mergedJd2,
+    },
+    jdSheet2ValuesMeta: {
+      rowCount: mergedJd2.length,
     },
   };
 }
