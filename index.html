@@ -11320,7 +11320,16 @@
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + XbsAuth.getToken() }
           })
-          .then(function(r) { return r.json(); })
+          .then(function(r) {
+            // 检查响应是否是 JSON
+            var contentType = r.headers.get('content-type');
+            if (!contentType || contentType.indexOf('application/json') === -1) {
+              return r.text().then(function(text) {
+                throw new Error('服务器返回非 JSON 响应：' + text.substring(0, 100));
+              });
+            }
+            return r.json();
+          })
           .then(function(data) {
             if (data.error) {
               // 隐藏loading
