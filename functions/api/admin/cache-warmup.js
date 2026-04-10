@@ -489,8 +489,13 @@ async function fetchRawFeishuNewretailDaily(env) {
   // 直接复用 feishu-newretail-daily.js 的完整逻辑，保持数据结构一致
   const mod = await import('../data/feishu-newretail-daily.js');
 
-  // 创建模拟请求上下文
-  const mockRequest = new Request('http://localhost/api/data/feishu-newretail-daily');
+  // 创建模拟请求上下文，添加管理员认证头
+  const mockRequest = new Request('http://localhost/api/data/feishu-newretail-daily', {
+    headers: {
+      'Authorization': 'Bearer admin-token',
+      'Content-Type': 'application/json',
+    },
+  });
   const mockContext = {
     request: mockRequest,
     env: env,
@@ -498,6 +503,12 @@ async function fetchRawFeishuNewretailDaily(env) {
 
   // 调用 onRequestGet 获取完整处理后的数据
   const response = await mod.onRequestGet(mockContext);
+
+  // 检查响应状态
+  if (response.status !== 200) {
+    const errorBody = await response.text();
+    throw new Error(`新零售数据获取失败: HTTP ${response.status} - ${errorBody}`);
+  }
 
   // 解析响应体
   const responseBody = await response.text();
