@@ -347,24 +347,50 @@ async function fetchRawFeishuDouyinSales(env) {
   const { fetchSheetValuesV2 } = await import('../../_lib/feishu.js');
   const token = env.FEISHU_DOUYIN_SPREADSHEET_TOKEN || 'X2jWseyDuh5invtFhgGcfgnCnWf';
 
-  const ranges = [
-    { name: 'live', label: '直播GMV' },
-    { name: 'video', label: '短视频GMV' },
-    { name: 'other', label: '其他GMV' },
-  ];
+  // 三个sheet的默认范围
+  const range1 = env.FEISHU_DOUYIN_LIVE_RANGE || '直播GMV!A1:ZZ20000';
+  const range2 = env.FEISHU_DOUYIN_VIDEO_RANGE || '短视频GMV!A1:ZZ20000';
+  const range3 = env.FEISHU_DOUYIN_OTHER_RANGE || '其他GMV!A1:ZZ20000';
 
-  const result = { spreadsheetToken: token, ranges: {} };
-  for (const { name, label } of ranges) {
-    const range = env['FEISHU_DOUYIN_' + name.toUpperCase() + '_RANGE'] || `${label}!A1:ZZ20000`;
-    const resp = await fetchSheetValuesV2(env, token, range);
-    result.ranges[name] = {
-      range: range,
-      code: resp.code,
-      data: resp.data,
-      error: resp.code !== 0 ? resp.msg : null,
-    };
-  }
-  return result;
+  // 并行获取三个sheet
+  const [r1, r2, r3] = await Promise.all([
+    fetchSheetValuesV2(env, token, range1),
+    fetchSheetValuesV2(env, token, range2),
+    fetchSheetValuesV2(env, token, range3),
+  ]);
+
+  // 构建与 feishu-douyin-sales.js 一致的数据结构
+  const d1 = r1.data || {};
+  const d2 = r2.data || {};
+  const d3 = r3.data || {};
+  const vr1 = d1.valueRange || {};
+  const vr2 = d2.valueRange || {};
+  const vr3 = d3.valueRange || {};
+
+  return {
+    spreadsheetToken: token,
+    range: range1,
+    range2: range2,
+    range3: range3,
+    revision: d1.revision,
+    revision2: d2.revision,
+    revision3: d3.revision,
+    valueRange: {
+      range: vr1.range || range1,
+      majorDimension: 'ROWS',
+      values: vr1.values || [],
+    },
+    valueRange2: {
+      range: vr2.range || range2,
+      majorDimension: 'ROWS',
+      values: vr2.values || [],
+    },
+    valueRange3: {
+      range: vr3.range || range3,
+      majorDimension: 'ROWS',
+      values: vr3.values || [],
+    },
+  };
 }
 
 async function fetchRawFeishuDouyinDailyTrend(env) {
