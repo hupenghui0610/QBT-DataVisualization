@@ -344,53 +344,28 @@ async function fetchRawFeishuTmallSales(env) {
 }
 
 async function fetchRawFeishuDouyinSales(env) {
-  const { fetchSheetValuesV2 } = await import('../../_lib/feishu.js');
-  const token = env.FEISHU_DOUYIN_SPREADSHEET_TOKEN || 'X2jWseyDuh5invtFhgGcfgnCnWf';
+  // 直接复用 feishu-douyin-sales.js 的完整逻辑，保持数据结构一致
+  const mod = await import('../data/feishu-douyin-sales.js');
 
-  // 三个sheet的默认范围
-  const range1 = env.FEISHU_DOUYIN_LIVE_RANGE || '直播GMV!A1:ZZ20000';
-  const range2 = env.FEISHU_DOUYIN_VIDEO_RANGE || '短视频GMV!A1:ZZ20000';
-  const range3 = env.FEISHU_DOUYIN_OTHER_RANGE || '其他GMV!A1:ZZ20000';
-
-  // 并行获取三个sheet
-  const [r1, r2, r3] = await Promise.all([
-    fetchSheetValuesV2(env, token, range1),
-    fetchSheetValuesV2(env, token, range2),
-    fetchSheetValuesV2(env, token, range3),
-  ]);
-
-  // 构建与 feishu-douyin-sales.js 一致的数据结构
-  const d1 = r1.data || {};
-  const d2 = r2.data || {};
-  const d3 = r3.data || {};
-  const vr1 = d1.valueRange || {};
-  const vr2 = d2.valueRange || {};
-  const vr3 = d3.valueRange || {};
-
-  return {
-    spreadsheetToken: token,
-    range: range1,
-    range2: range2,
-    range3: range3,
-    revision: d1.revision,
-    revision2: d2.revision,
-    revision3: d3.revision,
-    valueRange: {
-      range: vr1.range || range1,
-      majorDimension: 'ROWS',
-      values: vr1.values || [],
-    },
-    valueRange2: {
-      range: vr2.range || range2,
-      majorDimension: 'ROWS',
-      values: vr2.values || [],
-    },
-    valueRange3: {
-      range: vr3.range || range3,
-      majorDimension: 'ROWS',
-      values: vr3.values || [],
-    },
+  // 创建模拟请求上下文
+  const mockRequest = new Request('http://localhost/api/data/feishu-douyin-sales');
+  const mockContext = {
+    request: mockRequest,
+    env: env,
   };
+
+  // 调用 onRequestGet 获取完整处理后的数据
+  const response = await mod.onRequestGet(mockContext);
+
+  // 解析响应体
+  const responseBody = await response.text();
+  const data = JSON.parse(responseBody);
+
+  // 移除缓存标记
+  delete data._cached;
+  delete data._updatedAt;
+
+  return data;
 }
 
 async function fetchRawFeishuDouyinDailyTrend(env) {

@@ -5656,6 +5656,12 @@
         var mapDyDarenShop = parseGmvMapFromValues(douyinSheet1 || [], GMV_DOUYIN_DAREN_SHOP_COL);
         var mapDyLearn = parseGmvMapFromValues(douyinSheet2 || [], GMV_DOUYIN_LEARN_COL);
         var mapDyQinzi = parseGmvMapFromValues(douyinSheet3 || [], GMV_DOUYIN_QINZI_COL);
+
+        // 调试抖音解析结果
+        console.log('[gmvCombinedBuildPoints] 抖音店铺Map:', mapDyShop);
+        console.log('[gmvCombinedBuildPoints] 抖音达人店铺Map:', mapDyDarenShop);
+        console.log('[gmvCombinedBuildPoints] 抖音学习机Map:', mapDyLearn);
+        console.log('[gmvCombinedBuildPoints] 抖音亲子屏Map:', mapDyQinzi);
         var all = {};
         [jdThirdMap, mapLearn, mapQinzi, mapTmShop, mapTmLearn, mapTmQinzi, mapDyShop, mapDyDarenShop, mapDyLearn, mapDyQinzi].forEach(function (mp) {
           Object.keys(mp).forEach(function (d) {
@@ -7191,6 +7197,12 @@
         var dy1 = dyRaw && dyRaw.valueRange && dyRaw.valueRange.values;
         var dy2 = dyRaw && dyRaw.valueRange2 && dyRaw.valueRange2.values;
         var dy3 = dyRaw && dyRaw.valueRange3 && dyRaw.valueRange3.values;
+
+        // 调试抖音数据
+        console.log('[refreshGmvCombined] 抖音原始数据:', dyRaw);
+        console.log('[refreshGmvCombined] 抖音sheet1(直播)行数:', dy1?.length, '样本:', dy1?.slice(0, 3));
+        console.log('[refreshGmvCombined] 抖音sheet2(短视频)行数:', dy2?.length, '样本:', dy2?.slice(0, 3));
+        console.log('[refreshGmvCombined] 抖音sheet3(其他)行数:', dy3?.length, '样本:', dy3?.slice(0, 3));
         // 构建GMV数据
         if ((!tmV || !tmV.length) && (!jdV || !jdV.length) && (!vr1 || !vr1.length) && (!dy1 || !dy1.length) && (!dy2 || !dy2.length) && (!dy3 || !dy3.length)) {
           console.log('[refreshGmvCombined] 所有数据源为空');
