@@ -1,6 +1,10 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
+import { getCache, setCache } from '../../_lib/cache.js';
+
+var CACHE_KEY = 'feishu-gmv-combined';
+var CACHE_TTL_HOURS = 48;
 
 /** 天猫表 token */
 var DEFAULT_TMALL_TOKEN = 'WkFuwdxnhio6AckVEeQcohMAnpc';
@@ -332,6 +336,21 @@ export async function onRequestGet(context) {
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
 
+  // 优先读取缓存
+  var cached = await getCache(env, CACHE_KEY);
+  console.log('[feishu-gmv-combined] 缓存查询结果:', cached ? '命中' : '未命中');
+  if (cached) {
+    console.log('[feishu-gmv-combined] 缓存数据更新时间:', new Date(cached.updatedAt).toISOString());
+    return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        ...corsHeaders(origin),
+      },
+    });
+  }
+
   if (!env.FEISHU_APP_ID || !env.FEISHU_APP_SECRET) {
     return jsonResponse(
       { error: '服务器未配置飞书应用，请在 Pages 环境变量中设置 FEISHU_APP_ID、FEISHU_APP_SECRET' },
@@ -431,6 +450,13 @@ export async function onRequestGet(context) {
     var hStatsMerged = statsHColumn(mergedTmall, hCol);
     var hStatsFmt = tmFmtOk ? statsHColumn(vrTmFmt, hCol) : null;
     var hStatsUnf = tmUnfOk ? statsHColumn(vrTmUnf, hCol) : null;
+
+    // 调试：输出天猫GSV(H列)统计
+    console.log('[feishu-gmv-combined] 天猫数据行数:', mergedTmall.length);
+    console.log('[feishu-gmv-combined] 天猫H列(GSV)统计:', JSON.stringify(hStatsMerged));
+    console.log('[feishu-gmv-combined] 天猫G列(GMV)统计:', JSON.stringify(statsGridColumn(mergedTmall, 6)));
+    console.log('[feishu-gmv-combined] 天猫K列(学习机)统计:', JSON.stringify(statsGridColumn(mergedTmall, 10)));
+    console.log('[feishu-gmv-combined] 天猫M列(亲子屏)统计:', JSON.stringify(statsGridColumn(mergedTmall, 12)));
 
     var mergedJd = [];
     var jdFinalRange = '';
@@ -554,6 +580,9 @@ export async function onRequestGet(context) {
         gColumnStatsMerged: jd2GStats,
       },
     };
+
+    // 写入缓存
+    await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
 
     return new Response(JSON.stringify(payload), {
       status: 200,

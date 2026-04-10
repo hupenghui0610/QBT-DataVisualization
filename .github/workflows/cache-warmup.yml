@@ -1,0 +1,51 @@
+name: Cache Warmup
+
+on:
+  schedule:
+    # UTC时间：12:00 和 16:00
+    # 北京时间：20:00 和 00:00
+    - cron: "0 12,16 * * *"
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  warmup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Warmup
+        run: |
+          echo "Triggering cache warmup at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+          # 调用缓存刷新接口
+          response=$(curl -s -w "\n%{http_code}" -X POST "${{ vars.SITE_URL }}/api/admin/cache-warmup" \
+            -H "Authorization: Bearer ${{ secrets.ADMIN_API_TOKEN }}")
+
+          # 分离响应体和状态码
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response HTTP Code: $http_code"
+          echo "Response Body: $body"
+
+          # 检查响应
+          if [ "$http_code" != "200" ]; then
+            echo "Cache warmup failed with HTTP code: $http_code"
+            exit 1
+          fi
+
+          # 解析JSON响应
+          success=$(echo "$body" | jq -r '.success // false')
+          success_count=$(echo "$body" | jq -r '.successCount // 0')
+          failed_count=$(echo "$body" | jq -r '.failedCount // 0')
+          duration=$(echo "$body" | jq -r '.totalDuration // 0')
+
+          echo "Success: $success"
+          echo "Success Count: $success_count"
+          echo "Failed Count: $failed_count"
+          echo "Duration: ${duration}ms"
+
+          if [ "$success" != "true" ]; then
+            echo "Cache warmup completed with failures"
+            exit 1
+          fi
+
+          echo "Cache warmup completed successfully!"

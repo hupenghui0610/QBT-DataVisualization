@@ -11,6 +11,15 @@ export function publicUser(row) {
 }
 
 /**
+ * 检查用户是否是管理员
+ * @param {Object} user - publicUser返回的用户对象
+ * @returns {boolean}
+ */
+export function isAdmin(user) {
+  return !!(user && user.is_admin);
+}
+
+/**
  * @returns {{ user: object, row: object } | { error: Response }}
  */
 export async function authenticateRequest(request, env) {

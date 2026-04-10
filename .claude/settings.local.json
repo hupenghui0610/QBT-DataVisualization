@@ -11,7 +11,13 @@
       "Bash(node --check dist/charts.html)",
       "Bash(npx serve:*)",
       "Bash(git add:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(node:*)",
+      "Bash(wrangler:*)",
+      "Bash(npm install:*)",
+      "Bash(awk:*)",
+      "Bash(ls functions/api/data/*.js)",
+      "Bash(grep:*)"
     ]
   }
 }

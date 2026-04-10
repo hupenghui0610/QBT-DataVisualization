@@ -1,6 +1,10 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
+import { getCache, setCache } from '../../_lib/cache.js';
+
+var CACHE_KEY = 'feishu-douyin-sales';
+var CACHE_TTL_HOURS = 48;
 
 /** 抖音 wiki 对应的底层 spreadsheet token，可被环境变量覆盖 */
 var DEFAULT_SPREADSHEET_TOKEN = 'X2jWseyDuh5invtFhgGcfgnCnWf';
@@ -130,6 +134,19 @@ export async function onRequestGet(context) {
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
 
+  // 优先读取缓存
+  var cached = await getCache(env, CACHE_KEY);
+  if (cached) {
+    return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        ...corsHeaders(origin),
+      },
+    });
+  }
+
   if (!env.FEISHU_APP_ID || !env.FEISHU_APP_SECRET) {
     return jsonResponse(
       { error: '服务器未配置飞书应用，请在 Pages 环境变量中设置 FEISHU_APP_ID、FEISHU_APP_SECRET' },
@@ -190,6 +207,9 @@ export async function onRequestGet(context) {
       valueRange2: { range: vr2.range || range2, majorDimension: 'ROWS', values: m2.values || [] },
       valueRange3: { range: vr3.range || range3, majorDimension: 'ROWS', values: m3.values || [] },
     };
+
+    // 写入缓存
+    await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
 
     return new Response(JSON.stringify(payload), {
       status: 200,

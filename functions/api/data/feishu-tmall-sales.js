@@ -1,11 +1,14 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
+import { getCache, setCache } from '../../_lib/cache.js';
 
 /** 天猫在线表格：可被 FEISHU_TMALL_SPREADSHEET_TOKEN 覆盖 */
 var DEFAULT_SPREADSHEET_TOKEN = 'WkFuwdxnhio6AckVEeQcohMAnpc';
 /** AY 及以后为型号列，需足够宽；可被 FEISHU_TMALL_SHEET_RANGE 覆盖 */
 var DEFAULT_RANGE = '2joAvv!A1:ZZ20000';
+var CACHE_KEY = 'feishu-tmall-sales';
+var CACHE_TTL_HOURS = 48;
 
 function splitRange(range) {
   var i = String(range || '').indexOf('!');
@@ -139,6 +142,19 @@ export async function onRequestGet(context) {
     );
   }
 
+  // 优先读取缓存
+  var cached = await getCache(env, CACHE_KEY);
+  if (cached) {
+    return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        ...corsHeaders(origin),
+      },
+    });
+  }
+
   var spreadsheetToken = env.FEISHU_TMALL_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
   var range = env.FEISHU_TMALL_SHEET_RANGE || DEFAULT_RANGE;
 
@@ -183,6 +199,8 @@ export async function onRequestGet(context) {
         values: mergedValues,
       },
     };
+    // 写入缓存
+    await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: {
