@@ -1,0 +1,301 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/admin/access-logs",
+      "mountPath": "/api/admin",
+      "method": "GET",
+      "module": [
+        "api/admin/access-logs.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/admin/access-logs",
+      "mountPath": "/api/admin",
+      "method": "OPTIONS",
+      "module": [
+        "api/admin/access-logs.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/admin/login-security-events",
+      "mountPath": "/api/admin",
+      "method": "GET",
+      "module": [
+        "api/admin/login-security-events.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/admin/login-security-events",
+      "mountPath": "/api/admin",
+      "method": "OPTIONS",
+      "module": [
+        "api/admin/login-security-events.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/admin/users",
+      "mountPath": "/api/admin",
+      "method": "GET",
+      "module": [
+        "api/admin/users.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/admin/users",
+      "mountPath": "/api/admin",
+      "method": "OPTIONS",
+      "module": [
+        "api/admin/users.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/admin/users",
+      "mountPath": "/api/admin",
+      "method": "POST",
+      "module": [
+        "api/admin/users.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/auth/change-password",
+      "mountPath": "/api/auth",
+      "method": "OPTIONS",
+      "module": [
+        "api/auth/change-password.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/auth/change-password",
+      "mountPath": "/api/auth",
+      "method": "POST",
+      "module": [
+        "api/auth/change-password.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/auth/login",
+      "mountPath": "/api/auth",
+      "method": "OPTIONS",
+      "module": [
+        "api/auth/login.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/auth/login",
+      "mountPath": "/api/auth",
+      "method": "POST",
+      "module": [
+        "api/auth/login.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/auth/ping",
+      "mountPath": "/api/auth",
+      "method": "OPTIONS",
+      "module": [
+        "api/auth/ping.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/auth/ping",
+      "mountPath": "/api/auth",
+      "method": "POST",
+      "module": [
+        "api/auth/ping.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/data/features-brand-top10",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/features-brand-top10.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/features-brand-top10",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/features-brand-top10.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/features-output",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/features-output.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/features-output",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/features-output.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-channel-order-trend",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-channel-order-trend.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-channel-order-trend",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-channel-order-trend.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-daily-sales",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-daily-sales.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-daily-sales",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-daily-sales.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-douyin-daily-trend",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-douyin-daily-trend.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-douyin-daily-trend",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-douyin-daily-trend.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-douyin-model-distribution",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-douyin-model-distribution.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-douyin-model-distribution",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-douyin-model-distribution.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-douyin-sales",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-douyin-sales.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-douyin-sales",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-douyin-sales.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-gmv-combined",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-gmv-combined.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-gmv-combined",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-gmv-combined.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-livestream-funnel",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-livestream-funnel.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-livestream-funnel",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-livestream-funnel.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-newretail-daily",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-newretail-daily.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-newretail-daily",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-newretail-daily.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-tmall-sales",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/feishu-tmall-sales.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/feishu-tmall-sales",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/feishu-tmall-sales.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/data/monthly-cumulative-summary",
+      "mountPath": "/api/data",
+      "method": "GET",
+      "module": [
+        "api/data/monthly-cumulative-summary.js:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/data/monthly-cumulative-summary",
+      "mountPath": "/api/data",
+      "method": "OPTIONS",
+      "module": [
+        "api/data/monthly-cumulative-summary.js:onRequestOptions"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}

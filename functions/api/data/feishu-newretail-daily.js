@@ -1,6 +1,6 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
-import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
+import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
 import {
   PLATFORM_CONFIG,
   CHANNEL_MAP_CONFIG,
@@ -97,6 +97,17 @@ export async function onRequestGet(context) {
     // 重置未匹配达人ID统计（每次请求开始时清空）
     globalThis.__unmatchedDarenIds = new Set();
     globalThis.__unmatchedDarenStats = {};
+
+    // DEBUG: 先列出所有sheet，确认sheetId
+    var sheetsJson = await fetchSpreadsheetSheetsV3(env, spreadsheetToken);
+    console.log('[DEBUG] 飞书表格所有sheet列表:');
+    if (sheetsJson && sheetsJson.code === 0 && sheetsJson.data && sheetsJson.data.sheets) {
+      sheetsJson.data.sheets.forEach(function(sheet) {
+        console.log('  sheet_id:', sheet.sheet_id, 'title:', sheet.title);
+      });
+    } else {
+      console.log('  获取失败:', sheetsJson?.code, sheetsJson?.msg);
+    }
 
     // 1. 读取渠道映射表
     var chRange = CHANNEL_MAP_CONFIG.sheetId + '!A1:E2000';
