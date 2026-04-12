@@ -152,9 +152,11 @@ export async function onRequestGet(context) {
 
       return fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'FormattedValue' })
         .then(function(result) {
+          console.log('[' + platform + '] 飞书返回: code=' + (result?.code) + ', rows=' + (result?.data?.valueRange?.values?.length || 0));
           if (result && result.code === 0) {
             return { platform: platform, values: result.data?.valueRange?.values || [] };
           }
+          console.error('[' + platform + '] 飞书读取失败:', result?.code, result?.msg);
           return { platform: platform, values: [] };
         })
         .catch(function(e) {
@@ -164,6 +166,25 @@ export async function onRequestGet(context) {
     });
 
     var platformResults = await Promise.all(platformPromises);
+
+    // DEBUG: 详细输出抖音数据情况
+    platformResults.forEach(function(result) {
+      if (result.platform === 'douyin' && result.values && result.values.length > 1) {
+        console.log('[DEBUG-douyin] 总行数(含表头):', result.values.length);
+        console.log('[DEBUG-douyin] 表头列数:', result.values[0].length);
+        console.log('[DEBUG-douyin] 第一行数据列数:', result.values[1].length);
+        console.log('[DEBUG-douyin] 需要的最小列索引(AO=40):', PLATFORM_CONFIG.douyin.cols.darenId);
+        console.log('[DEBUG-douyin] 第一行数据样例(0-10列):', result.values[1].slice(0, 11));
+        console.log('[DEBUG-douyin] 第一行AO列(40)值:', result.values[1][40]);
+        console.log('[DEBUG-douyin] 第一行AK列(36)值:', result.values[1][36]);
+        // 检查是否有行被截断
+        let truncatedRows = 0;
+        for (let i = 1; i < Math.min(result.values.length, 10); i++) {
+          if (result.values[i].length <= 40) truncatedRows++;
+        }
+        console.log('[DEBUG-douyin] 前10行中列数<=40的行数:', truncatedRows);
+      }
+    });
 
     // 3. 处理订单数据 - GMV（所有订单）
     var allOrdersGmv = [];
@@ -334,6 +355,10 @@ export async function onRequestGet(context) {
 
     var payload = {
       mode: 'daily',
+      // 顶层 daily/weekly/monthly 用于兼容前端旧版渲染
+      daily: dailyPointsGsv,
+      weekly: weeklyPointsGsv,
+      monthly: monthlyPointsGsv,
       gmv: {
         daily: dailyPointsGmv,
         weekly: weeklyPointsGmv,
