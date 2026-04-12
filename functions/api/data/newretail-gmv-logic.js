@@ -175,13 +175,6 @@ function buildChannelMaps(chValues) {
     }
   }
 
-  // 调试：检查上海标竿是否存在
-  const hasShanghaiBiaogan = channelList.some(c => c.includes('上海标竿'));
-  console.log('[渠道映射] 总渠道数:', channelList.length, '包含上海标竿:', hasShanghaiBiaogan);
-  if (hasShanghaiBiaogan) {
-    console.log('[渠道映射] 上海标竿相关渠道:', channelList.filter(c => c.includes('上海标竿')));
-  }
-
   return { darenIdToChannel, shipinhaoNameToChannel };
 }
 
@@ -365,9 +358,6 @@ function processPlatformOrdersGsv(values, platform, channelMaps) {
     });
   }
 
-  // 调试输出
-  console.log(`[${platform}] GSV处理: 总${values.length-1}条, 跳过${skipCount}条, 保留${orders.length}条`);
-
   return { orders, skipCount, debugSkipped: debugLog };
 }
 
@@ -469,11 +459,6 @@ function processPlatformOrders(values, platform, channelMaps) {
       product: row[cfg.cols.product] || ''
     });
     stats.final++;
-  }
-
-  // 调试输出
-  if (platform === 'xiaohongshu' || platform === 'douyin') {
-    console.log(`[${platform}] GMV处理: 总${stats.totalRows}行, 有支付时间${stats.hasTime}, 保留${stats.final}`);
   }
 
   return { orders, stats };

@@ -234,12 +234,6 @@ export async function onRequestGet(context) {
     var fuwuTotalsWeekly = calculateFuwuTotalsByChannel(fuwuByChannelWeekly, fuwuByChannelGsvWeekly);
     var fuwuTotalsMonthly = calculateFuwuTotalsByChannel(fuwuByChannelMonthly, fuwuByChannelGsvMonthly);
 
-    // 调试：输出GSV服务商订单统计
-    var fuwuOrdersGsv = allOrdersGsv.filter(function(o) { return o.category === 'fuwu'; });
-    console.log('[GSV服务商统计] 总订单数:', allOrdersGsv.length, '服务商订单数:', fuwuOrdersGsv.length);
-    console.log('[GSV服务商统计] channels:', fuwuByChannelGsv.channels);
-    console.log('[GSV服务商统计] data长度:', fuwuByChannelGsv.data.length);
-
     // 4g. DP按渠道汇总（仿照服务商）
     var dpByChannel = aggregateDpByChannel(allOrdersGmv);
     var dpByChannelWeekly = aggregateDpByChannelWeekly(dpByChannel.data);
