@@ -24,7 +24,16 @@
       "Bash(curl -s -X POST \"https://2b28edcf.qbt-datavisualization.pages.dev/api/admin/cache-warmup\" -H \"Content-Type: application/json\" -d '{\"token\":\"test\"}' -v)",
       "Bash(git reset:*)",
       "WebFetch(domain:68bb23f9.qbt-datavisualization.pages.dev)",
-      "Bash(curl -s \"https://24804f4c.qbt-datavisualization.pages.dev/api/data/feishu-livestream-funnel\" -H \"Authorization: Bearer test\")"
+      "Bash(curl -s \"https://24804f4c.qbt-datavisualization.pages.dev/api/data/feishu-livestream-funnel\" -H \"Authorization: Bearer test\")",
+      "Bash(git checkout:*)",
+      "Bash(git fetch:*)",
+      "Bash(find . -type f \\\\\\( -name \"*.js\" -o -name \"*.html\" -o -name \"*.css\" \\\\\\) -not -path \"./node_modules/*\" -not -path \"./.git/*\" -not -path \"./.claude/*\" -exec wc -l {} +)",
+      "Bash(sed 's/.*\\\\.//')",
+      "Bash(ls -la *.html)",
+      "Bash(dir *.html /b)",
+      "Bash(dir dist:*)",
+      "Bash(cp index.html dist/index.html)",
+      "Bash(cp charts.html dist/charts.html)"
     ]
   }
 }

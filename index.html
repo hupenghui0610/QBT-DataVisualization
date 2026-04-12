@@ -5152,8 +5152,16 @@
         var pts = window.douyinDailyTrendPointsDailyCached || [];
         var datesFromData = pts.map(function (p) {
           return p.date;
-        });
-        var def = defaultJdDailyFilterRange();
+        }).filter(Boolean).sort();
+
+        // 使用数据实际日期范围作为默认值
+        var def;
+        if (datesFromData.length > 0) {
+          def = { start: datesFromData[0], end: datesFromData[datesFromData.length - 1] };
+        } else {
+          def = defaultJdDailyFilterRange();
+        }
+
         var merged = {};
         datesFromData.forEach(function (d) {
           if (d) merged[d] = true;

@@ -5,6 +5,10 @@ import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.
 var DEFAULT_SPREADSHEET_TOKEN = 'P1zusUMg2haMGctskH6cydLqn5e';
 var DEFAULT_ORDER_RANGE = 'tuec5U!A2:AO20000';
 
+/** 优化：只读取必要列 */
+var REQUIRED_COLS = ['C', 'E', 'AH', 'AK', 'AO'];
+var COL_INDEX_MAP = { 'C': 2, 'E': 4, 'AH': 33, 'AK': 36, 'AO': 40 };
+
 var COL_C = 2;
 /** 订单宽表 E 列：商品数量（累加到型号；与 I 列金额无关） */
 var COL_E = 4;
@@ -127,6 +131,44 @@ function orderRangeHasColumnC(orderRange) {
   return /^A/i.test(frag) || /^B/i.test(frag) || /^C/i.test(frag);
 }
 
+/** 从range提取sheetId */
+function extractSheetId(range) {
+  var bang = range.indexOf('!');
+  if (bang < 0) return null;
+  return range.slice(0, bang);
+}
+
+/** 读取单列数据 */
+async function fetchSingleColumn(env, spreadsheetToken, sheetId, colLetter, startRow, endRow) {
+  var range = sheetId + '!' + colLetter + startRow + ':' + colLetter + endRow;
+  var result = await fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'FormattedValue' });
+  if (!result || result.code !== 0) {
+    return { success: false, error: result?.msg || '读取失败', code: result?.code };
+  }
+  var values = (result.data && result.data.valueRange && result.data.valueRange.values) || [];
+  return { success: true, values: values };
+}
+
+/** 合并多列数据为行格式 */
+function mergeColumnsToRows(columns, rowCount) {
+  var result = [];
+  for (var i = 0; i < rowCount; i++) {
+    var row = new Array(41).fill(''); // AO列是第40索引
+    // C列
+    if (columns.C && columns.C[i]) row[COL_C] = columns.C[i][0];
+    // E列
+    if (columns.E && columns.E[i]) row[COL_E] = columns.E[i][0];
+    // AH列
+    if (columns.AH && columns.AH[i]) row[COL_AH] = columns.AH[i][0];
+    // AK列
+    if (columns.AK && columns.AK[i]) row[COL_AK] = columns.AK[i][0];
+    // AO列
+    if (columns.AO && columns.AO[i]) row[COL_AO] = columns.AO[i][0];
+    result.push(row);
+  }
+  return result;
+}
+
 export async function onRequestGet(context) {
   var request = context.request;
   var env = context.env;
@@ -195,15 +237,47 @@ export async function onRequestGet(context) {
     var rowsAB = (mapJson.data && mapJson.data.valueRange && mapJson.data.valueRange.values) || [];
     var rules = buildRulesSorted(rowsAB);
 
-    var orderJson = await fetchSheetValuesV2(env, spreadsheetToken, orderRange, { valueRenderOption: 'FormattedValue' });
-    if (!orderJson || orderJson.code !== 0) {
-      return jsonResponse(
-        { error: (orderJson && orderJson.msg) || '读取订单表失败', feishuCode: orderJson && orderJson.code },
-        502,
-        origin
-      );
+    // 优化：分批次读取必要列，减少数据传输
+    var sheetId = extractSheetId(orderRange);
+    if (!sheetId) {
+      return jsonResponse({ error: '无法解析sheetId' }, 400, origin);
     }
-    var ordValues = (orderJson.data && orderJson.data.valueRange && orderJson.data.valueRange.values) || [];
+
+    // 并行读取5个必要列
+    var colResults = await Promise.all([
+      fetchSingleColumn(env, spreadsheetToken, sheetId, 'C', 2, 20000),   // 商品名
+      fetchSingleColumn(env, spreadsheetToken, sheetId, 'E', 2, 20000),   // 数量
+      fetchSingleColumn(env, spreadsheetToken, sheetId, 'AH', 2, 20000),  // 日期
+      fetchSingleColumn(env, spreadsheetToken, sheetId, 'AK', 2, 20000),  // 状态
+      fetchSingleColumn(env, spreadsheetToken, sheetId, 'AO', 2, 20000),  // 达人ID
+    ]);
+
+    // 检查读取结果
+    var errors = [];
+    colResults.forEach(function(r, idx) {
+      if (!r.success) errors.push(REQUIRED_COLS[idx] + ':' + r.error);
+    });
+    if (errors.length > 0) {
+      return jsonResponse({ error: '读取列失败: ' + errors.join(', ') }, 502, origin);
+    }
+
+    // 计算实际行数
+    var actualRowCount = Math.max(
+      colResults[0].values.length,
+      colResults[1].values.length,
+      colResults[2].values.length,
+      colResults[3].values.length,
+      colResults[4].values.length
+    );
+
+    // 合并列为行格式
+    var ordValues = mergeColumnsToRows({
+      C: colResults[0].values,
+      E: colResults[1].values,
+      AH: colResults[2].values,
+      AK: colResults[3].values,
+      AO: colResults[4].values
+    }, actualRowCount);
 
     var qtyDp = {};
     var qtyDaren = {};
