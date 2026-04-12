@@ -6,6 +6,14 @@ import industryBuilder from '../../../shared/industry-data-builder.cjs';
 
 var DEFAULT_LAST_ROW = 20000;
 
+async function sha256Hex(s) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  var arr = new Uint8Array(buf);
+  var hex = '';
+  for (var i = 0; i < arr.length; i++) hex += arr[i].toString(16).padStart(2, '0');
+  return hex;
+}
+
 function sortSheetsByUiIndex(sheets) {
   var arr = (sheets || []).slice();
   arr.sort(function (a, b) {
@@ -41,6 +49,8 @@ export async function onRequestGet(context) {
   var request = context.request;
   var env = context.env;
   var origin = request.headers.get('Origin') || undefined;
+  var url = new URL(request.url);
+  var forceRefresh = url.searchParams.get('refresh') === '1' || url.searchParams.get('nocache') === '1';
 
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
@@ -64,6 +74,28 @@ export async function onRequestGet(context) {
 
   try {
     var range = await resolveSheetRange(env, spreadsheetToken, 1, env.FEISHU_INDUSTRY_BRAND_RANGE);
+
+    // 缓存逻辑：除非强制刷新，否则先尝试读取缓存
+    var cacheRequest = null;
+    if (!forceRefresh) {
+      var keyPayload = 'industry:brand:' + spreadsheetToken + ':' + range;
+      var hash = await sha256Hex(keyPayload);
+      cacheRequest = new Request('https://industry-brand.cache/' + hash);
+      var hit = await caches.default.match(cacheRequest);
+      if (hit) {
+        var body = await hit.text();
+        return new Response(body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': 'private, no-store',
+            'X-QBT-Industry-Brand-Cache': 'HIT',
+            ...corsHeaders(origin),
+          },
+        });
+      }
+    }
+
     var feishuJson = await fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'UnformattedValue' });
     if (!feishuJson || feishuJson.code !== 0) {
       return jsonResponse(
@@ -74,14 +106,35 @@ export async function onRequestGet(context) {
     }
     var values = (feishuJson.data && feishuJson.data.valueRange && feishuJson.data.valueRange.values) || [];
     var payload = industryBuilder.buildBrandPayloadFromValues(values, 'feishu:' + range);
-    return new Response(JSON.stringify(payload), {
+    var jsonBody = JSON.stringify(payload);
+
+    var res = new Response(jsonBody, {
       status: 200,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'Cache-Control': 'private, no-store',
+        'X-QBT-Industry-Brand-Cache': forceRefresh ? 'REFRESH' : 'MISS',
         ...corsHeaders(origin),
       },
     });
+
+    // 写入缓存，缓存30天（2592000秒）
+    if (cacheRequest || !forceRefresh) {
+      try {
+        var cacheReq = cacheRequest || new Request('https://industry-brand.cache/' + await sha256Hex('industry:brand:' + spreadsheetToken + ':' + range));
+        await caches.default.put(
+          cacheReq,
+          new Response(jsonBody, {
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Cache-Control': 'max-age=2592000',
+            },
+          })
+        );
+      } catch (ePut) {}
+    }
+
+    return res;
   } catch (e) {
     return jsonResponse(
       { error: '拉取行业品牌数据失败', detail: e && e.message ? e.message : String(e) },

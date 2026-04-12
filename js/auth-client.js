@@ -89,6 +89,30 @@
     return fetch(url, opts);
   }
 
+  /** 性能监控：包装 fetch 请求，记录耗时 */
+  function timedFetch(name, fetchFn) {
+    return function () {
+      var args = arguments;
+      var start = performance.now();
+      var label = '[API] ' + name;
+      console.time(label);
+      return fetchFn.apply(null, args).then(
+        function (res) {
+          var duration = performance.now() - start;
+          console.timeEnd(label);
+          console.log('[Perf] ' + name + ' 耗时: ' + duration.toFixed(2) + 'ms');
+          return res;
+        },
+        function (err) {
+          var duration = performance.now() - start;
+          console.timeEnd(label);
+          console.log('[Perf] ' + name + ' 失败, 耗时: ' + duration.toFixed(2) + 'ms');
+          throw err;
+        }
+      );
+    };
+  }
+
   global.XbsAuth = {
     TOKEN_KEY: TOKEN_KEY,
     /** 调试用：在控制台看当前 API 根，空字符串表示与页面同源（线上） */
@@ -98,28 +122,28 @@
     clearSession: function () {
       setToken(null);
     },
-    login: function (phone, password) {
+    login: timedFetch('login', function (phone, password) {
       return fetch(getApiBase() + '/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: phone, password: password }),
       });
-    },
-    ping: function () {
+    }),
+    ping: timedFetch('ping', function () {
       return fetch(getApiBase() + '/api/auth/ping', {
         method: 'POST',
         headers: authHeaders(),
         body: '{}',
       });
-    },
-    changePassword: function (oldPassword, newPassword) {
+    }),
+    changePassword: timedFetch('changePassword', function (oldPassword, newPassword) {
       return fetch(getApiBase() + '/api/auth/change-password', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ oldPassword: oldPassword, newPassword: newPassword }),
       });
-    },
-    fetchAccessLogs: function (limit, offset) {
+    }),
+    fetchAccessLogs: timedFetch('fetchAccessLogs', function (limit, offset) {
       var l = limit != null ? limit : 20;
       var o = offset != null ? offset : 0;
       return fetch(
@@ -129,8 +153,8 @@
           headers: authHeaders(),
         }
       );
-    },
-    fetchLoginSecurityEvents: function (limit, offset) {
+    }),
+    fetchLoginSecurityEvents: timedFetch('fetchLoginSecurityEvents', function (limit, offset) {
       var l = limit != null ? limit : 20;
       var o = offset != null ? offset : 0;
       return fetch(
@@ -140,56 +164,58 @@
           headers: authHeaders(),
         }
       );
-    },
-    fetchAdminUsers: function () {
+    }),
+    fetchAdminUsers: timedFetch('fetchAdminUsers', function () {
       return fetch(getApiBase() + '/api/admin/users', {
         method: 'GET',
         headers: authHeaders(),
       });
-    },
-    createAdminUser: function (name, phone, password) {
+    }),
+    createAdminUser: timedFetch('createAdminUser', function (name, phone, password) {
       return fetch(getApiBase() + '/api/admin/users', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ name: name, phone: phone, password: password }),
       });
-    },
+    }),
     /** 需登录；默认大盘 JSON（与 data/features-output.json 同源，经 Functions 鉴权） */
-    fetchFeaturesOutput: function () {
-      return fetch(getApiBase() + '/api/data/features-output', {
+    fetchFeaturesOutput: timedFetch('fetchFeaturesOutput', function (refresh) {
+      var qs = refresh ? '?refresh=1' : '';
+      return fetch(getApiBase() + '/api/data/features-output' + qs, {
         method: 'GET',
         headers: authHeaders(),
       });
-    },
+    }),
     /** 需登录；默认分品牌 JSON */
-    fetchFeaturesBrandTop10: function () {
-      return fetch(getApiBase() + '/api/data/features-brand-top10', {
+    fetchFeaturesBrandTop10: timedFetch('fetchFeaturesBrandTop10', function (refresh) {
+      var qs = refresh ? '?refresh=1' : '';
+      return fetch(getApiBase() + '/api/data/features-brand-top10' + qs, {
         method: 'GET',
         headers: authHeaders(),
       });
-    },
+    }),
     /** 需登录；飞书日销在线表格（Pages Functions 代理飞书 API） */
-    fetchFeishuDailySales: function () {
+    fetchFeishuDailySales: timedFetch('fetchFeishuDailySales', function () {
       return fetchGetWithTimeout('/api/data/feishu-daily-sales', 90000);
-    },
+    }),
     /** 需登录；飞书天猫在线表格（Pages Functions 代理飞书 API） */
-    fetchFeishuTmallSales: function () {
+    fetchFeishuTmallSales: timedFetch('fetchFeishuTmallSales', function () {
       return fetchGetWithTimeout('/api/data/feishu-tmall-sales', 90000);
-    },
+    }),
     /** 需登录；天猫 A:G/H + 京东表第三 sheet A:F（F 列 GMV，服务端合并公式计算值） */
-    fetchFeishuGmvCombined: function () {
+    fetchFeishuGmvCombined: timedFetch('fetchFeishuGmvCombined', function () {
       return fetchGetWithTimeout('/api/data/feishu-gmv-combined', 90000);
-    },
+    }),
     /** 需登录；抖音自播 GMV（三张 sheet） */
-    fetchFeishuDouyinSales: function () {
+    fetchFeishuDouyinSales: timedFetch('fetchFeishuDouyinSales', function () {
       return fetchGetWithTimeout('/api/data/feishu-douyin-sales', 90000);
-    },
+    }),
     /** 需登录；抖音日度趋势（DP/达人） */
-    fetchFeishuDouyinDailyTrend: function () {
+    fetchFeishuDouyinDailyTrend: timedFetch('fetchFeishuDouyinDailyTrend', function () {
       return fetchGetWithTimeout('/api/data/feishu-douyin-daily-trend', 90000);
-    },
+    }),
     /** 需登录；抖音订单 DP/达人 型号金额分布（sheet3 映射 + 订单宽表） */
-    fetchFeishuDouyinModelDistribution: function (start, end) {
+    fetchFeishuDouyinModelDistribution: timedFetch('fetchFeishuDouyinModelDistribution', function (start, end) {
       var qs = '';
       if (start && end && String(start) <= String(end)) {
         qs =
@@ -199,19 +225,19 @@
           encodeURIComponent(String(end));
       }
       return fetchGetWithTimeout('/api/data/feishu-douyin-model-distribution' + qs, 120000);
-    },
+    }),
     /** 需登录；渠道×日订单支付金额（飞书订单明细+渠道映射聚合） */
     /** 达播趋势：与页面 CHANNEL_ORDER_TREND_FETCH_TIMEOUT_MS、看门狗一致（当前 600s） */
-    fetchFeishuChannelOrderTrend: function () {
+    fetchFeishuChannelOrderTrend: timedFetch('fetchFeishuChannelOrderTrend', function () {
       return fetchGetWithTimeout('/api/data/feishu-channel-order-trend', 600000);
-    },
+    }),
     /** 需登录；新零售四平台GMV/GSV日趋势（DP/直对/服务商分类） */
-    fetchFeishuNewretailDaily: function () {
+    fetchFeishuNewretailDaily: timedFetch('fetchFeishuNewretailDaily', function () {
       return fetchGetWithTimeout('/api/data/feishu-newretail-daily', 120000);
-    },
+    }),
     /** 需登录；直播间转化漏斗（sheet4 B/H/K/X/Y 按主播聚合） */
-    fetchFeishuLivestreamFunnel: function () {
+    fetchFeishuLivestreamFunnel: timedFetch('fetchFeishuLivestreamFunnel', function () {
       return fetchGetWithTimeout('/api/data/feishu-livestream-funnel', 90000);
-    },
+    }),
   };
 })(typeof window !== 'undefined' ? window : globalThis);

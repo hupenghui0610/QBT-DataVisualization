@@ -166,6 +166,11 @@ function aggregateByAnchor(values, startDate, endDate) {
   };
 }
 
+// 简单的内存缓存（后端缓存飞书原始数据，5分钟）
+var __livestreamCache = null;
+var __livestreamCacheTime = 0;
+var CACHE_TTL_MS = 5 * 60 * 1000; // 5分钟
+
 export async function onRequestGet(context) {
   var request = context.request;
   var env = context.env;
@@ -192,32 +197,50 @@ export async function onRequestGet(context) {
   var endDate = url.searchParams.get('endDate');
 
   try {
-    var feishuJson = await fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'FormattedValue' });
-    if (!feishuJson || feishuJson.code !== 0) {
-      return jsonResponse(
-        {
-          error: (feishuJson && feishuJson.msg) || '飞书表格接口返回错误',
-          feishuCode: feishuJson && feishuJson.code,
-          range: range,
-        },
-        502,
-        origin
-      );
+    var values = null;
+    var now = Date.now();
+
+    // 检查缓存
+    if (__livestreamCache && __livestreamCache.token === spreadsheetToken && (now - __livestreamCacheTime) < CACHE_TTL_MS) {
+      values = __livestreamCache.values;
+    } else {
+      // 缓存未命中，请求飞书
+      var feishuJson = await fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'FormattedValue' });
+      if (!feishuJson || feishuJson.code !== 0) {
+        return jsonResponse(
+          {
+            error: (feishuJson && feishuJson.msg) || '飞书表格接口返回错误',
+            feishuCode: feishuJson && feishuJson.code,
+            range: range,
+          },
+          502,
+          origin
+        );
+      }
+      var data = feishuJson.data || {};
+      var vr = data.valueRange || {};
+      values = vr.values || [];
+
+      // 更新缓存
+      __livestreamCache = {
+        token: spreadsheetToken,
+        values: values
+      };
+      __livestreamCacheTime = now;
     }
-    var data = feishuJson.data || {};
-    var vr = data.valueRange || {};
-    var values = vr.values || [];
+
     var result = aggregateByAnchor(values, startDate, endDate);
     var anchors = result.anchors;
     var debug = result.debug;
     var payload = {
       spreadsheetToken: spreadsheetToken,
       range: range,
-      revision: data.revision,
+      revision: __livestreamCache ? __livestreamCache.revision : null,
       anchors: anchors,
       startDate: startDate,
       endDate: endDate,
-      debug: debug
+      debug: debug,
+      cached: !!__livestreamCache && (now - __livestreamCacheTime) < CACHE_TTL_MS
     };
     return new Response(JSON.stringify(payload), {
       status: 200,

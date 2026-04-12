@@ -821,9 +821,11 @@
   </div>
   <div class="load-bar" style="margin-top:24px">
     <span id="loadStatus">登录后自动从飞书加载行业大盘数据。</span>
+    <button type="button" id="refreshIndustryBtn" class="secondary" style="margin-left:12px;display:none">刷新数据</button>
   </div>
   <div class="load-bar">
     <span id="loadStatusBrand">登录后自动从飞书加载行业品牌数据。</span>
+    <span id="cacheStatus" style="margin-left:12px;color:#888;font-size:12px"></span>
   </div>
   </div>
   </div>
@@ -1137,6 +1139,9 @@
               currentUser = o.data.user;
               updateUserBar();
               enterApp();
+              // 显示行业数据刷新按钮
+              var refreshBtn = document.getElementById('refreshIndustryBtn');
+              if (refreshBtn) refreshBtn.style.display = '';
               if (window.__runAfterAuth__) window.__runAfterAuth__();
             })
             .catch(function () {
@@ -1179,6 +1184,9 @@
             currentUser = o.data.user;
             updateUserBar();
             enterApp();
+            // 显示行业数据刷新按钮
+            var refreshBtn = document.getElementById('refreshIndustryBtn');
+            if (refreshBtn) refreshBtn.style.display = '';
             if (window.__runAfterAuth__) window.__runAfterAuth__();
           })
           .catch(function () {
@@ -1202,6 +1210,50 @@
             return { r: r, data: null };
           }
         );
+      }
+
+      /** 性能监控工具 */
+      var PerfMonitor = {
+        timings: {},
+        start: function (name) {
+          this.timings[name] = performance.now();
+          console.time('[Render] ' + name);
+        },
+        end: function (name) {
+          var start = this.timings[name];
+          if (start) {
+            var duration = performance.now() - start;
+            console.timeEnd('[Render] ' + name);
+            console.log('[Perf] ' + name + ' 耗时: ' + duration.toFixed(2) + 'ms');
+            delete this.timings[name];
+            return duration;
+          }
+        },
+        wrap: function (name, fn) {
+          var self = this;
+          return function () {
+            self.start(name);
+            var result = fn.apply(this, arguments);
+            self.end(name);
+            return result;
+          };
+        }
+      };
+
+      /** 包装渲染函数，添加性能监控 */
+      function wrapRenderFunctions() {
+        var renderNames = ['render1','render2','render3','render4','render5','render9'];
+        renderNames.forEach(function (name) {
+          if (typeof window[name] === 'function') {
+            window[name] = PerfMonitor.wrap(name, window[name]);
+          }
+        });
+        var brandRenderNames = ['renderBrand1','renderBrand2','renderBrand3','renderBrand5','renderBrand6','renderBrand7','renderBrand8','renderBrand9'];
+        brandRenderNames.forEach(function (name) {
+          if (typeof window[name] === 'function') {
+            window[name] = PerfMonitor.wrap(name, window[name]);
+          }
+        });
       }
 
       function applyMobileChartOption(opt) {
@@ -1403,6 +1455,7 @@
 
       function renderAll() {
         if (!dataSource) return;
+        PerfMonitor.start('renderAll(总渲染)');
         initDateRangeSelects();
         bindDateRangeChange();
         render1();
@@ -1431,6 +1484,7 @@
             });
           });
         }
+        PerfMonitor.end('renderAll(总渲染)');
       }
 
       // 维度一：渠道 - 柱状图（销量、销售额）+ 右轴客单价，支持时间范围
@@ -1902,6 +1956,7 @@
         ['dimB9Start','dimB9End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB9; });
       }
       function renderBrandAll() {
+        PerfMonitor.start('renderBrandAll(品牌总渲染)');
         var fp = getFenPinPai();
         if (!fp) return;
         var topBrands = (fp.数据说明 && fp.数据说明.前十大品牌) || [];
@@ -1930,6 +1985,7 @@
             });
           });
         }
+        PerfMonitor.end('renderBrandAll(品牌总渲染)');
       }
       function renderBrand1() {
         var fp = getFenPinPai();
@@ -6906,22 +6962,31 @@
         refreshGmvCombined();
       }
 
-      function loadDefaultData(done) {
+      function loadDefaultData(done, refresh) {
         var statusEl = document.getElementById('loadStatus');
         var statusBrandEl = document.getElementById('loadStatusBrand');
+        var cacheStatusEl = document.getElementById('cacheStatus');
         statusEl.textContent = '正在加载默认数据…';
         statusBrandEl.textContent = '正在加载默认数据…';
+        if (cacheStatusEl) cacheStatusEl.textContent = '';
+
         function fetchDapan() {
           if (typeof XbsAuth === 'undefined' || !XbsAuth.getToken()) {
             statusEl.textContent = '未登录：请先登录后再拉取行业大盘数据。';
             return Promise.resolve();
           }
-          return XbsAuth.fetchFeaturesOutput()
+          return XbsAuth.fetchFeaturesOutput(refresh)
             .then(parseJsonRes)
             .then(function (o) {
               if (o.r.ok && o.data && typeof o.data === 'object' && !o.data.error) {
                 loadJson(o.data);
                 statusEl.textContent = '';
+                // 显示缓存状态
+                var cacheHeader = o.r.headers.get('X-QBT-Industry-DaPan-Cache');
+                if (cacheStatusEl && cacheHeader) {
+                  var cacheText = cacheHeader === 'HIT' ? '（来自缓存）' : (cacheHeader === 'REFRESH' ? '（已刷新）' : '');
+                  cacheStatusEl.textContent = cacheText;
+                }
                 return;
               }
               if (o.r.status === 401) {
@@ -6941,7 +7006,7 @@
             statusBrandEl.textContent = '未登录：请先登录后再拉取行业品牌数据。';
             return Promise.resolve();
           }
-          return XbsAuth.fetchFeaturesBrandTop10()
+          return XbsAuth.fetchFeaturesBrandTop10(refresh)
             .then(parseJsonRes)
             .then(function (o) {
               if (o.r.ok && o.data && typeof o.data === 'object' && !o.data.error) {
@@ -7692,6 +7757,8 @@
           });
           window.__newretailTrendModeGsvSwitchesBound = true;
         })();
+        console.time('[Perf] 全部数据加载总耗时');
+        var loadStartTime = performance.now();
         Promise.all([
           fetchDapan(),
           fetchBrand(),
@@ -7707,6 +7774,9 @@
           fetchFeishuNewretailDaily(),
           fetchFourPlatformGmvData(),
         ]).then(function () {
+          var loadDuration = performance.now() - loadStartTime;
+          console.timeEnd('[Perf] 全部数据加载总耗时');
+          console.log('[Perf] 全部数据加载完成，总耗时: ' + loadDuration.toFixed(2) + 'ms');
           initMainTabNav();
           if (typeof done === 'function') done();
             requestAnimationFrame(function () {
@@ -7718,6 +7788,38 @@
       }
 
       window.__runAfterAuth__ = function () { loadDefaultData(hideLoading); };
+
+      // 绑定刷新按钮事件
+      (function bindRefreshButton() {
+        var refreshBtn = document.getElementById('refreshIndustryBtn');
+        if (!refreshBtn) return;
+        // 登录后显示刷新按钮
+        if (typeof XbsAuth !== 'undefined' && XbsAuth.getToken()) {
+          refreshBtn.style.display = '';
+        }
+        refreshBtn.addEventListener('click', function () {
+          if (!XbsAuth.getToken()) {
+            alert('请先登录');
+            return;
+          }
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = '刷新中…';
+          loadDefaultData(function () {
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = '刷新数据';
+            // 显示刷新成功提示
+            var cacheStatusEl = document.getElementById('cacheStatus');
+            if (cacheStatusEl) {
+              cacheStatusEl.textContent = '（已刷新）';
+              setTimeout(function () {
+                if (cacheStatusEl.textContent === '（已刷新）') {
+                  cacheStatusEl.textContent = '';
+                }
+              }, 3000);
+            }
+          }, true);
+        });
+      })();
 
       /**
        * 版本记录（仅手动维护）：按时间由早到晚排列，新版本在数组**末尾**追加一行。
@@ -7773,6 +7875,9 @@
         });
         wrap.addEventListener('click', function (e) { e.stopPropagation(); });
       })();
+
+      // 包装渲染函数，添加性能监控
+      wrapRenderFunctions();
 
       function initMainTabNav() {
         var nav = document.querySelector('.main-nav-tabs');
