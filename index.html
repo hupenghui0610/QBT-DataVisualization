@@ -9426,7 +9426,7 @@
             defaultStart = dates[Math.max(0, dates.length - 12)];
           } else {
             // 日度：结束昨天，开始30天前
-            var today = new Date('2026-04-05');
+            var today = new Date();
             var yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
             var thirtyDaysAgo = new Date(yesterday);
