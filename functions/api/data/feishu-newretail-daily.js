@@ -1,6 +1,6 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
-import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
+import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
 import {
   PLATFORM_CONFIG,
   CHANNEL_MAP_CONFIG,
@@ -39,6 +39,33 @@ function numToColLetter(n) {
     n = Math.floor(n / 26) - 1;
   }
   return s || 'A';
+}
+
+/** 读取单列数据 */
+async function fetchSingleColumn(env, spreadsheetToken, sheetId, colLetter, startRow, endRow) {
+  var range = sheetId + '!' + colLetter + startRow + ':' + colLetter + endRow;
+  var result = await fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: 'FormattedValue' });
+  if (!result || result.code !== 0) {
+    return { success: false, error: result?.msg || '读取失败', code: result?.code };
+  }
+  var values = (result.data && result.data.valueRange && result.data.valueRange.values) || [];
+  return { success: true, values: values };
+}
+
+/** 合并多列数据为行格式 */
+function mergeColumnsToRows(columns, rowCount, colIndexMap) {
+  var result = [];
+  for (var i = 0; i < rowCount; i++) {
+    var row = new Array(41).fill(''); // AO列是第40索引
+    if (columns.C && columns.C[i]) row[colIndexMap.C] = columns.C[i][0];
+    if (columns.E && columns.E[i]) row[colIndexMap.E] = columns.E[i][0];
+    if (columns.I && columns.I[i]) row[colIndexMap.I] = columns.I[i][0];
+    if (columns.AH && columns.AH[i]) row[colIndexMap.AH] = columns.AH[i][0];
+    if (columns.AK && columns.AK[i]) row[colIndexMap.AK] = columns.AK[i][0];
+    if (columns.AO && columns.AO[i]) row[colIndexMap.AO] = columns.AO[i][0];
+    result.push(row);
+  }
+  return result;
 }
 
 async function sha256Hex(s) {
@@ -98,17 +125,6 @@ export async function onRequestGet(context) {
     globalThis.__unmatchedDarenIds = new Set();
     globalThis.__unmatchedDarenStats = {};
 
-    // DEBUG: 先列出所有sheet，确认sheetId
-    var sheetsJson = await fetchSpreadsheetSheetsV3(env, spreadsheetToken);
-    console.log('[DEBUG] 飞书表格所有sheet列表:');
-    if (sheetsJson && sheetsJson.code === 0 && sheetsJson.data && sheetsJson.data.sheets) {
-      sheetsJson.data.sheets.forEach(function(sheet) {
-        console.log('  sheet_id:', sheet.sheet_id, 'title:', sheet.title);
-      });
-    } else {
-      console.log('  获取失败:', sheetsJson?.code, sheetsJson?.msg);
-    }
-
     // 1. 读取渠道映射表
     var chRange = CHANNEL_MAP_CONFIG.sheetId + '!A1:E2000';
     var chJson = await fetchSheetValuesV2(env, spreadsheetToken, chRange, { valueRenderOption: 'FormattedValue' });
@@ -157,6 +173,64 @@ export async function onRequestGet(context) {
       var cfg = PLATFORM_CONFIG[platform];
       if (!cfg) return Promise.resolve({ platform: platform, values: [] });
 
+      // 抖音使用分列读取，避免行截断问题
+      if (platform === 'douyin') {
+        return (async function() {
+          var sheetId = cfg.sheetId;
+          // 并行读取6个必要列
+          var colResults = await Promise.all([
+            fetchSingleColumn(env, spreadsheetToken, sheetId, 'A', 1, maxRows),  // 表头行
+            fetchSingleColumn(env, spreadsheetToken, sheetId, 'C', 1, maxRows),  // product
+            fetchSingleColumn(env, spreadsheetToken, sheetId, 'E', 1, maxRows),  // quantity
+            fetchSingleColumn(env, spreadsheetToken, sheetId, 'I', 1, maxRows),  // amount
+            fetchSingleColumn(env, spreadsheetToken, sheetId, 'AH', 1, maxRows), // time
+            fetchSingleColumn(env, spreadsheetToken, sheetId, 'AK', 1, maxRows), // status
+            fetchSingleColumn(env, spreadsheetToken, sheetId, 'AO', 1, maxRows)  // darenId
+          ]);
+
+          var errors = [];
+          colResults.forEach(function(r, idx) {
+            if (!r.success) errors.push(['A','C','E','I','AH','AK','AO'][idx] + ':' + r.error);
+          });
+          if (errors.length > 0) {
+            console.error('[douyin] 读取列失败:', errors.join(', '));
+            return { platform: platform, values: [] };
+          }
+
+          // 计算实际行数
+          var actualRowCount = Math.max(
+            colResults[0].values.length,
+            colResults[1].values.length,
+            colResults[2].values.length,
+            colResults[3].values.length,
+            colResults[4].values.length,
+            colResults[5].values.length,
+            colResults[6].values.length
+          );
+
+          // 合并列为行格式
+          var mergedValues = mergeColumnsToRows({
+            C: colResults[1].values,
+            E: colResults[2].values,
+            I: colResults[3].values,
+            AH: colResults[4].values,
+            AK: colResults[5].values,
+            AO: colResults[6].values
+          }, actualRowCount, { C: 2, E: 4, I: 8, AH: 33, AK: 36, AO: 40 });
+
+          // 添加表头（从A列第一行获取）
+          if (colResults[0].values.length > 0) {
+            var headerRow = new Array(41).fill('');
+            headerRow[0] = colResults[0].values[0][0];
+            mergedValues.unshift(headerRow);
+          }
+
+          console.log('[douyin] 分列读取成功, rows=' + mergedValues.length);
+          return { platform: platform, values: mergedValues };
+        })();
+      }
+
+      // 其他平台使用原来的范围读取
       var maxCol = Math.max(...Object.values(cfg.cols));
       var colLetter = numToColLetter(maxCol);
       var range = cfg.sheetId + '!A1:' + colLetter + maxRows;
@@ -177,25 +251,6 @@ export async function onRequestGet(context) {
     });
 
     var platformResults = await Promise.all(platformPromises);
-
-    // DEBUG: 详细输出抖音数据情况
-    platformResults.forEach(function(result) {
-      if (result.platform === 'douyin' && result.values && result.values.length > 1) {
-        console.log('[DEBUG-douyin] 总行数(含表头):', result.values.length);
-        console.log('[DEBUG-douyin] 表头列数:', result.values[0].length);
-        console.log('[DEBUG-douyin] 第一行数据列数:', result.values[1].length);
-        console.log('[DEBUG-douyin] 需要的最小列索引(AO=40):', PLATFORM_CONFIG.douyin.cols.darenId);
-        console.log('[DEBUG-douyin] 第一行数据样例(0-10列):', result.values[1].slice(0, 11));
-        console.log('[DEBUG-douyin] 第一行AO列(40)值:', result.values[1][40]);
-        console.log('[DEBUG-douyin] 第一行AK列(36)值:', result.values[1][36]);
-        // 检查是否有行被截断
-        let truncatedRows = 0;
-        for (let i = 1; i < Math.min(result.values.length, 10); i++) {
-          if (result.values[i].length <= 40) truncatedRows++;
-        }
-        console.log('[DEBUG-douyin] 前10行中列数<=40的行数:', truncatedRows);
-      }
-    });
 
     // 3. 处理订单数据 - GMV（所有订单）
     var allOrdersGmv = [];

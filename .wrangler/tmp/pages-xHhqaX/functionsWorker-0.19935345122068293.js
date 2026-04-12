@@ -54,7 +54,7 @@ function getBearer(request) {
 }
 var init_http = __esm({
   "_lib/http.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     __name(jsonResponse, "jsonResponse");
     __name(corsHeaders, "corsHeaders");
     __name(getBearer, "getBearer");
@@ -157,7 +157,7 @@ async function verifyJwt(token, secret) {
 var PBKDF2_ITERATIONS, PBKDF2_HASH_LEN, JWT_EXP_SECONDS, enc;
 var init_crypto = __esm({
   "_lib/crypto.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     PBKDF2_ITERATIONS = 1e5;
     PBKDF2_HASH_LEN = 32;
     JWT_EXP_SECONDS = 30 * 24 * 60 * 60;
@@ -225,7 +225,7 @@ function clientIp(request) {
 }
 var init_session = __esm({
   "_lib/session.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_crypto();
     init_http();
     __name(publicUser, "publicUser");
@@ -269,7 +269,7 @@ async function onRequestOptions(context) {
 }
 var init_access_logs = __esm({
   "api/admin/access-logs.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     __name(onRequestGet, "onRequestGet");
@@ -309,7 +309,7 @@ async function onRequestOptions2(context) {
 }
 var init_login_security_events = __esm({
   "api/admin/login-security-events.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     __name(onRequestGet2, "onRequestGet");
@@ -383,7 +383,7 @@ async function onRequestOptions3(context) {
 }
 var init_users = __esm({
   "api/admin/users.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_crypto();
     init_http();
     init_session();
@@ -428,7 +428,7 @@ async function onRequestOptions4(context) {
 }
 var init_change_password = __esm({
   "api/auth/change-password.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_crypto();
     init_http();
     init_session();
@@ -638,7 +638,7 @@ function failedLoginDelayMs(accountShortCount, ipCount) {
 var ACCOUNT_FAIL_SHORT_WINDOW_MIN, ACCOUNT_FAIL_SHORT_LIMIT, ACCOUNT_FAIL_SHORT_LOCK_MIN, ACCOUNT_FAIL_LONG_WINDOW_MIN, ACCOUNT_FAIL_LONG_LIMIT, ACCOUNT_FAIL_LONG_LOCK_MIN, IP_FAIL_WINDOW_MIN, IP_FAIL_LIMIT, IP_FAIL_LOCK_MIN;
 var init_login_security = __esm({
   "_lib/login-security.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_session();
     ACCOUNT_FAIL_SHORT_WINDOW_MIN = 10;
     ACCOUNT_FAIL_SHORT_LIMIT = 3;
@@ -751,7 +751,7 @@ async function onRequestOptions5(context) {
 }
 var init_login = __esm({
   "api/auth/login.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_crypto();
     init_http();
     init_session();
@@ -796,7 +796,7 @@ async function onRequestOptions6(context) {
 }
 var init_ping = __esm({
   "api/auth/ping.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     __name(onRequestPost4, "onRequestPost");
@@ -869,7 +869,7 @@ async function fetchSpreadsheetSheetsV3(env, spreadsheetToken) {
 var tokenCache;
 var init_feishu = __esm({
   "_lib/feishu.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     tokenCache = { token: null, expireAtMs: 0 };
     __name(getFeishuTenantToken, "getFeishuTenantToken");
     __name(fetchSheetValuesV2, "fetchSheetValuesV2");
@@ -880,7 +880,7 @@ var init_feishu = __esm({
 // ../shared/industry-data-builder.cjs
 var require_industry_data_builder = __commonJS({
   "../shared/industry-data-builder.cjs"(exports, module) {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     var FIXED_TOP_BRANDS = [
       "\u5B66\u800C\u601D",
       "\u79D1\u5927\u8BAF\u98DE",
@@ -1612,7 +1612,7 @@ async function onRequestOptions7(context) {
 var import_industry_data_builder, DEFAULT_LAST_ROW;
 var init_features_brand_top10 = __esm({
   "api/data/features-brand-top10.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_http();
     init_session();
@@ -1753,7 +1753,7 @@ async function onRequestOptions8(context) {
 var import_industry_data_builder2, DEFAULT_LAST_ROW2;
 var init_features_output = __esm({
   "api/data/features-output.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_http();
     init_session();
@@ -2017,7 +2017,7 @@ async function onRequestOptions9(context) {
 var DEFAULT_SPREADSHEET_TOKEN, DEFAULT_CHANNEL_RANGE, DEFAULT_ORDER_RANGE, COL_I_FULL, COL_AO_FULL, COL_AH_FULL, COL_AK_FULL, COL_I_NARROW, COL_AO_NARROW, COL_AH_NARROW, COL_AK_NARROW;
 var init_feishu_channel_order_trend = __esm({
   "api/data/feishu-channel-order-trend.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -2239,7 +2239,7 @@ async function onRequestOptions10(context) {
 var DEFAULT_SPREADSHEET_TOKEN2, DEFAULT_RANGE, DEFAULT_RANGE_MODEL, DEFAULT_RANGE_2;
 var init_feishu_daily_sales = __esm({
   "api/data/feishu-daily-sales.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -2319,7 +2319,7 @@ async function onRequestOptions11(context) {
 var DEFAULT_SPREADSHEET_TOKEN3, DEFAULT_RANGE2;
 var init_feishu_douyin_daily_trend = __esm({
   "api/data/feishu-douyin-daily-trend.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -2645,7 +2645,7 @@ async function onRequestOptions12(context) {
 var DEFAULT_SPREADSHEET_TOKEN4, DEFAULT_ORDER_RANGE2, REQUIRED_COLS, COL_C, COL_E, COL_AH, COL_AK, COL_AO, DP_DAREN_IDS, SPECIAL_DP_CUTOVER_DAREN_IDS;
 var init_feishu_douyin_model_distribution = __esm({
   "api/data/feishu-douyin-model-distribution.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -2880,7 +2880,7 @@ async function onRequestOptions13(context) {
 var DEFAULT_SPREADSHEET_TOKEN5;
 var init_feishu_douyin_sales = __esm({
   "api/data/feishu-douyin-sales.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -3403,7 +3403,7 @@ async function onRequestOptions14(context) {
 var DEFAULT_TMALL_TOKEN, DEFAULT_TMALL_RANGE, DEFAULT_JD_SPREADSHEET_TOKEN;
 var init_feishu_gmv_combined = __esm({
   "api/data/feishu-gmv-combined.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -3643,7 +3643,7 @@ async function onRequestOptions15(context) {
 var DEFAULT_SPREADSHEET_TOKEN6, DEFAULT_RANGE3, COL_B, COL_D, COL_G, COL_I, COL_U, COL_V, COL_AD, __livestreamCache, __livestreamCacheTime, CACHE_TTL_MS;
 var init_feishu_livestream_funnel = __esm({
   "api/data/feishu-livestream-funnel.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -4737,7 +4737,7 @@ function calculateFuwuTotalsByChannel(fuwuGmvData, fuwuGsvData) {
 var PLATFORM_CONFIG, CHANNEL_MAP_CONFIG;
 var init_newretail_gmv_logic = __esm({
   "api/data/newretail-gmv-logic.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     PLATFORM_CONFIG = {
       douyin: {
         name: "\u6296\u97F3",
@@ -4857,6 +4857,15 @@ async function onRequestGet13(context) {
   try {
     globalThis.__unmatchedDarenIds = /* @__PURE__ */ new Set();
     globalThis.__unmatchedDarenStats = {};
+    var sheetsJson = await fetchSpreadsheetSheetsV3(env, spreadsheetToken);
+    console.log("[DEBUG] \u98DE\u4E66\u8868\u683C\u6240\u6709sheet\u5217\u8868:");
+    if (sheetsJson && sheetsJson.code === 0 && sheetsJson.data && sheetsJson.data.sheets) {
+      sheetsJson.data.sheets.forEach(function(sheet) {
+        console.log("  sheet_id:", sheet.sheet_id, "title:", sheet.title);
+      });
+    } else {
+      console.log("  \u83B7\u53D6\u5931\u8D25:", sheetsJson?.code, sheetsJson?.msg);
+    }
     var chRange = CHANNEL_MAP_CONFIG.sheetId + "!A1:E2000";
     var chJson = await fetchSheetValuesV2(env, spreadsheetToken, chRange, { valueRenderOption: "FormattedValue" });
     if (!chJson || chJson.code !== 0) {
@@ -5162,7 +5171,7 @@ async function onRequestOptions16(context) {
 var DEFAULT_SPREADSHEET_TOKEN7;
 var init_feishu_newretail_daily = __esm({
   "api/data/feishu-newretail-daily.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -5338,7 +5347,7 @@ async function onRequestOptions17(context) {
 var DEFAULT_SPREADSHEET_TOKEN8, DEFAULT_RANGE4, DEFAULT_RANGE_MODEL2;
 var init_feishu_tmall_sales = __esm({
   "api/data/feishu-tmall-sales.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     init_session();
     init_feishu();
@@ -5426,7 +5435,7 @@ async function authenticateOpenClawRequest(request, env) {
 var enc2, CLOCK_SKEW_MS;
 var init_openclaw_auth = __esm({
   "_lib/openclaw-auth.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_http();
     enc2 = new TextEncoder();
     CLOCK_SKEW_MS = 5 * 60 * 1e3;
@@ -5800,7 +5809,7 @@ function formatMonthlyCumulativeMessage(summaryPayload, statDate) {
 }
 var init_monthly_cumulative = __esm({
   "_lib/monthly-cumulative.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     __name(pad23, "pad2");
     __name(currentDateYmd, "currentDateYmd");
     __name(lastDateOfYearMonth, "lastDateOfYearMonth");
@@ -5922,7 +5931,7 @@ async function onRequestOptions18(context) {
 }
 var init_monthly_cumulative_summary = __esm({
   "api/data/monthly-cumulative-summary.js"() {
-    init_functionsRoutes_0_7672139550444342();
+    init_functionsRoutes_0_5241138130685944();
     init_crypto();
     init_http();
     init_openclaw_auth();
@@ -5936,10 +5945,10 @@ var init_monthly_cumulative_summary = __esm({
   }
 });
 
-// ../.wrangler/tmp/pages-UZPSAi/functionsRoutes-0.7672139550444342.mjs
+// ../.wrangler/tmp/pages-xHhqaX/functionsRoutes-0.5241138130685944.mjs
 var routes;
-var init_functionsRoutes_0_7672139550444342 = __esm({
-  "../.wrangler/tmp/pages-UZPSAi/functionsRoutes-0.7672139550444342.mjs"() {
+var init_functionsRoutes_0_5241138130685944 = __esm({
+  "../.wrangler/tmp/pages-xHhqaX/functionsRoutes-0.5241138130685944.mjs"() {
     init_access_logs();
     init_access_logs();
     init_login_security_events();
@@ -6242,10 +6251,10 @@ var init_functionsRoutes_0_7672139550444342 = __esm({
 });
 
 // ../node_modules/wrangler/templates/pages-template-worker.ts
-init_functionsRoutes_0_7672139550444342();
+init_functionsRoutes_0_5241138130685944();
 
 // ../node_modules/path-to-regexp/dist.es2015/index.js
-init_functionsRoutes_0_7672139550444342();
+init_functionsRoutes_0_5241138130685944();
 function lexer(str) {
   var tokens = [];
   var i = 0;
