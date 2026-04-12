@@ -1,8 +1,10 @@
 /**
  * 与 Cloudflare Pages Functions /api/auth/* 配合；页面需先加载本文件再执行内联逻辑。
+ * v2 - 使用 performance.now() 替代 console.time
  */
 (function (global) {
   var TOKEN_KEY = 'xbs_token';
+  console.log('[AuthClient] v2 loaded - Perf monitor fixed');
   /** 本地打开页面时与 /api 不同源，跨域指向正式站（见下方 isLocalPageOrigin） */
   var REMOTE_API_ORIGIN = 'https://qbt-datavisualization.pages.dev';
   /** 可选：仅在本地页下生效，覆盖正式 API 根（如预览环境），需在控制台设置 localStorage */
