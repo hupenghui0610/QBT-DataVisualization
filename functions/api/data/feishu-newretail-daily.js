@@ -93,8 +93,8 @@ export async function onRequestGet(context) {
   }
 
   var spreadsheetToken = env.FEISHU_NEWRETAIL_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
-  var maxRows = parseInt(env.FEISHU_NEWRETAIL_MAX_ROWS || '20000', 10);
-  if (isNaN(maxRows) || maxRows < 1000) maxRows = 20000;
+  var maxRows = parseInt(env.FEISHU_NEWRETAIL_MAX_ROWS || '30000', 10);
+  if (isNaN(maxRows) || maxRows < 1000) maxRows = 30000;
 
   var cacheTtlSec = parseInt(env.FEISHU_NEWRETAIL_CACHE_TTL_SEC || '120', 10);
   if (isNaN(cacheTtlSec) || cacheTtlSec < 0) cacheTtlSec = 120;

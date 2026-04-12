@@ -54,7 +54,7 @@ function getBearer(request) {
 }
 var init_http = __esm({
   "_lib/http.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     __name(jsonResponse, "jsonResponse");
     __name(corsHeaders, "corsHeaders");
     __name(getBearer, "getBearer");
@@ -157,7 +157,7 @@ async function verifyJwt(token, secret) {
 var PBKDF2_ITERATIONS, PBKDF2_HASH_LEN, JWT_EXP_SECONDS, enc;
 var init_crypto = __esm({
   "_lib/crypto.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     PBKDF2_ITERATIONS = 1e5;
     PBKDF2_HASH_LEN = 32;
     JWT_EXP_SECONDS = 30 * 24 * 60 * 60;
@@ -225,7 +225,7 @@ function clientIp(request) {
 }
 var init_session = __esm({
   "_lib/session.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_crypto();
     init_http();
     __name(publicUser, "publicUser");
@@ -269,7 +269,7 @@ async function onRequestOptions(context) {
 }
 var init_access_logs = __esm({
   "api/admin/access-logs.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     __name(onRequestGet, "onRequestGet");
@@ -309,7 +309,7 @@ async function onRequestOptions2(context) {
 }
 var init_login_security_events = __esm({
   "api/admin/login-security-events.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     __name(onRequestGet2, "onRequestGet");
@@ -383,7 +383,7 @@ async function onRequestOptions3(context) {
 }
 var init_users = __esm({
   "api/admin/users.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_crypto();
     init_http();
     init_session();
@@ -428,7 +428,7 @@ async function onRequestOptions4(context) {
 }
 var init_change_password = __esm({
   "api/auth/change-password.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_crypto();
     init_http();
     init_session();
@@ -638,7 +638,7 @@ function failedLoginDelayMs(accountShortCount, ipCount) {
 var ACCOUNT_FAIL_SHORT_WINDOW_MIN, ACCOUNT_FAIL_SHORT_LIMIT, ACCOUNT_FAIL_SHORT_LOCK_MIN, ACCOUNT_FAIL_LONG_WINDOW_MIN, ACCOUNT_FAIL_LONG_LIMIT, ACCOUNT_FAIL_LONG_LOCK_MIN, IP_FAIL_WINDOW_MIN, IP_FAIL_LIMIT, IP_FAIL_LOCK_MIN;
 var init_login_security = __esm({
   "_lib/login-security.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_session();
     ACCOUNT_FAIL_SHORT_WINDOW_MIN = 10;
     ACCOUNT_FAIL_SHORT_LIMIT = 3;
@@ -751,7 +751,7 @@ async function onRequestOptions5(context) {
 }
 var init_login = __esm({
   "api/auth/login.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_crypto();
     init_http();
     init_session();
@@ -796,7 +796,7 @@ async function onRequestOptions6(context) {
 }
 var init_ping = __esm({
   "api/auth/ping.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     __name(onRequestPost4, "onRequestPost");
@@ -869,7 +869,7 @@ async function fetchSpreadsheetSheetsV3(env, spreadsheetToken) {
 var tokenCache;
 var init_feishu = __esm({
   "_lib/feishu.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     tokenCache = { token: null, expireAtMs: 0 };
     __name(getFeishuTenantToken, "getFeishuTenantToken");
     __name(fetchSheetValuesV2, "fetchSheetValuesV2");
@@ -880,7 +880,7 @@ var init_feishu = __esm({
 // ../shared/industry-data-builder.cjs
 var require_industry_data_builder = __commonJS({
   "../shared/industry-data-builder.cjs"(exports, module) {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     var FIXED_TOP_BRANDS = [
       "\u5B66\u800C\u601D",
       "\u79D1\u5927\u8BAF\u98DE",
@@ -1612,7 +1612,7 @@ async function onRequestOptions7(context) {
 var import_industry_data_builder, DEFAULT_LAST_ROW;
 var init_features_brand_top10 = __esm({
   "api/data/features-brand-top10.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_http();
     init_session();
@@ -1753,7 +1753,7 @@ async function onRequestOptions8(context) {
 var import_industry_data_builder2, DEFAULT_LAST_ROW2;
 var init_features_output = __esm({
   "api/data/features-output.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_http();
     init_session();
@@ -2017,7 +2017,7 @@ async function onRequestOptions9(context) {
 var DEFAULT_SPREADSHEET_TOKEN, DEFAULT_CHANNEL_RANGE, DEFAULT_ORDER_RANGE, COL_I_FULL, COL_AO_FULL, COL_AH_FULL, COL_AK_FULL, COL_I_NARROW, COL_AO_NARROW, COL_AH_NARROW, COL_AK_NARROW;
 var init_feishu_channel_order_trend = __esm({
   "api/data/feishu-channel-order-trend.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
@@ -2239,7 +2239,7 @@ async function onRequestOptions10(context) {
 var DEFAULT_SPREADSHEET_TOKEN2, DEFAULT_RANGE, DEFAULT_RANGE_MODEL, DEFAULT_RANGE_2;
 var init_feishu_daily_sales = __esm({
   "api/data/feishu-daily-sales.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
@@ -2319,7 +2319,7 @@ async function onRequestOptions11(context) {
 var DEFAULT_SPREADSHEET_TOKEN3, DEFAULT_RANGE2;
 var init_feishu_douyin_daily_trend = __esm({
   "api/data/feishu-douyin-daily-trend.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
@@ -2645,7 +2645,7 @@ async function onRequestOptions12(context) {
 var DEFAULT_SPREADSHEET_TOKEN4, DEFAULT_ORDER_RANGE2, REQUIRED_COLS, COL_C, COL_E, COL_AH, COL_AK, COL_AO, DP_DAREN_IDS, SPECIAL_DP_CUTOVER_DAREN_IDS;
 var init_feishu_douyin_model_distribution = __esm({
   "api/data/feishu-douyin-model-distribution.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
@@ -2880,7 +2880,7 @@ async function onRequestOptions13(context) {
 var DEFAULT_SPREADSHEET_TOKEN5;
 var init_feishu_douyin_sales = __esm({
   "api/data/feishu-douyin-sales.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
@@ -3403,7 +3403,7 @@ async function onRequestOptions14(context) {
 var DEFAULT_TMALL_TOKEN, DEFAULT_TMALL_RANGE, DEFAULT_JD_SPREADSHEET_TOKEN;
 var init_feishu_gmv_combined = __esm({
   "api/data/feishu-gmv-combined.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
@@ -3643,7 +3643,7 @@ async function onRequestOptions15(context) {
 var DEFAULT_SPREADSHEET_TOKEN6, DEFAULT_RANGE3, COL_B, COL_D, COL_G, COL_I, COL_U, COL_V, COL_AD, __livestreamCache, __livestreamCacheTime, CACHE_TTL_MS;
 var init_feishu_livestream_funnel = __esm({
   "api/data/feishu-livestream-funnel.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
@@ -4737,7 +4737,7 @@ function calculateFuwuTotalsByChannel(fuwuGmvData, fuwuGsvData) {
 var PLATFORM_CONFIG, CHANNEL_MAP_CONFIG;
 var init_newretail_gmv_logic = __esm({
   "api/data/newretail-gmv-logic.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     PLATFORM_CONFIG = {
       douyin: {
         name: "\u6296\u97F3",
@@ -4810,6 +4810,29 @@ function numToColLetter(n) {
   }
   return s || "A";
 }
+async function fetchSingleColumn2(env, spreadsheetToken, sheetId, colLetter, startRow, endRow) {
+  var range = sheetId + "!" + colLetter + startRow + ":" + colLetter + endRow;
+  var result = await fetchSheetValuesV2(env, spreadsheetToken, range, { valueRenderOption: "FormattedValue" });
+  if (!result || result.code !== 0) {
+    return { success: false, error: result?.msg || "\u8BFB\u53D6\u5931\u8D25", code: result?.code };
+  }
+  var values = result.data && result.data.valueRange && result.data.valueRange.values || [];
+  return { success: true, values };
+}
+function mergeColumnsToRows2(columns, rowCount, colIndexMap) {
+  var result = [];
+  for (var i = 0; i < rowCount; i++) {
+    var row = new Array(41).fill("");
+    if (columns.C && columns.C[i]) row[colIndexMap.C] = columns.C[i][0];
+    if (columns.E && columns.E[i]) row[colIndexMap.E] = columns.E[i][0];
+    if (columns.I && columns.I[i]) row[colIndexMap.I] = columns.I[i][0];
+    if (columns.AH && columns.AH[i]) row[colIndexMap.AH] = columns.AH[i][0];
+    if (columns.AK && columns.AK[i]) row[colIndexMap.AK] = columns.AK[i][0];
+    if (columns.AO && columns.AO[i]) row[colIndexMap.AO] = columns.AO[i][0];
+    result.push(row);
+  }
+  return result;
+}
 async function sha256Hex4(s) {
   var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   var arr = new Uint8Array(buf);
@@ -4857,15 +4880,6 @@ async function onRequestGet13(context) {
   try {
     globalThis.__unmatchedDarenIds = /* @__PURE__ */ new Set();
     globalThis.__unmatchedDarenStats = {};
-    var sheetsJson = await fetchSpreadsheetSheetsV3(env, spreadsheetToken);
-    console.log("[DEBUG] \u98DE\u4E66\u8868\u683C\u6240\u6709sheet\u5217\u8868:");
-    if (sheetsJson && sheetsJson.code === 0 && sheetsJson.data && sheetsJson.data.sheets) {
-      sheetsJson.data.sheets.forEach(function(sheet) {
-        console.log("  sheet_id:", sheet.sheet_id, "title:", sheet.title);
-      });
-    } else {
-      console.log("  \u83B7\u53D6\u5931\u8D25:", sheetsJson?.code, sheetsJson?.msg);
-    }
     var chRange = CHANNEL_MAP_CONFIG.sheetId + "!A1:E2000";
     var chJson = await fetchSheetValuesV2(env, spreadsheetToken, chRange, { valueRenderOption: "FormattedValue" });
     if (!chJson || chJson.code !== 0) {
@@ -4902,6 +4916,59 @@ async function onRequestGet13(context) {
     var platformPromises = platformKeys.map(function(platform2) {
       var cfg = PLATFORM_CONFIG[platform2];
       if (!cfg) return Promise.resolve({ platform: platform2, values: [] });
+      if (platform2 === "douyin") {
+        return (async function() {
+          var sheetId = cfg.sheetId;
+          var colResults = await Promise.all([
+            fetchSingleColumn2(env, spreadsheetToken, sheetId, "A", 1, maxRows),
+            // 表头行
+            fetchSingleColumn2(env, spreadsheetToken, sheetId, "C", 1, maxRows),
+            // product
+            fetchSingleColumn2(env, spreadsheetToken, sheetId, "E", 1, maxRows),
+            // quantity
+            fetchSingleColumn2(env, spreadsheetToken, sheetId, "I", 1, maxRows),
+            // amount
+            fetchSingleColumn2(env, spreadsheetToken, sheetId, "AH", 1, maxRows),
+            // time
+            fetchSingleColumn2(env, spreadsheetToken, sheetId, "AK", 1, maxRows),
+            // status
+            fetchSingleColumn2(env, spreadsheetToken, sheetId, "AO", 1, maxRows)
+            // darenId
+          ]);
+          var errors = [];
+          colResults.forEach(function(r2, idx) {
+            if (!r2.success) errors.push(["A", "C", "E", "I", "AH", "AK", "AO"][idx] + ":" + r2.error);
+          });
+          if (errors.length > 0) {
+            console.error("[douyin] \u8BFB\u53D6\u5217\u5931\u8D25:", errors.join(", "));
+            return { platform: platform2, values: [] };
+          }
+          var actualRowCount = Math.max(
+            colResults[0].values.length,
+            colResults[1].values.length,
+            colResults[2].values.length,
+            colResults[3].values.length,
+            colResults[4].values.length,
+            colResults[5].values.length,
+            colResults[6].values.length
+          );
+          var mergedValues = mergeColumnsToRows2({
+            C: colResults[1].values,
+            E: colResults[2].values,
+            I: colResults[3].values,
+            AH: colResults[4].values,
+            AK: colResults[5].values,
+            AO: colResults[6].values
+          }, actualRowCount, { C: 2, E: 4, I: 8, AH: 33, AK: 36, AO: 40 });
+          if (colResults[0].values.length > 0) {
+            var headerRow = new Array(41).fill("");
+            headerRow[0] = colResults[0].values[0][0];
+            mergedValues.unshift(headerRow);
+          }
+          console.log("[douyin] \u5206\u5217\u8BFB\u53D6\u6210\u529F, rows=" + mergedValues.length);
+          return { platform: platform2, values: mergedValues };
+        })();
+      }
       var maxCol = Math.max(...Object.values(cfg.cols));
       var colLetter = numToColLetter(maxCol);
       var range = cfg.sheetId + "!A1:" + colLetter + maxRows;
@@ -4918,22 +4985,6 @@ async function onRequestGet13(context) {
       });
     });
     var platformResults = await Promise.all(platformPromises);
-    platformResults.forEach(function(result) {
-      if (result.platform === "douyin" && result.values && result.values.length > 1) {
-        console.log("[DEBUG-douyin] \u603B\u884C\u6570(\u542B\u8868\u5934):", result.values.length);
-        console.log("[DEBUG-douyin] \u8868\u5934\u5217\u6570:", result.values[0].length);
-        console.log("[DEBUG-douyin] \u7B2C\u4E00\u884C\u6570\u636E\u5217\u6570:", result.values[1].length);
-        console.log("[DEBUG-douyin] \u9700\u8981\u7684\u6700\u5C0F\u5217\u7D22\u5F15(AO=40):", PLATFORM_CONFIG.douyin.cols.darenId);
-        console.log("[DEBUG-douyin] \u7B2C\u4E00\u884C\u6570\u636E\u6837\u4F8B(0-10\u5217):", result.values[1].slice(0, 11));
-        console.log("[DEBUG-douyin] \u7B2C\u4E00\u884CAO\u5217(40)\u503C:", result.values[1][40]);
-        console.log("[DEBUG-douyin] \u7B2C\u4E00\u884CAK\u5217(36)\u503C:", result.values[1][36]);
-        let truncatedRows = 0;
-        for (let i2 = 1; i2 < Math.min(result.values.length, 10); i2++) {
-          if (result.values[i2].length <= 40) truncatedRows++;
-        }
-        console.log("[DEBUG-douyin] \u524D10\u884C\u4E2D\u5217\u6570<=40\u7684\u884C\u6570:", truncatedRows);
-      }
-    });
     var allOrdersGmv = [];
     var platformStatsGmv = {};
     var gmvDebugStats = {};
@@ -5171,13 +5222,15 @@ async function onRequestOptions16(context) {
 var DEFAULT_SPREADSHEET_TOKEN7;
 var init_feishu_newretail_daily = __esm({
   "api/data/feishu-newretail-daily.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
     init_newretail_gmv_logic();
     DEFAULT_SPREADSHEET_TOKEN7 = "WNp4wbOI3ib7J7kiX2fcZf6Fn8b";
     __name(numToColLetter, "numToColLetter");
+    __name(fetchSingleColumn2, "fetchSingleColumn");
+    __name(mergeColumnsToRows2, "mergeColumnsToRows");
     __name(sha256Hex4, "sha256Hex");
     __name(onRequestGet13, "onRequestGet");
     __name(onRequestOptions16, "onRequestOptions");
@@ -5347,7 +5400,7 @@ async function onRequestOptions17(context) {
 var DEFAULT_SPREADSHEET_TOKEN8, DEFAULT_RANGE4, DEFAULT_RANGE_MODEL2;
 var init_feishu_tmall_sales = __esm({
   "api/data/feishu-tmall-sales.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     init_session();
     init_feishu();
@@ -5435,7 +5488,7 @@ async function authenticateOpenClawRequest(request, env) {
 var enc2, CLOCK_SKEW_MS;
 var init_openclaw_auth = __esm({
   "_lib/openclaw-auth.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_http();
     enc2 = new TextEncoder();
     CLOCK_SKEW_MS = 5 * 60 * 1e3;
@@ -5809,7 +5862,7 @@ function formatMonthlyCumulativeMessage(summaryPayload, statDate) {
 }
 var init_monthly_cumulative = __esm({
   "_lib/monthly-cumulative.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     __name(pad23, "pad2");
     __name(currentDateYmd, "currentDateYmd");
     __name(lastDateOfYearMonth, "lastDateOfYearMonth");
@@ -5931,7 +5984,7 @@ async function onRequestOptions18(context) {
 }
 var init_monthly_cumulative_summary = __esm({
   "api/data/monthly-cumulative-summary.js"() {
-    init_functionsRoutes_0_5241138130685944();
+    init_functionsRoutes_0_43621812355026957();
     init_crypto();
     init_http();
     init_openclaw_auth();
@@ -5945,10 +5998,10 @@ var init_monthly_cumulative_summary = __esm({
   }
 });
 
-// ../.wrangler/tmp/pages-xHhqaX/functionsRoutes-0.5241138130685944.mjs
+// ../.wrangler/tmp/pages-slKrqV/functionsRoutes-0.43621812355026957.mjs
 var routes;
-var init_functionsRoutes_0_5241138130685944 = __esm({
-  "../.wrangler/tmp/pages-xHhqaX/functionsRoutes-0.5241138130685944.mjs"() {
+var init_functionsRoutes_0_43621812355026957 = __esm({
+  "../.wrangler/tmp/pages-slKrqV/functionsRoutes-0.43621812355026957.mjs"() {
     init_access_logs();
     init_access_logs();
     init_login_security_events();
@@ -6251,10 +6304,10 @@ var init_functionsRoutes_0_5241138130685944 = __esm({
 });
 
 // ../node_modules/wrangler/templates/pages-template-worker.ts
-init_functionsRoutes_0_5241138130685944();
+init_functionsRoutes_0_43621812355026957();
 
 // ../node_modules/path-to-regexp/dist.es2015/index.js
-init_functionsRoutes_0_5241138130685944();
+init_functionsRoutes_0_43621812355026957();
 function lexer(str) {
   var tokens = [];
   var i = 0;
