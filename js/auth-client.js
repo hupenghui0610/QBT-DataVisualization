@@ -89,24 +89,26 @@
     return fetch(url, opts);
   }
 
-  /** 性能监控：包装 fetch 请求，记录耗时 */
+  /** 性能监控：包装 fetch 请求，记录耗时 - 使用 performance.now() 避免 timer 不匹配问题 */
   function timedFetch(name, fetchFn) {
     return function () {
       var args = arguments;
       var start = performance.now();
-      var label = '[API] ' + name;
-      console.time(label);
-      return fetchFn.apply(null, args).then(
-        function (res) {
+      var res = fetchFn.apply(null, args);
+      // 确保是 Promise
+      if (!res || typeof res.then !== 'function') {
+        console.log('[Perf] ' + name + ' 返回非 Promise: ' + (typeof res));
+        return res;
+      }
+      return res.then(
+        function (response) {
           var duration = performance.now() - start;
-          console.timeEnd(label);
-          console.log('[Perf] ' + name + ' 耗时: ' + duration.toFixed(2) + 'ms');
-          return res;
+          console.log('[Perf] ' + name + ' 成功: ' + duration.toFixed(2) + 'ms');
+          return response;
         },
         function (err) {
           var duration = performance.now() - start;
-          console.timeEnd(label);
-          console.log('[Perf] ' + name + ' 失败, 耗时: ' + duration.toFixed(2) + 'ms');
+          console.log('[Perf] ' + name + ' 失败: ' + duration.toFixed(2) + 'ms, 错误: ' + (err && err.message ? err.message : String(err)));
           throw err;
         }
       );
