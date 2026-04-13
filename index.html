@@ -2811,7 +2811,9 @@
         var uniqueMonths = Object.keys(monthsSet).sort();
         var opts = uniqueMonths.map(function (month) { return '<option value="' + month + '">' + month + '</option>'; });
         var html = '<option value="">全量</option>' + opts.join('');
-        var defaultStart = uniqueMonths.length ? uniqueMonths[0] : '';
+        // 起始时间默认2025-01，如不存在则取最早月份
+        var wantMonth = '2025-01';
+        var defaultStart = uniqueMonths.indexOf(wantMonth) !== -1 ? wantMonth : (uniqueMonths.length ? uniqueMonths[0] : '');
         var defaultEnd = uniqueMonths.length ? uniqueMonths[uniqueMonths.length - 1] : '';
         var ids = ['dimB1Start','dimB1End','dimB8Start','dimB8End','dimB9Start','dimB9End','dimB2Start','dimB2End','dimB3Start','dimB3End','dimB5Start','dimB5End','dimB6Start','dimB6End','dimB7Start','dimB7End'];
         for (var i = 0; i < ids.length; i++) {
