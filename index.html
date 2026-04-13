@@ -4787,13 +4787,24 @@
           var raw0 = window.__QBT_FEISHU_DAILY_SALES__;
           var range0 = raw0 && raw0.range ? raw0.range : '';
           var err0 = window.__QBT_FEISHU_DAILY_SALES_ERROR__ || '';
+          // 显示更详细的错误信息
+          var detailInfo = '';
+          if (raw0 && raw0.error) {
+            detailInfo += '；后端error=' + String(raw0.error);
+          }
+          if (raw0 && raw0.detail) {
+            detailInfo += '；后端detail=' + String(raw0.detail);
+          }
+          if (raw0 && raw0.feishuCode) {
+            detailInfo += '；feishuCode=' + String(raw0.feishuCode);
+          }
           var keys0 = [];
           try {
             keys0 = Object.keys(raw0 || {});
           } catch (e) {}
           updateModelDistDebug(
             'jdModelDistDebug',
-            '主表无数据。range=' + (range0 || '-') + '；keys=' + (keys0.length ? keys0.join(',') : '-') + (err0 ? '；error=' + err0 : '')
+            '主表无数据。range=' + (range0 || '-') + '；keys=' + (keys0.length ? keys0.join(',') : '-') + (err0 ? '；error=' + err0 : '') + detailInfo
           );
           charts.chartJdModelDist.setOption(
             {
@@ -4999,7 +5010,18 @@
           var raw0 = window.__QBT_FEISHU_TMALL_SALES__;
           var range0 = raw0 && raw0.range ? raw0.range : '';
           var err0 = window.__QBT_FEISHU_TMALL_SALES_ERROR__ || '';
-          updateModelDistDebug('tmallModelDistDebug', '主表无数据。range=' + (range0 || '-') + (err0 ? '；error=' + err0 : ''));
+          // 显示更详细的错误信息
+          var detailInfo = '';
+          if (raw0 && raw0.error) {
+            detailInfo += '；后端error=' + String(raw0.error);
+          }
+          if (raw0 && raw0.detail) {
+            detailInfo += '；后端detail=' + String(raw0.detail);
+          }
+          if (raw0 && raw0.feishuCode) {
+            detailInfo += '；feishuCode=' + String(raw0.feishuCode);
+          }
+          updateModelDistDebug('tmallModelDistDebug', '主表无数据。range=' + (range0 || '-') + (err0 ? '；error=' + err0 : '') + detailInfo);
           charts.chartTmallModelDist.setOption(
             {
               title: { text: '暂无飞书天猫主表数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
