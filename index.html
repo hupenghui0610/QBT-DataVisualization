@@ -1092,6 +1092,7 @@
     <div class="skeleton-loader" id="skeletonLoader">
       <div class="skeleton-loader-spinner"></div>
       <span class="skeleton-loader-text" id="skeletonStatusText">几十万数据计算ing，喝杯水等我几十秒</span>
+      <span class="skeleton-loader-timer" id="skeletonTimer" style="margin-left:12px;color:#64748b;font-size:13px;">0s</span>
     </div>
   </div>
   <div id="main-content" style="display:none">
@@ -1592,11 +1593,23 @@
       // 暴露到全局，供缓存刷新使用
       window.showGlobalLoading = showLoading;
       window.hideGlobalLoading = hideLoading;
+      var skeletonTimerInterval = null;
+      var skeletonStartTime = null;
       function enterApp() {
         authGate.style.display = 'none';
         // 先显示骨架屏，让用户立即看到反馈
         var pageSkeleton = document.getElementById('page-skeleton');
         if (pageSkeleton) pageSkeleton.classList.add('is-visible');
+        // 启动计时器
+        skeletonStartTime = Date.now();
+        var timerEl = document.getElementById('skeletonTimer');
+        if (timerEl) {
+          timerEl.textContent = '0s';
+          skeletonTimerInterval = setInterval(function() {
+            var elapsed = Math.floor((Date.now() - skeletonStartTime) / 1000);
+            if (timerEl) timerEl.textContent = elapsed + 's';
+          }, 1000);
+        }
         // 调用原来的加载逻辑
         if (window.__runAfterAuth__) window.__runAfterAuth__();
       }
@@ -1607,6 +1620,11 @@
         var mainContent = document.getElementById('main-content');
         if (pageSkeleton) pageSkeleton.classList.remove('is-visible');
         if (mainContent) mainContent.style.display = 'block';
+        // 停止计时器
+        if (skeletonTimerInterval) {
+          clearInterval(skeletonTimerInterval);
+          skeletonTimerInterval = null;
+        }
         initMainTabNav();
         if (typeof window.resizeCharts === 'function') window.resizeCharts();
       }
