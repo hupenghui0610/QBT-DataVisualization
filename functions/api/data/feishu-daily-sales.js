@@ -1,6 +1,7 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
+import { getCache, setCache } from '../../_lib/cache.js';
 
 /** 默认与方案文档中示例 URL 一致，可用环境变量覆盖（勿写死过小行号，否则 501 行之后不会返回） */
 var DEFAULT_SPREADSHEET_TOKEN = 'EBwmsjjArhutvWtM2E9cLUMGnYd';
@@ -8,6 +9,8 @@ var DEFAULT_SPREADSHEET_TOKEN = 'EBwmsjjArhutvWtM2E9cLUMGnYd';
 var DEFAULT_RANGE = '0VWscb!A1:H20000';
 var DEFAULT_RANGE_MODEL = '0VWscb!AO1:BZ20000';
 var DEFAULT_RANGE_2 = '亲子屏日报数!A1:Z20000';
+var CACHE_KEY = 'feishu-daily-sales';
+var CACHE_TTL_HOURS = 48;
 
 function splitRange(range) {
   var i = String(range || '').indexOf('!');
@@ -167,6 +170,19 @@ export async function onRequestGet(context) {
     );
   }
 
+  // 优先读取缓存
+  var cached = await getCache(env, CACHE_KEY);
+  if (cached) {
+    return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        ...corsHeaders(origin),
+      },
+    });
+  }
+
   var spreadsheetToken = env.FEISHU_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
   var range = env.FEISHU_SHEET_RANGE || DEFAULT_RANGE;
   var rangeModel = env.FEISHU_SHEET_RANGE_MODEL || DEFAULT_RANGE_MODEL;
@@ -221,6 +237,8 @@ export async function onRequestGet(context) {
       revision2: data2.revision,
       valueRange2: data2.valueRange,
     };
+    // 写入缓存
+    await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: {

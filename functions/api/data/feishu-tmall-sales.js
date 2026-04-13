@@ -1,12 +1,14 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
+import { getCache, setCache } from '../../_lib/cache.js';
 
 /** 天猫在线表格：可被 FEISHU_TMALL_SPREADSHEET_TOKEN 覆盖 */
 var DEFAULT_SPREADSHEET_TOKEN = 'WkFuwdxnhio6AckVEeQcohMAnpc';
-/** 主数据：A-H列（日期、GMV、GSV）；型号数据：AY-CZ列 */
-var DEFAULT_RANGE = '2joAvv!A1:H20000';
-var DEFAULT_RANGE_MODEL = '2joAvv!AY1:CZ20000';
+/** AY 及以后为型号列，需足够宽；可被 FEISHU_TMALL_SHEET_RANGE 覆盖 */
+var DEFAULT_RANGE = '2joAvv!A1:ZZ20000';
+var CACHE_KEY = 'feishu-tmall-sales';
+var CACHE_TTL_HOURS = 48;
 
 function splitRange(range) {
   var i = String(range || '').indexOf('!');
@@ -110,54 +112,18 @@ function mergeDateAndModelValues(dateValues, modelValues, modelStartCol) {
   var b = Array.isArray(modelValues) ? modelValues : [];
   var n = Math.max(a.length, b.length);
   var out = [];
-  var start = typeof modelStartCol === 'number' ? modelStartCol : 50; // AY列对应索引50
+  var start = typeof modelStartCol === 'number' ? modelStartCol : 46;
   for (var r = 0; r < n; r++) {
     var row = [];
     var ra = a[r] || [];
     var rb = b[r] || [];
-    // 复制主数据
-    for (var i = 0; i < ra.length; i++) {
-      row[i] = ra[i];
-    }
-    // 复制型号数据到指定位置
+    row[0] = ra[0] == null ? '' : ra[0];
     for (var c = 0; c < rb.length; c++) {
       row[start + c] = rb[c];
     }
     out.push(row);
   }
   return out;
-}
-
-/** 合并主数据和型号数据，保持列位置 */
-function mergeMainAndModelValues(mainValues, modelValues, modelStartIndex) {
-  if (!mainValues || !mainValues.length) return mainValues || [];
-  if (!modelValues || !modelValues.length) return mainValues;
-
-  var result = [];
-  var maxRows = Math.max(mainValues.length, modelValues.length);
-  var startIdx = typeof modelStartIndex === 'number' ? modelStartIndex : 50;
-
-  for (var i = 0; i < maxRows; i++) {
-    var mainRow = mainValues[i] || [];
-    var modelRow = modelValues[i] || [];
-
-    // 创建足够大的数组
-    var mergedRow = new Array(Math.max(mainRow.length, startIdx + modelRow.length)).fill('');
-
-    // 复制主数据
-    for (var j = 0; j < mainRow.length; j++) {
-      mergedRow[j] = mainRow[j];
-    }
-
-    // 复制型号数据到指定位置
-    for (var k = 0; k < modelRow.length; k++) {
-      mergedRow[startIdx + k] = modelRow[k];
-    }
-
-    result.push(mergedRow);
-  }
-
-  return result;
 }
 
 export async function onRequestGet(context) {
@@ -176,46 +142,65 @@ export async function onRequestGet(context) {
     );
   }
 
+  // 优先读取缓存
+  var cached = await getCache(env, CACHE_KEY);
+  if (cached) {
+    return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        ...corsHeaders(origin),
+      },
+    });
+  }
+
   var spreadsheetToken = env.FEISHU_TMALL_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
   var range = env.FEISHU_TMALL_SHEET_RANGE || DEFAULT_RANGE;
-  var rangeModel = env.FEISHU_TMALL_SHEET_RANGE_MODEL || DEFAULT_RANGE_MODEL;
 
   try {
-    // 1. 读取主数据（A-H列：日期、GMV、GSV等）
-    var rMain = await fetchRangeWithAutoResolve(env, spreadsheetToken, range);
-    if (!rMain.feishuJson || rMain.feishuJson.code !== 0) {
+    var rows = parseRangeRows(range);
+    var dateRange = buildRangeByCols(range, 'A', 'A', rows.endRow);
+    var modelRange = buildRangeByCols(range, 'AU', 'ZZ', rows.endRow);
+    var rDate = await fetchRangeWithAutoResolve(env, spreadsheetToken, dateRange);
+    if (!rDate.feishuJson || rDate.feishuJson.code !== 0) {
       return jsonResponse(
         {
-          error: (rMain.feishuJson && rMain.feishuJson.msg ? rMain.feishuJson.msg : '飞书表格接口返回错误') + '（天猫主数据 range=' + String(rMain.finalRange || range) + '）',
-          feishuCode: rMain.feishuJson && rMain.feishuJson.code,
+          error: (rDate.feishuJson && rDate.feishuJson.msg ? rDate.feishuJson.msg : '飞书表格接口返回错误') + '（天猫日期列 range=' + String(rDate.finalRange || dateRange) + '）',
+          feishuCode: rDate.feishuJson && rDate.feishuJson.code,
         },
         502,
         origin
       );
     }
-
-    // 2. 读取型号数据（AY-CZ列）
-    var rModel = await fetchRangeWithAutoResolve(env, spreadsheetToken, rangeModel);
-    // 型号列可选，失败不影响主数据
-    var modelValues = [];
-    if (rModel.feishuJson && rModel.feishuJson.code === 0) {
-      modelValues = (rModel.feishuJson.data?.valueRange?.values) || [];
+    var rModel = await fetchRangeWithAutoResolve(env, spreadsheetToken, modelRange);
+    if (!rModel.feishuJson || rModel.feishuJson.code !== 0) {
+      return jsonResponse(
+        {
+          error: (rModel.feishuJson && rModel.feishuJson.msg ? rModel.feishuJson.msg : '飞书表格接口返回错误') + '（天猫型号列 range=' + String(rModel.finalRange || modelRange) + '）',
+          feishuCode: rModel.feishuJson && rModel.feishuJson.code,
+        },
+        502,
+        origin
+      );
     }
-
-    // 3. 合并数据，AY列对应索引50（0-based）
-    var mainValues = (rMain.feishuJson.data?.valueRange?.values) || [];
-    var mergedValues = mergeMainAndModelValues(mainValues, modelValues, 50);
-
+    var dataDate = rDate.feishuJson.data || {};
+    var dataModel = rModel.feishuJson.data || {};
+    var dateValues = (dataDate.valueRange && dataDate.valueRange.values) || [];
+    var modelValues = (dataModel.valueRange && dataModel.valueRange.values) || [];
+    var mergedValues = mergeDateAndModelValues(dateValues, modelValues, 46);
     var payload = {
       spreadsheetToken: spreadsheetToken,
-      range: String(rMain.finalRange || range) + ' + ' + String(rModel.finalRange || rangeModel),
-      revision: rMain.feishuJson.data?.revision,
+      range: String(rDate.finalRange || dateRange) + ' + ' + String(rModel.finalRange || modelRange),
+      revision: dataDate.revision || dataModel.revision,
       valueRange: {
-        range: String(rMain.finalRange || range) + ' + ' + String(rModel.finalRange || rangeModel),
+        range: String(rDate.finalRange || dateRange) + ' + ' + String(rModel.finalRange || modelRange),
         majorDimension: 'ROWS',
         values: mergedValues,
       },
     };
+    // 写入缓存
+    await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: {

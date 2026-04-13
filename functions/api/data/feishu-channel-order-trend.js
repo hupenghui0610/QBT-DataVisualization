@@ -1,6 +1,10 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
+import { getCache, setCache } from '../../_lib/cache.js';
+
+var CACHE_KEY = 'feishu-channel-order-trend';
+var CACHE_TTL_HOURS = 48;
 
 var DEFAULT_SPREADSHEET_TOKEN = 'P1zusUMg2haMGctskH6cydLqn5e';
 var DEFAULT_CHANNEL_RANGE = 'ghju03!A1:E2000';
@@ -92,6 +96,19 @@ export async function onRequestGet(context) {
 
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
+
+  // 优先读取缓存
+  var cached = await getCache(env, CACHE_KEY);
+  if (cached) {
+    return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        ...corsHeaders(origin),
+      },
+    });
+  }
 
   if (!env.FEISHU_APP_ID || !env.FEISHU_APP_SECRET) {
     return jsonResponse(
@@ -280,6 +297,10 @@ export async function onRequestGet(context) {
     };
 
     var jsonBody = JSON.stringify(payload);
+
+    // 写入缓存
+    await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
+
     var res = new Response(jsonBody, {
       status: 200,
       headers: {

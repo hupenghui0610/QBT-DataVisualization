@@ -1,6 +1,10 @@
 import { jsonResponse, corsHeaders } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
+import { getCache, setCache } from '../../_lib/cache.js';
+
+var CACHE_KEY = 'feishu-douyin-model-distribution';
+var CACHE_TTL_HOURS = 48;
 
 var DEFAULT_SPREADSHEET_TOKEN = 'P1zusUMg2haMGctskH6cydLqn5e';
 var DEFAULT_ORDER_RANGE = 'tuec5U!A2:AO20000';
@@ -176,6 +180,19 @@ export async function onRequestGet(context) {
 
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
+
+  // 优先读取缓存
+  var cached = await getCache(env, CACHE_KEY);
+  if (cached) {
+    return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+        ...corsHeaders(origin),
+      },
+    });
+  }
 
   if (!env.FEISHU_APP_ID || !env.FEISHU_APP_SECRET) {
     return jsonResponse(
@@ -355,17 +372,22 @@ export async function onRequestGet(context) {
       return a.localeCompare(b, 'zh-CN');
     });
 
+    var payload = {
+      spreadsheetToken: spreadsheetToken,
+      orderRange: orderRange,
+      mapSheetTitle: sMap.title,
+      cutover: cutover,
+      models: models,
+      qtyByModelDp: qtyDp,
+      qtyByModelDaren: qtyDaren,
+      meta: meta,
+    };
+
+    // 写入缓存
+    await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
+
     return new Response(
-      JSON.stringify({
-        spreadsheetToken: spreadsheetToken,
-        orderRange: orderRange,
-        mapSheetTitle: sMap.title,
-        cutover: cutover,
-        models: models,
-        qtyByModelDp: qtyDp,
-        qtyByModelDaren: qtyDaren,
-        meta: meta,
-      }),
+      JSON.stringify(payload),
       {
         status: 200,
         headers: {

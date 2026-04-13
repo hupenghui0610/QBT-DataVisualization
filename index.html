@@ -1091,8 +1091,7 @@
     <!-- 底部加载指示器 -->
     <div class="skeleton-loader" id="skeletonLoader">
       <div class="skeleton-loader-spinner"></div>
-      <span class="skeleton-loader-text" id="skeletonStatusText">几十万数据计算ing，喝杯茶吧~</span>
-      <span class="skeleton-loader-timer" id="skeletonTimer" style="margin-left:12px;color:#64748b;font-size:13px;">0s</span>
+      <span class="skeleton-loader-text" id="skeletonStatusText">几十万数据计算ing，喝杯水等我几十秒</span>
     </div>
   </div>
   <div id="main-content" style="display:none">
@@ -1118,7 +1117,12 @@
       </div>
     </div>
     <h1>希倍思 - 电商数据可视化</h1>
-    <div class="subtitle">仅限于希倍思人员使用，切勿分享至外部！</div>
+    <div class="subtitle" id="cacheStatusBar" style="display:flex;align-items:center;justify-content:center;gap:12px;font-size:14px;color:#64748b;">
+      <span id="cacheUpdateTime">当前数据更新于--/-- --:--</span>
+      <button type="button" id="headerRefreshBtn" style="padding:4px 12px;font-size:13px;color:#4a69bd;background:#f0f3fb;border:1px solid #c5cee8;border-radius:6px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;">
+        <i class="fa fa-refresh" style="font-size:12px;"></i>刷新
+      </button>
+    </div>
     <nav class="main-nav-tabs" role="tablist" aria-label="数据分区">
       <button type="button" class="main-nav-tab active" role="tab" aria-selected="true" aria-controls="main-tab-panel-home" id="main-tab-btn-home" data-main-tab="home">首页</button>
       <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-shelf" id="main-tab-btn-shelf" data-main-tab="shelf">货架电商</button>
@@ -1426,7 +1430,7 @@
   <div class="grid" id="chartGrid">
     <div class="card"><h3><i class="chart-title-icon fa fa-bar-chart"></i><span>渠道对比（销量 / 销售额）</span></h3><div class="date-range">起始：<select id="dim1Start"></select> 结束：<select id="dim1End"></select></div><div id="chart1" class="chart"></div></div>
     <div class="card"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>价格段结构（销量占比）</span></h3><div class="date-range">起始：<select id="dim2Start"></select> 结束：<select id="dim2End"></select></div><div id="chart2" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>大盘时间趋势（销量、销量同比）</span></h3><div class="date-range">起始：<select id="dim3Start"></select> 结束：<select id="dim3End"></select></div><div id="chart3" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>大盘时间趋势</span></h3><div class="date-range">起始：<select id="dim3Start"></select> 结束：<select id="dim3End"></select></div><div id="chart3" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-area-chart"></i><span>分渠道销量趋势</span></h3><div class="date-range">起始：<select id="dim4Start"></select> 结束：<select id="dim4End"></select></div><div id="chart4" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>价格段销量占比</span></h3><div class="date-range">起始：<select id="dim5Start"></select> 结束：<select id="dim5End"></select></div><div id="chart5" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>各渠道销量占比</span></h3><div class="date-range">起始：<select id="dim6Start"></select> 结束：<select id="dim6End"></select></div><div id="chart9" class="chart"></div></div>
@@ -1589,39 +1593,25 @@
         globalLoading.classList.remove('show');
         document.body.classList.remove('loading-active');
       }
+
+      // 暴露到全局，供缓存刷新使用
+      window.showGlobalLoading = showLoading;
+      window.hideGlobalLoading = hideLoading;
       function enterApp() {
         authGate.style.display = 'none';
         // 先显示骨架屏，让用户立即看到反馈
         var pageSkeleton = document.getElementById('page-skeleton');
         if (pageSkeleton) pageSkeleton.classList.add('is-visible');
-        // 启动计时器
-        skeletonStartTime = Date.now();
-        var timerEl = document.getElementById('skeletonTimer');
-        if (timerEl) {
-          timerEl.textContent = '0s';
-          skeletonTimerInterval = setInterval(function() {
-            var elapsed = Math.floor((Date.now() - skeletonStartTime) / 1000);
-            if (timerEl) timerEl.textContent = elapsed + 's';
-          }, 1000);
-        }
         // 调用原来的加载逻辑
         if (window.__runAfterAuth__) window.__runAfterAuth__();
       }
 
       // 显示主内容（在数据加载完成后调用）
-      var skeletonTimerInterval = null;
-      var skeletonStartTime = null;
-
       function showMainContent() {
         var pageSkeleton = document.getElementById('page-skeleton');
         var mainContent = document.getElementById('main-content');
         if (pageSkeleton) pageSkeleton.classList.remove('is-visible');
         if (mainContent) mainContent.style.display = 'block';
-        // 停止计时器
-        if (skeletonTimerInterval) {
-          clearInterval(skeletonTimerInterval);
-          skeletonTimerInterval = null;
-        }
         initMainTabNav();
         if (typeof window.resizeCharts === 'function') window.resizeCharts();
       }
@@ -2519,8 +2509,8 @@
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
           yAxis: [
             { type: 'value', name: '销量', axisLabel: { formatter: formatAxisNumInt } },
-            { type: 'value', name: '', axisLabel: { show: false }, splitLine: { show: false }, axisTick: { show: false } },
-            { type: 'value', name: '客单价(元)', position: 'right', offset: 50, axisLabel: { formatter: function(v) { return Math.round(v).toLocaleString(); } }, splitLine: { show: false } }
+            { type: 'value', name: '同比%', axisLabel: { formatter: formatAxisPercentInt }, splitLine: { show: false } },
+            { type: 'value', name: '', position: 'right', offset: 50, min: 2500, max: 4000, axisLabel: { formatter: function(v) { return Math.round(v).toLocaleString(); } }, splitLine: { show: false } }
           ],
           series: [
             { name: '销量', type: 'line', data: s1, smooth: true, connectNulls: false },
@@ -4787,24 +4777,13 @@
           var raw0 = window.__QBT_FEISHU_DAILY_SALES__;
           var range0 = raw0 && raw0.range ? raw0.range : '';
           var err0 = window.__QBT_FEISHU_DAILY_SALES_ERROR__ || '';
-          // 显示更详细的错误信息
-          var detailInfo = '';
-          if (raw0 && raw0.error) {
-            detailInfo += '；后端error=' + String(raw0.error);
-          }
-          if (raw0 && raw0.detail) {
-            detailInfo += '；后端detail=' + String(raw0.detail);
-          }
-          if (raw0 && raw0.feishuCode) {
-            detailInfo += '；feishuCode=' + String(raw0.feishuCode);
-          }
           var keys0 = [];
           try {
             keys0 = Object.keys(raw0 || {});
           } catch (e) {}
           updateModelDistDebug(
             'jdModelDistDebug',
-            '主表无数据。range=' + (range0 || '-') + '；keys=' + (keys0.length ? keys0.join(',') : '-') + (err0 ? '；error=' + err0 : '') + detailInfo
+            '主表无数据。range=' + (range0 || '-') + '；keys=' + (keys0.length ? keys0.join(',') : '-') + (err0 ? '；error=' + err0 : '')
           );
           charts.chartJdModelDist.setOption(
             {
@@ -5010,18 +4989,7 @@
           var raw0 = window.__QBT_FEISHU_TMALL_SALES__;
           var range0 = raw0 && raw0.range ? raw0.range : '';
           var err0 = window.__QBT_FEISHU_TMALL_SALES_ERROR__ || '';
-          // 显示更详细的错误信息
-          var detailInfo = '';
-          if (raw0 && raw0.error) {
-            detailInfo += '；后端error=' + String(raw0.error);
-          }
-          if (raw0 && raw0.detail) {
-            detailInfo += '；后端detail=' + String(raw0.detail);
-          }
-          if (raw0 && raw0.feishuCode) {
-            detailInfo += '；feishuCode=' + String(raw0.feishuCode);
-          }
-          updateModelDistDebug('tmallModelDistDebug', '主表无数据。range=' + (range0 || '-') + (err0 ? '；error=' + err0 : '') + detailInfo);
+          updateModelDistDebug('tmallModelDistDebug', '主表无数据。range=' + (range0 || '-') + (err0 ? '；error=' + err0 : ''));
           charts.chartTmallModelDist.setOption(
             {
               title: { text: '暂无飞书天猫主表数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
@@ -5174,16 +5142,8 @@
         var pts = window.douyinDailyTrendPointsDailyCached || [];
         var datesFromData = pts.map(function (p) {
           return p.date;
-        }).filter(Boolean).sort();
-
-        // 使用数据实际日期范围作为默认值
-        var def;
-        if (datesFromData.length > 0) {
-          def = { start: datesFromData[0], end: datesFromData[datesFromData.length - 1] };
-        } else {
-          def = defaultJdDailyFilterRange();
-        }
-
+        });
+        var def = defaultJdDailyFilterRange();
         var merged = {};
         datesFromData.forEach(function (d) {
           if (d) merged[d] = true;
@@ -5696,6 +5656,12 @@
         var mapDyDarenShop = parseGmvMapFromValues(douyinSheet1 || [], GMV_DOUYIN_DAREN_SHOP_COL);
         var mapDyLearn = parseGmvMapFromValues(douyinSheet2 || [], GMV_DOUYIN_LEARN_COL);
         var mapDyQinzi = parseGmvMapFromValues(douyinSheet3 || [], GMV_DOUYIN_QINZI_COL);
+
+        // 调试抖音解析结果
+        console.log('[gmvCombinedBuildPoints] 抖音店铺Map:', mapDyShop);
+        console.log('[gmvCombinedBuildPoints] 抖音达人店铺Map:', mapDyDarenShop);
+        console.log('[gmvCombinedBuildPoints] 抖音学习机Map:', mapDyLearn);
+        console.log('[gmvCombinedBuildPoints] 抖音亲子屏Map:', mapDyQinzi);
         var all = {};
         [jdThirdMap, mapLearn, mapQinzi, mapTmShop, mapTmLearn, mapTmQinzi, mapDyShop, mapDyDarenShop, mapDyLearn, mapDyQinzi].forEach(function (mp) {
           Object.keys(mp).forEach(function (d) {
@@ -7047,7 +7013,7 @@
               );
             },
           },
-          legend: { data: legendData, selected: { '京东': false }, top: 6, left: 'center', type: 'scroll' },
+          legend: { data: legendData, top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 40, top: 48, bottom: 52 },
           xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
           yAxis: {
@@ -7175,7 +7141,7 @@
               );
             },
           },
-          legend: { data: legendData, selected: { '京东': false }, top: 6, left: 'center', type: 'scroll' },
+          legend: { data: legendData, top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 40, top: 48, bottom: 52 },
           xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
           yAxis: {
@@ -7210,8 +7176,20 @@
       }
       function refreshGmvCombined() {
         var gmvRaw = window.__QBT_FEISHU_GMV_COMBINED__;
+
+        // 调试日志
+        console.log('[refreshGmvCombined] gmvRaw:', gmvRaw);
+        console.log('[refreshGmvCombined] tmallValueRange:', gmvRaw?.tmallValueRange);
+        console.log('[refreshGmvCombined] jdValueRange:', gmvRaw?.jdValueRange);
+
         var jdV = gmvRaw && gmvRaw.jdValueRange && gmvRaw.jdValueRange.values;
         var tmV = gmvRaw && gmvRaw.tmallValueRange && gmvRaw.tmallValueRange.values;
+
+        // 调试日志
+        console.log('[refreshGmvCombined] 天猫数据行数:', tmV?.length);
+        console.log('[refreshGmvCombined] 京东数据行数:', jdV?.length);
+        console.log('[refreshGmvCombined] 天猫前3行:', tmV?.slice(0, 3));
+
         var daily = window.__QBT_FEISHU_DAILY_SALES__;
         var vr1 = daily && daily.valueRange && daily.valueRange.values;
         var vr2 = daily && daily.valueRange2 && daily.valueRange2.values;
@@ -7219,8 +7197,15 @@
         var dy1 = dyRaw && dyRaw.valueRange && dyRaw.valueRange.values;
         var dy2 = dyRaw && dyRaw.valueRange2 && dyRaw.valueRange2.values;
         var dy3 = dyRaw && dyRaw.valueRange3 && dyRaw.valueRange3.values;
+
+        // 调试抖音数据
+        console.log('[refreshGmvCombined] 抖音原始数据:', dyRaw);
+        console.log('[refreshGmvCombined] 抖音sheet1(直播)行数:', dy1?.length, '样本:', dy1?.slice(0, 3));
+        console.log('[refreshGmvCombined] 抖音sheet2(短视频)行数:', dy2?.length, '样本:', dy2?.slice(0, 3));
+        console.log('[refreshGmvCombined] 抖音sheet3(其他)行数:', dy3?.length, '样本:', dy3?.slice(0, 3));
         // 构建GMV数据
         if ((!tmV || !tmV.length) && (!jdV || !jdV.length) && (!vr1 || !vr1.length) && (!dy1 || !dy1.length) && (!dy2 || !dy2.length) && (!dy3 || !dy3.length)) {
+          console.log('[refreshGmvCombined] 所有数据源为空');
           window.gmvCombinedPointsCached = [];
           initGmvCombinedSelects([]);
           renderGmvCombined();
@@ -7228,6 +7213,8 @@
           refreshAllChannelRefund();
         } else {
           window.gmvCombinedPointsCached = gmvCombinedBuildPoints(jdV || [], tmV || [], vr1, vr2 || [], dy1 || [], dy2 || [], dy3 || []);
+          console.log('[refreshGmvCombined] GMV数据点数量:', window.gmvCombinedPointsCached.length);
+          console.log('[refreshGmvCombined] GMV前3条:', window.gmvCombinedPointsCached.slice(0, 3));
           if (!window.gmvCombinedPointsCached.length) {
             initGmvCombinedSelects([]);
             renderGmvCombined();
@@ -7715,7 +7702,7 @@
         return false;
       }
       function livestreamFunnelLocalDemoAnchors() {
-        return [{ name: '示例主播', exposure: 236010, view: 14319, productExposure: 12000, productClick: 3500, order: 890, dates: ['2024-01-15', '2024-01-16', '2024-01-17'] }];
+        return [{ name: '示例主播', exposure: 236010, view: 14319, productExposure: 12000, productClick: 3500, order: 890 }];
       }
 
       // ==================== 直播间转化漏斗多实例管理 ====================
@@ -7724,6 +7711,8 @@
 
       function initLivestreamFunnelSelect(card, anchors) {
         var sel = card.querySelector('.livestream-funnel-anchor');
+        var startDateSel = card.querySelector('.livestream-funnel-start-date');
+        var endDateSel = card.querySelector('.livestream-funnel-end-date');
         if (!sel) return;
         var prev = sel.value;
         sel.innerHTML = '<option value="">请选择主播</option>';
@@ -7737,132 +7726,71 @@
 
         // 主播选择变化时更新日期选项
         sel.onchange = function() {
-          updateLivestreamFunnelDateOptions(card);
+          updateFunnelDateOptions(card, this.value);
           renderLivestreamFunnel(card.dataset.funnelId);
         };
+
+        // 日期选择变化时重新渲染
+        if (startDateSel) {
+          startDateSel.onchange = function() {
+            renderLivestreamFunnel(card.dataset.funnelId);
+          };
+        }
+        if (endDateSel) {
+          endDateSel.onchange = function() {
+            renderLivestreamFunnel(card.dataset.funnelId);
+          };
+        }
 
         if (prev) {
           var has = Array.prototype.some.call(sel.options, function (opt) {
             return opt.value === prev;
           });
-          if (has) sel.value = prev;
+          if (has) {
+            sel.value = prev;
+            updateFunnelDateOptions(card, prev);
+          }
         }
-
-        // 初始化日期选择器
-        updateLivestreamFunnelDateOptions(card);
       }
 
-      // 更新直播间转化漏斗的日期选项
-      function updateLivestreamFunnelDateOptions(card) {
-        var anchorSel = card.querySelector('.livestream-funnel-anchor');
-        var startSel = card.querySelector('.livestream-funnel-start-date');
-        var endSel = card.querySelector('.livestream-funnel-end-date');
-        if (!anchorSel || !startSel || !endSel) return;
+      // 更新日期选项
+      function updateFunnelDateOptions(card, anchorName) {
+        var startDateSel = card.querySelector('.livestream-funnel-start-date');
+        var endDateSel = card.querySelector('.livestream-funnel-end-date');
+        if (!startDateSel || !endDateSel) return;
 
-        var anchorName = anchorSel.value;
-        if (!anchorName) {
-          startSel.innerHTML = '<option value="">全部</option>';
-          endSel.innerHTML = '<option value="">全部</option>';
-          startSel.disabled = true;
-          endSel.disabled = true;
+        // 清空并添加默认选项
+        startDateSel.innerHTML = '<option value="">全部</option>';
+        endDateSel.innerHTML = '<option value="">全部</option>';
+
+        if (!anchorName || !window.livestreamFunnelDataCached) {
+          startDateSel.disabled = true;
+          endDateSel.disabled = true;
           return;
         }
 
-        var anchors = window.livestreamFunnelAnchorsCached;
-        if (!anchors || !Array.isArray(anchors)) {
-          startSel.innerHTML = '<option value="">全部</option>';
-          endSel.innerHTML = '<option value="">全部</option>';
-          startSel.disabled = true;
-          endSel.disabled = true;
-          return;
-        }
+        var dates = window.livestreamFunnelDataCached.datesByAnchor[anchorName] || [];
+        dates.forEach(function (d) {
+          var opt1 = document.createElement('option');
+          opt1.value = d;
+          opt1.textContent = d;
+          startDateSel.appendChild(opt1);
 
-        var anchorData = null;
-        for (var i = 0; i < anchors.length; i++) {
-          var anchorItem = anchors[i];
-          if (anchorItem && anchorItem.name && anchorItem.name === anchorName) {
-            anchorData = anchorItem;
-            break;
-          }
-        }
-
-        // 保存当前选择
-        var prevStart = startSel.value;
-        var prevEnd = endSel.value;
-
-        // 重置选项
-        startSel.innerHTML = '<option value="">全部</option>';
-        endSel.innerHTML = '<option value="">全部</option>';
-
-        // Debug: 输出调试信息
-        console.log('[updateLivestreamFunnelDateOptions] 调试:', {
-          anchorName: anchorName,
-          anchorsCount: anchors.length,
-          anchorData: anchorData,
-          hasDates: anchorData ? !!anchorData.dates : false,
-          datesArray: anchorData ? Array.isArray(anchorData.dates) : false,
-          datesLength: anchorData && anchorData.dates ? anchorData.dates.length : 0,
-          datesContent: anchorData ? anchorData.dates : null
+          var opt2 = document.createElement('option');
+          opt2.value = d;
+          opt2.textContent = d;
+          endDateSel.appendChild(opt2);
         });
 
-        if (!anchorData || !anchorData.dates || !Array.isArray(anchorData.dates) || anchorData.dates.length === 0) {
-          startSel.disabled = true;
-          endSel.disabled = true;
-          return;
-        }
-
-        // 启用选择器
-        startSel.disabled = false;
-        endSel.disabled = false;
-
-        // 填充日期选项
-        anchorData.dates.forEach(function(dateKey) {
-          var optStart = document.createElement('option');
-          optStart.value = dateKey;
-          optStart.textContent = dateKey;
-          startSel.appendChild(optStart);
-
-          var optEnd = document.createElement('option');
-          optEnd.value = dateKey;
-          optEnd.textContent = dateKey;
-          endSel.appendChild(optEnd);
-        });
-
-        // 恢复之前的选择（如果可用）
-        if (prevStart) {
-          var hasStart = Array.prototype.some.call(startSel.options, function(opt) {
-            return opt.value === prevStart;
-          });
-          if (hasStart) startSel.value = prevStart;
-        }
-        if (prevEnd) {
-          var hasEnd = Array.prototype.some.call(endSel.options, function(opt) {
-            return opt.value === prevEnd;
-          });
-          if (hasEnd) endSel.value = prevEnd;
-        }
-
-        // 绑定日期变化事件
-        startSel.onchange = function() {
-          // 确保结束日期不早于起始日期
-          if (startSel.value && endSel.value && startSel.value > endSel.value) {
-            endSel.value = startSel.value;
-          }
-          renderLivestreamFunnel(card.dataset.funnelId);
-        };
-        endSel.onchange = function() {
-          // 确保结束日期不早于起始日期
-          if (startSel.value && endSel.value && endSel.value < startSel.value) {
-            startSel.value = endSel.value;
-          }
-          renderLivestreamFunnel(card.dataset.funnelId);
-        };
+        startDateSel.disabled = false;
+        endDateSel.disabled = false;
       }
 
       function renderLivestreamFunnel(funnelId) {
         var card = document.querySelector('.livestream-funnel-card[data-funnel-id="' + funnelId + '"]');
         if (!card) return;
         var el = card.querySelector('.livestream-funnel-chart');
+        var list = window.livestreamFunnelAnchorsCached;
         if (!el) return;
 
         var instance = window.livestreamFunnelInstances.find(function(inst) { return inst.id === funnelId; });
@@ -7877,17 +7805,12 @@
         instance.chart.resize();
 
         var sel = card.querySelector('.livestream-funnel-anchor');
-        var startSel = card.querySelector('.livestream-funnel-start-date');
-        var endSel = card.querySelector('.livestream-funnel-end-date');
         var name = sel && sel.value ? String(sel.value).trim() : '';
-        var startDate = startSel && startSel.value ? startSel.value : '';
-        var endDate = endSel && endSel.value ? endSel.value : '';
-
-        if (!name) {
+        if (!name || !list || !list.length) {
           instance.chart.setOption(
             {
               title: {
-                text: '请选择主播',
+                text: name ? '未找到该主播数据' : '请选择主播',
                 left: 'center',
                 top: 'middle',
                 textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' },
@@ -7899,87 +7822,19 @@
           return;
         }
 
-        // 检查是否需要按日期筛选（如果选择了日期范围，需要重新获取数据）
-        if (startDate || endDate) {
-          // 显示计算中状态
-          instance.chart.setOption(
-            {
-              title: {
-                text: '计算中...',
-                left: 'center',
-                top: 'middle',
-                textStyle: { fontSize: 14, fontWeight: 'normal', color: '#64748b' },
-              },
-              series: [],
-            },
-            true
-          );
-          // 需要重新获取筛选后的数据
-          fetchLivestreamFunnelWithDateRange(startDate, endDate).then(function(data) {
-            if (!data || !data.anchors) {
-              instance.chart.setOption(
-                { title: { text: '获取筛选数据失败', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, series: [] },
-                true
-              );
-              return;
-            }
-            var hit = null;
-            for (var i = 0; i < data.anchors.length; i++) {
-              if (data.anchors[i] && data.anchors[i].name === name) {
-                hit = data.anchors[i];
-                break;
-              }
-            }
-            renderLivestreamFunnelData(instance, hit);
-          }).catch(function(err) {
-            instance.chart.setOption(
-              { title: { text: '获取筛选数据失败', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, series: [] },
-              true
-            );
-          });
-        } else {
-          // 使用缓存数据
-          var list = window.livestreamFunnelAnchorsCached;
-          var hit = null;
-          for (var i = 0; i < list.length; i++) {
-            if (list[i] && list[i].name === name) {
-              hit = list[i];
-              break;
-            }
-          }
-          renderLivestreamFunnelData(instance, hit);
-        }
-      }
+        // 获取日期选择
+        var startDateSel = card.querySelector('.livestream-funnel-start-date');
+        var endDateSel = card.querySelector('.livestream-funnel-end-date');
+        var startDate = startDateSel && startDateSel.value ? startDateSel.value : '';
+        var endDate = endDateSel && endDateSel.value ? endDateSel.value : '';
 
-      // 获取带日期筛选的直播间漏斗数据
-      function fetchLivestreamFunnelWithDateRange(startDate, endDate) {
-        var cacheKey = 'funnel_' + (startDate || 'all') + '_' + (endDate || 'all');
-        var now = Date.now();
-        // 简单的内存缓存（5分钟）
-        if (window.__livestreamFunnelDateCache && window.__livestreamFunnelDateCache.key === cacheKey) {
-          if (now - window.__livestreamFunnelDateCache.time < 5 * 60 * 1000) {
-            return Promise.resolve(window.__livestreamFunnelDateCache.data);
+        var hit = null;
+        for (var i = 0; i < list.length; i++) {
+          if (list[i] && list[i].name === name) {
+            hit = list[i];
+            break;
           }
         }
-
-        var url = '/api/data/feishu-livestream-funnel';
-        var params = [];
-        if (startDate) params.push('startDate=' + encodeURIComponent(startDate));
-        if (endDate) params.push('endDate=' + encodeURIComponent(endDate));
-        if (params.length > 0) url += '?' + params.join('&');
-
-        return fetch(url, {
-          headers: {
-            'Authorization': 'Bearer ' + (XbsAuth.getToken() || '')
-          }
-        }).then(function(r) { return r.json(); }).then(function(data) {
-          window.__livestreamFunnelDateCache = { key: cacheKey, time: now, data: data };
-          return data;
-        });
-      }
-
-      // 渲染直播间转化漏斗数据
-      function renderLivestreamFunnelData(instance, hit) {
         if (!hit) {
           instance.chart.setOption(
             { title: { text: '未找到该主播数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, series: [] },
@@ -7987,11 +7842,42 @@
           );
           return;
         }
-        var sumExp = hit.exposure != null ? Number(hit.exposure) : 0;
-        var sumView = hit.view != null ? Number(hit.view) : 0;
-        var sumProductExp = hit.productExposure != null ? Number(hit.productExposure) : 0;
-        var sumProductClick = hit.productClick != null ? Number(hit.productClick) : 0;
-        var sumOrder = hit.order != null ? Number(hit.order) : 0;
+
+        // 计算漏斗数据：如果选择日期范围，则累加范围内数据；否则使用全部累加
+        var sumExp, sumView, sumProductExp, sumProductClick, sumOrder;
+        if (startDate && endDate && window.livestreamFunnelDataCached && window.livestreamFunnelDataCached.dataByAnchorAndDate) {
+          var dateData = window.livestreamFunnelDataCached.dataByAnchorAndDate[name];
+          if (dateData) {
+            sumExp = 0; sumView = 0; sumProductExp = 0; sumProductClick = 0; sumOrder = 0;
+            var dates = Object.keys(dateData).filter(function(d) {
+              return d >= startDate && d <= endDate;
+            }).sort();
+            dates.forEach(function(d) {
+              var day = dateData[d];
+              if (day) {
+                sumExp += (day.exposure || 0);
+                sumView += (day.view || 0);
+                sumProductExp += (day.productExposure || 0);
+                sumProductClick += (day.productClick || 0);
+                sumOrder += (day.order || 0);
+              }
+            });
+          } else {
+            // 该主播无日期数据，使用全部累加
+            sumExp = hit.exposure != null ? Number(hit.exposure) : 0;
+            sumView = hit.view != null ? Number(hit.view) : 0;
+            sumProductExp = hit.productExposure != null ? Number(hit.productExposure) : 0;
+            sumProductClick = hit.productClick != null ? Number(hit.productClick) : 0;
+            sumOrder = hit.order != null ? Number(hit.order) : 0;
+          }
+        } else {
+          // 未选择日期范围，使用全部累加
+          sumExp = hit.exposure != null ? Number(hit.exposure) : 0;
+          sumView = hit.view != null ? Number(hit.view) : 0;
+          sumProductExp = hit.productExposure != null ? Number(hit.productExposure) : 0;
+          sumProductClick = hit.productClick != null ? Number(hit.productClick) : 0;
+          sumOrder = hit.order != null ? Number(hit.order) : 0;
+        }
         if (sumExp + sumView + sumProductExp + sumProductClick + sumOrder <= 0) {
           instance.chart.setOption(
             {
@@ -8014,12 +7900,10 @@
           { value: sumProductClick, name: '直播间商品点击人数', color: '#8b5cf6' },
           { value: sumOrder, name: '直播间成交人数', color: '#10b981' },
         ];
-        // 移动端检测：将整个漏斗向左移动，让右侧转化率文字有更多显示空间
-        var isMobile = document.documentElement.classList.contains('mobile-client');
         var opt = {
           title: { show: false },
           animationDuration: 280,
-          grid: { left: isMobile ? '-10%' : '8%', right: '8%', top: '10%', bottom: '14%', containLabel: false },
+          grid: { left: '8%', right: '8%', top: '10%', bottom: '14%', containLabel: false },
           xAxis: { type: 'value', show: false, min: 0, max: 1 },
           yAxis: { type: 'value', show: false, min: 0, max: 1 },
           tooltip: { show: false },
@@ -8185,7 +8069,7 @@
         var addBtn = document.getElementById('addFunnelBtn');
         if (!grid) return;
         var cards = grid.querySelectorAll('.livestream-funnel-card');
-        if (cards.length >= 3) return;
+        if (cards.length >= 4) return;
 
         var newId = String(window.livestreamFunnelNextId++);
         var card = document.createElement('div');
@@ -8204,8 +8088,8 @@
         initLivestreamFunnelSelect(card, window.livestreamFunnelAnchorsCached);
         renderLivestreamFunnel(newId);
 
-        // 当达到3个时禁用增加按钮
-        if (addBtn) addBtn.disabled = cards.length + 1 >= 3;
+        // 当达到4个时禁用增加按钮
+        if (addBtn) addBtn.disabled = cards.length + 1 >= 4;
       }
 
       function removeLivestreamFunnel(funnelId) {
@@ -8259,7 +8143,8 @@
           });
           return;
         }
-        window.livestreamFunnelAnchorsCached = data.anchors;
+        window.livestreamFunnelDataCached = data;  // 存储完整数据
+        window.livestreamFunnelAnchorsCached = data.anchors;  // 兼容旧代码
         var cards = grid.querySelectorAll('.livestream-funnel-card');
         cards.forEach(function(card) {
           var status = card.querySelector('.livestream-funnel-status');
@@ -8536,7 +8421,9 @@
             });
         }
         function fetchFeishuGmvCombined() {
+          console.log('[fetchFeishuGmvCombined] 开始调用');
           if (typeof XbsAuth === 'undefined' || !XbsAuth.getToken()) {
+            console.log('[fetchFeishuGmvCombined] 未登录，返回空');
             try {
               window.__QBT_FEISHU_GMV_COMBINED__ = null;
             } catch (e) {}
@@ -8547,6 +8434,9 @@
           return XbsAuth.fetchFeishuGmvCombined()
             .then(parseJsonRes)
             .then(function (o) {
+              console.log('[fetchFeishuGmvCombined] API响应:', o);
+              console.log('[fetchFeishuGmvCombined] HTTP状态:', o.r.status);
+              console.log('[fetchFeishuGmvCombined] 数据:', o.data);
               try {
                 var hasTm = o.data && o.data.tmallValueRange && Array.isArray(o.data.tmallValueRange.values);
                 var hasJd = o.data && o.data.jdValueRange && Array.isArray(o.data.jdValueRange.values);
@@ -8556,34 +8446,21 @@
                   typeof o.data === 'object' &&
                   !o.data.error &&
                   (hasTm || hasJd);
+                console.log('[fetchFeishuGmvCombined] 验证结果:', {hasTm, hasJd, valid});
                 if (valid) {
                   window.__QBT_FEISHU_GMV_COMBINED__ = o.data;
                   window.__QBT_FEISHU_GMV_COMBINED_ERROR__ = '';
-                  try {
-                    var meta = o.data.tmallValuesMeta;
-                    var hs = meta && meta.hColumnStatsMerged;
-                    if (hs && hs.nonEmpty > 0 && hs.formulaString >= hs.numericParseable) {
-                      console.warn(
-                        '[天猫GSV] H列大量为公式文本（formulaString=' +
-                          hs.formulaString +
-                          '），接口可能未返回公式计算结果。请查看响应 tmallValuesMeta；飞书不支持跨表引用、数组公式等部分公式通过 OpenAPI 取数。'
-                      );
-                    }
-                    if (meta && meta.maxRowLength > 0 && meta.maxRowLength < 8) {
-                      console.warn(
-                        '[天猫GSV] 响应 maxRowLength=' + meta.maxRowLength + '，未含H列。请把 FEISHU_TMALL_GMV_RANGE 设为含 H 列（如 A1:H20000）。'
-                      );
-                    }
-                  } catch (eMeta) {}
                 } else {
                   window.__QBT_FEISHU_GMV_COMBINED__ = null;
                   var msg =
                     (o.data && (o.data.error || o.data.detail)) ||
                     ('接口异常 HTTP ' + (o.r && o.r.status != null ? o.r.status : '-'));
                   window.__QBT_FEISHU_GMV_COMBINED_ERROR__ = msg;
+                  console.error('[fetchFeishuGmvCombined] 数据无效:', msg);
                 }
                 refreshGmvCombined();
               } catch (e) {
+                console.error('[fetchFeishuGmvCombined] 处理异常:', e);
                 try {
                   window.__QBT_FEISHU_GMV_COMBINED__ = null;
                 } catch (e2) {}
@@ -8592,6 +8469,7 @@
               }
             })
             .catch(function (err) {
+              console.error('[fetchFeishuGmvCombined] 请求失败:', err);
               try {
                 window.__QBT_FEISHU_GMV_COMBINED__ = null;
               } catch (e) {}
@@ -8716,13 +8594,6 @@
                 if (validPayload) {
                   window.__QBT_FEISHU_LIVESTREAM_FUNNEL__ = o.data;
                   window.__QBT_FEISHU_LIVESTREAM_FUNNEL_ERROR__ = '';
-                  // Debug: 输出调试信息
-                  console.log('[LivestreamFunnel] API返回数据:', {
-                    anchorsCount: o.data.anchors.length,
-                    firstAnchor: o.data.anchors[0] ? o.data.anchors[0].name : null,
-                    firstAnchorDates: o.data.anchors[0] ? o.data.anchors[0].dates : null,
-                    debug: o.data.debug
-                  });
                 } else {
                   window.__QBT_FEISHU_LIVESTREAM_FUNNEL__ = null;
                   var msg =
@@ -9036,7 +8907,7 @@
             defaultEnd = dates[dates.length - 1];
             defaultStart = dates[Math.max(0, dates.length - 12)];
           } else {
-            var today = new Date();
+            var today = new Date('2026-04-05');
             var yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
             var thirtyDaysAgo = new Date(yesterday);
@@ -9448,7 +9319,7 @@
             defaultStart = dates[Math.max(0, dates.length - 12)];
           } else {
             // 日度：结束昨天，开始30天前
-            var today = new Date();
+            var today = new Date('2026-04-05');
             var yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
             var thirtyDaysAgo = new Date(yesterday);
@@ -9898,7 +9769,7 @@
             defaultEnd = dates[dates.length - 1];
             defaultStart = dates[Math.max(0, dates.length - 12)];
           } else {
-            var today = new Date();
+            var today = new Date('2026-04-05');
             var yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
             var thirtyDaysAgo = new Date(yesterday);
@@ -10239,7 +10110,7 @@
           var maxD = dates[dates.length - 1];
 
           // 计算默认值：结束日期昨天，起始日期30天前
-          var today = new Date();
+          var today = new Date('2026-04-05');
           var yesterday = new Date(today);
           yesterday.setDate(today.getDate() - 1);
           var thirtyDaysAgo = new Date(yesterday);
@@ -10462,7 +10333,7 @@
           var maxD = dates[dates.length - 1];
 
           // 计算默认值：结束日期昨天，起始日期30天前
-          var today = new Date();
+          var today = new Date('2026-04-05');
           var yesterday = new Date(today);
           yesterday.setDate(today.getDate() - 1);
           var thirtyDaysAgo = new Date(yesterday);
@@ -10952,7 +10823,7 @@
           var minD = dates[0];
           var maxD = dates[dates.length - 1];
 
-          var today = new Date();
+          var today = new Date('2026-04-05');
           var yesterday = new Date(today);
           yesterday.setDate(today.getDate() - 1);
           var thirtyDaysAgo = new Date(yesterday);
@@ -11115,10 +10986,17 @@
         });
       }
 
+      // 暴露到全局，供缓存刷新后重新加载数据使用
+      window.loadDefaultData = loadDefaultData;
+
       window.__runAfterAuth__ = function () {
         loadDefaultData(function() {
           console.log('数据加载完成');
         });
+        // 登录成功后加载缓存状态，更新header时间显示
+        if (typeof window.loadCacheStatus === 'function') {
+          window.loadCacheStatus();
+        }
       };
 
       /**
@@ -11302,6 +11180,278 @@
           }).then(function () { sendBtn.disabled = false; });
         });
         inputEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendBtn.click(); });
+      })();
+
+      // ==================== 数据缓存刷新功能 ====================
+      (function initCacheRefresh() {
+        var wrap = document.querySelector('.cache-refresh-wrap');
+        var btn = document.getElementById('cacheRefreshBtn');
+        var panel = document.getElementById('cacheRefreshPanel');
+        var statusList = document.getElementById('cacheStatusList');
+        var statusText = document.getElementById('cacheStatusText');
+        var refreshBtn = document.getElementById('doCacheRefreshBtn');
+        var closeBtn = document.getElementById('closeCacheRefreshBtn');
+
+        // 获取缓存键的友好名称
+        function getCacheKeyName(key) {
+          var names = {
+            'features-output': '行业大盘数据',
+            'features-brand-top10': '品牌TOP10数据',
+            'feishu-daily-sales': '京东日销数据',
+            'feishu-tmall-sales': '天猫销售数据',
+            'feishu-douyin-sales': '抖音销售数据',
+            'feishu-douyin-daily-trend': '抖音日度趋势',
+            'feishu-douyin-model-distribution': '抖音型号分布',
+            'feishu-gmv-combined': 'GMV合并数据',
+            'feishu-channel-order-trend': '渠道订单趋势',
+            'feishu-livestream-funnel': '直播间转化漏斗',
+            'feishu-newretail-daily': '新零售日销数据'
+          };
+          return names[key] || key;
+        }
+
+        // 格式化时间（MM/DD HH:mm格式）
+        function formatTimeHeader(timestamp) {
+          if (!timestamp) return '--/-- --:--';
+          var d = new Date(timestamp);
+          var mm = String(d.getMonth() + 1).padStart(2, '0');
+          var dd = String(d.getDate()).padStart(2, '0');
+          var hh = String(d.getHours()).padStart(2, '0');
+          var min = String(d.getMinutes()).padStart(2, '0');
+          return mm + '/' + dd + ' ' + hh + ':' + min;
+        }
+
+        // 格式化时间（完整格式）
+        function formatTime(timestamp) {
+          if (!timestamp) return '-';
+          var d = new Date(timestamp);
+          var mm = String(d.getMonth() + 1).padStart(2, '0');
+          var dd = String(d.getDate()).padStart(2, '0');
+          var hh = String(d.getHours()).padStart(2, '0');
+          var min = String(d.getMinutes()).padStart(2, '0');
+          return mm + '-' + dd + ' ' + hh + ':' + min;
+        }
+
+        // 更新header状态显示
+        function updateHeaderStatus(lastUpdate) {
+          var headerStatus = document.getElementById('cacheUpdateTime');
+          if (headerStatus) {
+            if (lastUpdate) {
+              headerStatus.textContent = '当前数据更新于' + formatTimeHeader(lastUpdate);
+            } else {
+              headerStatus.textContent = '当前数据更新于--/-- --:--';
+            }
+          }
+        }
+
+        // 加载缓存状态
+        function loadCacheStatus() {
+          if (!statusList) return;
+          statusList.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">加载中...</div>';
+
+          if (typeof XbsAuth === 'undefined' || !XbsAuth.getToken()) {
+            statusList.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">请先登录</div>';
+            updateHeaderStatus(null);
+            return;
+          }
+
+          fetch('/api/admin/cache-status', {
+            headers: { 'Authorization': 'Bearer ' + XbsAuth.getToken() }
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.error) {
+              statusList.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">' + data.error + '</div>';
+              updateHeaderStatus(null);
+              return;
+            }
+            var html = '';
+            var caches = data.caches || {};
+            var lastUpdate = null;
+            for (var key in caches) {
+              var c = caches[key];
+              var statusColor = c.isValid ? '#10b981' : '#ef4444';
+              var statusText = c.isValid ? '有效' : (c.hasCache ? '过期' : '无缓存');
+              html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f1f5f9;">';
+              html += '<span>' + getCacheKeyName(key) + '</span>';
+              html += '<span style="color:' + statusColor + ';font-size:11px;">' + statusText + ' ' + formatTime(c.updatedAt) + '</span>';
+              html += '</div>';
+              if (c.updatedAt && (!lastUpdate || c.updatedAt > lastUpdate)) {
+                lastUpdate = c.updatedAt;
+              }
+            }
+            statusList.innerHTML = html || '<div style="text-align:center;padding:20px;color:#999;">无数据</div>';
+
+            // 更新状态文本
+            if (statusText) {
+              if (lastUpdate) {
+                var timeStr = formatTime(lastUpdate);
+                var diff = Date.now() - lastUpdate;
+                var diffHours = Math.floor(diff / 3600000);
+                var diffMins = Math.floor((diff % 3600000) / 60000);
+                var timeAgo = diffHours > 0 ? diffHours + '小时前' : diffMins + '分钟前';
+                statusText.textContent = '上次更新：' + timeStr + ' (' + timeAgo + ')';
+              } else {
+                statusText.textContent = '上次更新：无';
+              }
+            }
+
+            // 更新header状态
+            updateHeaderStatus(lastUpdate);
+          })
+          .catch(function(err) {
+            statusList.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">加载失败：' + (err.message || '网络错误') + '</div>';
+            updateHeaderStatus(null);
+          });
+        }
+
+        // 暴露到全局，供登录后调用
+        window.loadCacheStatus = loadCacheStatus;
+
+        // 刷新缓存
+        function doRefresh() {
+          // 禁用两个刷新按钮
+          if (refreshBtn) {
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = '刷新中...';
+          }
+
+          // 同时禁用header刷新按钮
+          var headerRefreshBtn = document.getElementById('headerRefreshBtn');
+          if (headerRefreshBtn) headerRefreshBtn.disabled = true;
+
+          // 显示全局loading，阻止用户操作
+          if (typeof window.showGlobalLoading === 'function') {
+            window.showGlobalLoading();
+          }
+          // 更新loading文字提示
+          var loadingText = document.querySelector('#global-loading .loading-text');
+          if (loadingText) loadingText.textContent = '正在刷新数据缓存，请稍候…';
+
+          fetch('/api/admin/cache-warmup', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + XbsAuth.getToken() }
+          })
+          .then(function(r) {
+            // 检查响应是否是 JSON
+            var contentType = r.headers.get('content-type');
+            if (!contentType || contentType.indexOf('application/json') === -1) {
+              return r.text().then(function(text) {
+                throw new Error('服务器返回非 JSON 响应：' + text.substring(0, 100));
+              });
+            }
+            return r.json();
+          })
+          .then(function(data) {
+            if (data.error) {
+              // 隐藏loading
+              if (typeof window.hideGlobalLoading === 'function') {
+                window.hideGlobalLoading();
+              }
+              // 恢复loading文字
+              if (loadingText) loadingText.textContent = '加载中…';
+              alert('刷新失败：' + data.error);
+            } else {
+              // 刷新成功，先更新缓存状态显示
+              loadCacheStatus();
+
+              // 更新loading文字提示
+              if (loadingText) loadingText.textContent = '数据更新成功，正在重新加载图表…';
+
+              // 延迟一下让用户看到成功提示，然后重新加载数据
+              setTimeout(function() {
+                // 隐藏loading
+                if (typeof window.hideGlobalLoading === 'function') {
+                  window.hideGlobalLoading();
+                }
+                // 恢复loading文字
+                if (loadingText) loadingText.textContent = '加载中…';
+
+                // 构建详细的成功/失败信息
+                var msg = '数据缓存更新完成！\n\n成功：' + data.successCount + ' 个\n失败：' + data.failedCount + ' 个\n总耗时：' + data.totalDuration + 'ms';
+
+                // 如果有失败的，显示详细信息
+                if (data.failedCount > 0 && data.results) {
+                  msg += '\n\n失败的API：';
+                  data.results.forEach(function(r) {
+                    if (!r.success) {
+                      msg += '\n• ' + getCacheKeyName(r.key) + '：' + (r.error || '未知错误');
+                    }
+                  });
+                }
+
+                // 提示成功
+                alert(msg);
+
+                // 重新加载所有图表和数据
+                if (typeof window.loadDefaultData === 'function') {
+                  window.loadDefaultData(function() {
+                    console.log('数据重新加载完成');
+                  });
+                }
+              }, 500);
+            }
+          })
+          .catch(function(err) {
+            // 隐藏loading
+            if (typeof window.hideGlobalLoading === 'function') {
+              window.hideGlobalLoading();
+            }
+            // 恢复loading文字
+            if (loadingText) loadingText.textContent = '加载中…';
+            alert('刷新失败：' + (err.message || '网络错误'));
+          })
+          .then(function() {
+            if (refreshBtn) {
+              refreshBtn.disabled = false;
+              refreshBtn.textContent = '立即刷新';
+            }
+            var headerRefreshBtn = document.getElementById('headerRefreshBtn');
+            if (headerRefreshBtn) headerRefreshBtn.disabled = false;
+          });
+        }
+
+        // 事件绑定（只有元素存在时才绑定）
+        if (btn && panel) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var isOpen = panel.style.display === 'block';
+            panel.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) {
+              loadCacheStatus();
+            }
+          });
+        }
+
+        if (closeBtn && panel) {
+          closeBtn.addEventListener('click', function() {
+            panel.style.display = 'none';
+          });
+        }
+
+        if (refreshBtn) {
+          refreshBtn.addEventListener('click', doRefresh);
+        }
+
+        // header刷新按钮事件绑定（独立存在，不依赖其他元素）
+        var headerRefreshBtn = document.getElementById('headerRefreshBtn');
+        if (headerRefreshBtn) {
+          headerRefreshBtn.addEventListener('click', doRefresh);
+        }
+
+        // 点击外部关闭面板（只有wrap和panel都存在时才绑定）
+        if (wrap && panel) {
+          document.addEventListener('click', function(e) {
+            if (!wrap.contains(e.target)) {
+              panel.style.display = 'none';
+            }
+          });
+        }
+
+        // 初始加载状态（只有statusList存在时才加载）
+        if (statusList && typeof XbsAuth !== 'undefined' && XbsAuth.getToken()) {
+          loadCacheStatus();
+        }
       })();
     })();
   </script>
