@@ -79,6 +79,14 @@ function excelDateToStr(serial) {
   return raw.slice(0, 10);
 }
 
+/** 将日期统一为月份第一天（用于品牌图表按月汇总） */
+function toMonthStart(dateStr) {
+  if (!dateStr) return '';
+  const m = String(dateStr).match(/^(\d{4})-(\d{2})/);
+  if (!m) return dateStr;
+  return `${m[1]}-${m[2]}-01`;
+}
+
 function hasAnyValue(row) {
   return Array.isArray(row) && row.some((v) => v != null && String(v).trim() !== '');
 }
@@ -115,7 +123,7 @@ function parseBrandRowsFromValues(values) {
       品牌: normalizeBrand(r[col.品牌]),
       价格段: r[col.价格段],
       日期: r[col.日期],
-      日期_str: excelDateToStr(r[col.日期]),
+      日期_str: toMonthStart(excelDateToStr(r[col.日期])),
       销量: parseNumberCell(r[col.销量]),
       销售额: parseNumberCell(r[col.销售额]),
     }))
