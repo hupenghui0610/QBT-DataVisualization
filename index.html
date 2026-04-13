@@ -2879,7 +2879,9 @@
         var endVal = document.getElementById('dimB1End') && document.getElementById('dimB1End').value;
         var list;
         if (startVal && endVal && startVal <= endVal && fp && fp.品牌与日期 && fp.品牌与日期.length) {
-          var raw = fp.品牌与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          // 结束月份转为该月最后一天，确保当月数据被包含
+          var endMonthLastDay = endVal + '-31';
+          var raw = fp.品牌与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endMonthLastDay; });
           var byBrand = {};
           raw.forEach(function (r) {
             if (!byBrand[r.品牌]) byBrand[r.品牌] = { 销量: 0, 销售额: 0 };
@@ -2921,7 +2923,9 @@
         var byBrandCh = {};
         var channels = ['天猫', '京东', '抖音'];
         if (startVal && endVal && startVal <= endVal && fp && fp.品牌与渠道与日期 && fp.品牌与渠道与日期.length) {
-          var raw = fp.品牌与渠道与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          // 结束月份转为该月最后一天，确保当月数据被包含
+          var endMonthLastDay = endVal + '-31';
+          var raw = fp.品牌与渠道与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endMonthLastDay; });
           var byBrand = {};
           raw.forEach(function (r) {
             if (!byBrandCh[r.品牌]) byBrandCh[r.品牌] = {};
@@ -2980,9 +2984,11 @@
         var 各品牌按日期市占率 = d.各品牌按日期市占率;
         var dates = allDates;
         if (startVal && endVal && startVal <= endVal) {
+          // 结束月份转为该月最后一天，确保当月数据被包含
+          var endMonthLastDay = endVal + '-31';
           var idxStart = allDates.findIndex(function (dt) { return dt >= startVal; });
           var idxEnd = allDates.length - 1;
-          for (var i = allDates.length - 1; i >= 0; i--) { if (allDates[i] <= endVal) { idxEnd = i; break; } }
+          for (var i = allDates.length - 1; i >= 0; i--) { if (allDates[i] <= endMonthLastDay) { idxEnd = i; break; } }
           if (idxStart >= 0 && idxEnd >= idxStart) {
             dates = allDates.slice(idxStart, idxEnd + 1);
             各品牌按日期市占率 = {};
@@ -3021,7 +3027,9 @@
         var endVal = document.getElementById('dimB5End') && document.getElementById('dimB5End').value;
         var list;
         if (startVal && endVal && startVal <= endVal && fp && fp.品牌与日期 && fp.品牌与日期.length) {
-          var raw = fp.品牌与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          // 结束月份转为该月最后一天，确保当月数据被包含
+          var endMonthLastDay = endVal + '-31';
+          var raw = fp.品牌与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endMonthLastDay; });
           var byBrand = {};
           raw.forEach(function (r) {
             if (!byBrand[r.品牌]) byBrand[r.品牌] = { 销量: 0, 销售额: 0 };
@@ -3062,9 +3070,11 @@
         var dates = allDates;
         var 按价格段与日期 = info.按价格段与日期 || [];
         if (startVal && endVal && startVal <= endVal && allDates.length) {
+          // 结束月份转为该月最后一天，确保当月数据被包含
+          var endMonthLastDay = endVal + '-31';
           var idxStart = allDates.findIndex(function (dt) { return dt >= startVal; });
           var idxEnd = -1;
-          for (var i = allDates.length - 1; i >= 0; i--) { if (allDates[i] <= endVal) { idxEnd = i; break; } }
+          for (var i = allDates.length - 1; i >= 0; i--) { if (allDates[i] <= endMonthLastDay) { idxEnd = i; break; } }
           if (idxStart >= 0 && idxEnd >= idxStart) {
             dates = allDates.slice(idxStart, idxEnd + 1);
             按价格段与日期 = 按价格段与日期.map(function (item) {
@@ -3133,7 +3143,9 @@
         var endVal = document.getElementById('dimB7End') && document.getElementById('dimB7End').value;
         var raw = fp.品牌与日期;
         if (startVal && endVal && startVal <= endVal) {
-          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          // 结束月份转为该月最后一天，确保当月数据被包含
+          var endMonthLastDay = endVal + '-31';
+          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endMonthLastDay; });
         }
         var seen = {};
         raw.forEach(function (r) { if (r.日期) seen[r.日期] = true; });
@@ -3203,7 +3215,9 @@
         var endVal = document.getElementById('dimB8End') && document.getElementById('dimB8End').value;
         var raw = fp.品牌与日期;
         if (startVal && endVal && startVal <= endVal) {
-          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          // 结束月份转为该月最后一天，确保当月数据被包含
+          var endMonthLastDay = endVal + '-31';
+          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endMonthLastDay; });
         }
         if (!raw.length) {
           if (!charts.chartB8) charts.chartB8 = echarts.init(el);
@@ -3286,7 +3300,9 @@
         var endVal = document.getElementById('dimB9End') && document.getElementById('dimB9End').value;
         var raw = fp.品牌与日期;
         if (startVal && endVal && startVal <= endVal) {
-          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          // 结束月份转为该月最后一天，确保当月数据被包含
+          var endMonthLastDay = endVal + '-31';
+          raw = raw.filter(function (r) { return r.日期 >= startVal && r.日期 <= endMonthLastDay; });
         }
         if (!raw.length) {
           if (!charts.chartB9) charts.chartB9 = echarts.init(el);
