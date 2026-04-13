@@ -2491,7 +2491,6 @@
               if (!params || !params.length) return '';
               var line = chartAxisDateLabel(params[0].axisValue) + '<br/>';
               params.forEach(function (p) {
-                if (p.seriesName === '客单价') return; // 隐藏客单价的tooltip显示
                 var val = p.value;
                 if (val != null && typeof val === 'object' && 'value' in val) val = val.value;
                 if (p.seriesName === '同比增长率') {
