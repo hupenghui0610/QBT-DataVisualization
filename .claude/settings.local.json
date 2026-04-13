@@ -17,7 +17,9 @@
       "Bash(npm install:*)",
       "Bash(awk:*)",
       "Bash(ls functions/api/data/*.js)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(xargs wc:*)",
+      "Bash(sed 's/.*\\\\.//')"
     ]
   }
 }

@@ -2491,6 +2491,7 @@
               if (!params || !params.length) return '';
               var line = chartAxisDateLabel(params[0].axisValue) + '<br/>';
               params.forEach(function (p) {
+                if (p.seriesName === '客单价') return; // 隐藏客单价的tooltip显示
                 var val = p.value;
                 if (val != null && typeof val === 'object' && 'value' in val) val = val.value;
                 if (p.seriesName === '同比增长率') {
@@ -2504,13 +2505,13 @@
               return line;
             }
           },
-          legend: { data: ['销量', '同比增长率', '客单价'], top: 6, left: 'center' },
+          legend: { data: ['销量', '同比增长率'], top: 6, left: 'center' },
           grid: { left: 56, right: 56, top: 40, bottom: 72 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14, rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
           yAxis: [
             { type: 'value', name: '销量', axisLabel: { formatter: formatAxisNumInt } },
             { type: 'value', name: '同比%', axisLabel: { formatter: formatAxisPercentInt }, splitLine: { show: false } },
-            { type: 'value', name: '', position: 'right', offset: 50, min: 2500, max: 4000, axisLabel: { formatter: function(v) { return Math.round(v).toLocaleString(); } }, splitLine: { show: false } }
+            { type: 'value', name: '', position: 'right', offset: 50, min: 2500, max: 4200, axisLabel: { formatter: function(v) { return Math.round(v).toLocaleString(); } }, splitLine: { show: false } }
           ],
           series: [
             { name: '销量', type: 'line', data: s1, smooth: true, connectNulls: false },
