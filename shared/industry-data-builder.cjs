@@ -35,9 +35,9 @@ function normalizeBrand(name) {
     { brand: '小度', keys: ['小度'] },
     { brand: 'BBK/步步高', keys: ['bbk步步高', '步步高', 'bbk'] },
     { brand: 'SEEWO/希沃', keys: ['seewo希沃', '希沃', 'seewo'] },
-    { brand: 'BOE/京东方', keys: ['boe京东方', '京东方', 'boe'] },
+    { brand: 'BOE/京东方', keys: ['boe京东方', '京东方', 'boe', '小课屏'] },
     { brand: '清北道远', keys: ['清北道远'] },
-    { brand: '智能精准学', keys: ['智能精准学', '精准学'] },
+    { brand: '智能精准学', keys: ['智能精准学', '精准学', '寒雪老师'] },
   ];
   for (const rule of aliasRules) {
     if (rule.keys.some((alias) => key === alias || key.includes(alias) || alias.includes(key))) {
