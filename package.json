@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "node scripts/prepare-dist.js && npx wrangler pages deploy dist --project-name=qbt-datavisualization --commit-dirty=true",
-    "deploy:server-only": "node scripts/deploy-pages-keep-remote-ui.js"
+    "deploy:test": "node scripts/prepare-dist.js && npx wrangler pages deploy dist --project-name=qbt-datavisualization-test --commit-dirty=true",
+    "deploy:prod": "node scripts/prepare-dist.js && npx wrangler pages deploy dist --project-name=qbt-datavisualization --commit-dirty=true"
   },
   "keywords": [],
   "author": "",

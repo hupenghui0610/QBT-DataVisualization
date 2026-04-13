@@ -1,0 +1,19 @@
+# Cloudflare Pages：正式服配置备份
+# 生产环境配置
+
+name = "qbt-datavisualization"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qbt-auth"
+database_id = "8e33f508-e226-4040-a4ba-df1754713733"
+
+[vars]
+FEISHU_DOUYIN_MODEL_ORDER_RANGE = "tuec5U!A2:AO20000"
+FEISHU_LIVESTREAM_FUNNEL_SPREADSHEET_TOKEN = "P1zusUMg2haMGctskH6cydLqn5e"
+OPENCLAW_MONTHLY_API_URL = "https://qbt-datavisualization.pages.dev/api/data/monthly-cumulative-summary"
+OPENCLAW_MONTHLY_API_KEY = "qbt_openclaw_monthly_2026_key"
+OPENCLAW_MONTHLY_API_SECRET = "sk_7a9f3e2d1c8b4a5f6e0d9c2b8a4f7e1d3c6b0a5f9e2d8c1b7a3f6e0d4c9b2a5"
+FEISHU_WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/YOUR_WEBHOOK_TOKEN_HERE"
