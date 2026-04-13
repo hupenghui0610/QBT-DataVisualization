@@ -19,7 +19,8 @@
       "Bash(ls functions/api/data/*.js)",
       "Bash(grep:*)",
       "Bash(xargs wc:*)",
-      "Bash(sed 's/.*\\\\.//')"
+      "Bash(sed 's/.*\\\\.//')",
+      "Bash(git checkout:*)"
     ]
   }
 }
