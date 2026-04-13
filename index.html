@@ -2785,10 +2785,16 @@
       function initBrandDateRangeSelects() {
         var dates = getBrandDateList();
         if (!dates.length) return;
-        var opts = dates.map(function (dt) { return '<option value="' + dt + '">' + (dt ? dt.slice(0, 7) : dt) + '</option>'; });
+        // 提取唯一月份，避免下拉菜单显示重复选项
+        var monthsSet = {};
+        dates.forEach(function (dt) {
+          if (dt) monthsSet[dt.slice(0, 7)] = true;
+        });
+        var uniqueMonths = Object.keys(monthsSet).sort();
+        var opts = uniqueMonths.map(function (month) { return '<option value="' + month + '">' + month + '</option>'; });
         var html = '<option value="">全量</option>' + opts.join('');
-        var defaultStart = defaultStartDateBrand(dates);
-        var defaultEnd = dates.length ? dates[dates.length - 1] : '';
+        var defaultStart = uniqueMonths.length ? uniqueMonths[0] : '';
+        var defaultEnd = uniqueMonths.length ? uniqueMonths[uniqueMonths.length - 1] : '';
         var ids = ['dimB1Start','dimB1End','dimB8Start','dimB8End','dimB9Start','dimB9End','dimB2Start','dimB2End','dimB3Start','dimB3End','dimB5Start','dimB5End','dimB6Start','dimB6End','dimB7Start','dimB7End'];
         for (var i = 0; i < ids.length; i++) {
           var el = document.getElementById(ids[i]);
