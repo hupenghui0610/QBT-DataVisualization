@@ -2791,7 +2791,7 @@
       function chartAxisDateLabel(v) {
         if (v == null) return '';
         var s = String(v);
-        return s.length > 10 ? s.slice(0, 10) : s;
+        return s.length > 7 ? s.slice(0, 7) : s;
       }
       function denseFillCalendarDaysForRange(pts, startStr, endStr, emptyFactory) {
         var list = pts || [];

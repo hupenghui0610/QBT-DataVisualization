@@ -113,15 +113,15 @@
       color: #fff;
       border-color: #2563eb;
     }
-    /* GMV/GSV 切换按钮样式 - 货架电商 */
-    #shelfMetricSwitch .view-btn[data-shelf-metric="gmv"],
-    #shelfMetricSwitch .view-btn[data-shelf-metric="gsv"] {
+    /* 品牌月销同比切换按钮样式 */
+    #brandB9MetricSwitch .view-btn[data-b9-metric="sales"],
+    #brandB9MetricSwitch .view-btn[data-b9-metric="amount"] {
       border: 1px solid #cbd5e1;
       background: #fff;
       color: #334155;
     }
-    #shelfMetricSwitch .view-btn[data-shelf-metric="gmv"].active,
-    #shelfMetricSwitch .view-btn[data-shelf-metric="gsv"].active {
+    #brandB9MetricSwitch .view-btn[data-b9-metric="sales"].active,
+    #brandB9MetricSwitch .view-btn[data-b9-metric="amount"].active {
       background: #10b981;
       color: #fff;
       border-color: #10b981;
@@ -1436,8 +1436,8 @@
   <div class="section-title">品牌数据</div>
   <div class="grid" id="chartGridBrand">
     <div class="card wide"><h3><i class="chart-title-icon fa fa-bar-chart"></i><span>品牌销量/销额对比</span></h3><div class="date-range">起始：<select id="dimB1Start"></select> 结束：<select id="dimB1End"></select></div><div id="chartB1" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销量</span></h3><div class="date-range">起始：<select id="dimB8Start"></select> 结束：<select id="dimB8End"></select></div><div id="chartB8" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销量同比</span></h3><div class="date-range">起始：<select id="dimB9Start"></select> 结束：<select id="dimB9End"></select></div><div id="chartB9" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB8Start"></select> 结束：<select id="dimB8End"></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB8MetricSwitch"><button type="button" class="view-btn active" data-b8-metric="sales">销量</button><button type="button" class="view-btn" data-b8-metric="amount">销额</button></span></div></div><div id="chartB8" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销同比</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB9Start"></select> 结束：<select id="dimB9End"></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB9MetricSwitch"><button type="button" class="view-btn active" data-b9-metric="sales">销量</button><button type="button" class="view-btn" data-b9-metric="amount">销额</button></span></div></div><div id="chartB9" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌渠道占比</span></h3><div class="date-range">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select></div><div id="chartB2" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span></h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select></div><div id="chartB3" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌价格段销量</span></h3><div class="load-bar" style="margin-bottom:8px"><select id="brandTop10Select"><option value="">选择品牌</option></select><span style="margin-left:8px">起始：<select id="dimB6Start"></select> 结束：<select id="dimB6End"></select></span></div><div id="chartB6" class="chart"></div></div>
@@ -2145,6 +2145,10 @@
         return opt;
       }
       var dataSource = null;
+      // 品牌月销图表当前指标模式: 'sales'(销量) 或 'amount'(销额)
+      window.brandB8Metric = 'sales';
+      // 品牌月销同比图表当前指标模式: 'sales'(销量) 或 'amount'(销额)
+      window.brandB9Metric = 'sales';
       // 部署 Worker 后在此填写，例如 https://qbt-ai-assistant.xxx.workers.dev
       var AI_ASSISTANT_WORKER_URL = '';
 
@@ -2394,7 +2398,7 @@
         var s1 = list.map(function (r) { return r.销量; });
         var s2 = list.map(function (r) { return r.销售额; });
         var opt = {
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { if (p.seriesName === '销量') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e4).toFixed(2) + '万' : '-'); else if (p.seriesName === '销售额') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : '-'); }); return s; } },
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { if (p.seriesName === '销量') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toLocaleString() : '-'); else if (p.seriesName === '销售额') s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? (p.value / 1e8).toFixed(2) + '亿' : '-'); }); return s; } },
           legend: { data: ['销量', '销售额'], top: 6, left: 'center' },
           grid: { left: 60, right: 56, top: 40, bottom: 44 },
           xAxis: { type: 'category', data: x, axisLabel: { margin: 14 } },
@@ -2841,6 +2845,44 @@
         ['dimB7Start','dimB7End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB7; });
         ['dimB8Start','dimB8End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB8; });
         ['dimB9Start','dimB9End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB9; });
+        // 品牌月销指标切换绑定
+        var b8MetricSw = document.getElementById('brandB8MetricSwitch');
+        if (b8MetricSw && !b8MetricSw.__bound__) {
+          b8MetricSw.addEventListener('click', function(e) {
+            var btn = e.target.closest && e.target.closest('[data-b8-metric]');
+            if (!btn) return;
+            var newMetric = btn.getAttribute('data-b8-metric');
+            if (newMetric === window.brandB8Metric) return;
+            // 更新全局状态
+            window.brandB8Metric = newMetric;
+            // 更新按钮样式
+            Array.from(b8MetricSw.querySelectorAll('[data-b8-metric]')).forEach(function(b) {
+              b.classList.toggle('active', b.getAttribute('data-b8-metric') === newMetric);
+            });
+            // 重新渲染图表
+            renderBrand8();
+          });
+          b8MetricSw.__bound__ = true;
+        }
+        // 品牌月销同比指标切换绑定
+        var b9MetricSw = document.getElementById('brandB9MetricSwitch');
+        if (b9MetricSw && !b9MetricSw.__bound__) {
+          b9MetricSw.addEventListener('click', function(e) {
+            var btn = e.target.closest && e.target.closest('[data-b9-metric]');
+            if (!btn) return;
+            var newMetric = btn.getAttribute('data-b9-metric');
+            if (newMetric === window.brandB9Metric) return;
+            // 更新全局状态
+            window.brandB9Metric = newMetric;
+            // 更新按钮样式
+            Array.from(b9MetricSw.querySelectorAll('[data-b9-metric]')).forEach(function(b) {
+              b.classList.toggle('active', b.getAttribute('data-b9-metric') === newMetric);
+            });
+            // 重新渲染图表
+            renderBrand9();
+          });
+          b9MetricSw.__bound__ = true;
+        }
       }
       function renderBrandAll() {
         var fp = getFenPinPai();
@@ -3206,6 +3248,11 @@
         var topBrands = (fp && fp.数据说明 && fp.数据说明.前十大品牌) || [];
         var el = document.getElementById('chartB8');
         if (!el) return;
+        // 获取当前指标模式
+        var metric = window.brandB8Metric || 'sales';
+        var isAmount = metric === 'amount';
+        var valueField = isAmount ? '销售额' : '销量';
+        var yAxisName = isAmount ? '销额(亿)' : '销量';
         if (!fp || !fp.品牌与日期 || !fp.品牌与日期.length || !topBrands.length) {
           if (!charts.chartB8) charts.chartB8 = echarts.init(el);
           charts.chartB8.setOption({ title: { text: '暂无品牌与日期明细', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
@@ -3230,7 +3277,7 @@
           var m = String(r.日期).slice(0, 7);
           if (!monthBrand[m]) monthBrand[m] = {};
           var prev = monthBrand[m][r.品牌] || 0;
-          monthBrand[m][r.品牌] = prev + (r.销量 != null ? Number(r.销量) : 0);
+          monthBrand[m][r.品牌] = prev + (r[valueField] != null ? Number(r[valueField]) : 0);
         });
         var months = Object.keys(monthBrand);
         months.sort();
@@ -3261,7 +3308,14 @@
               if (!params || !params.length) return '';
               var s = (params[0].axisValue ? String(params[0].axisValue) : '') + '<br/>';
               params.forEach(function (p) {
-                s += p.marker + p.seriesName + ': ' + (p.value != null ? formatNum(p.value) : '-') + '<br/>';
+                var v = p.value;
+                if (v != null && isAmount) {
+                  // 销额模式：显示为X亿或X万
+                  if (v >= 1e8) s += p.marker + p.seriesName + ': ' + (v / 1e8).toFixed(2) + '亿<br/>';
+                  else s += p.marker + p.seriesName + ': ' + (v / 1e4).toFixed(2) + '万<br/>';
+                } else {
+                  s += p.marker + p.seriesName + ': ' + (v != null ? Number(v).toLocaleString() : '-') + '<br/>';
+                }
               });
               return s;
             }
@@ -3269,7 +3323,7 @@
           legend: { data: topBrands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 48, bottom: 92 },
           xAxis: { type: 'category', data: monthsFull, boundaryGap: false, axisLabel: { margin: 14, rotate: 35, interval: 0, fontSize: 11 } },
-          yAxis: { type: 'value', name: '销量', axisLabel: { formatter: formatAxisNumInt } },
+          yAxis: { type: 'value', name: yAxisName, axisLabel: { formatter: isAmount ? function(v) { return (v / 1e8).toFixed(2) + '亿'; } : formatAxisNumInt } },
           series: series
         };
         if (!charts.chartB8) charts.chartB8 = echarts.init(el);
@@ -3291,6 +3345,11 @@
         var topBrands = (fp && fp.数据说明 && fp.数据说明.前十大品牌) || [];
         var el = document.getElementById('chartB9');
         if (!el) return;
+        // 获取当前指标模式
+        var metric = window.brandB9Metric || 'sales';
+        var isAmount = metric === 'amount';
+        var valueField = isAmount ? '销售额' : '销量';
+        var yAxisName = isAmount ? '销额同比%' : '销量同比%';
         if (!fp || !fp.品牌与日期 || !fp.品牌与日期.length || !topBrands.length) {
           if (!charts.chartB9) charts.chartB9 = echarts.init(el);
           charts.chartB9.setOption({ title: { text: '暂无品牌与日期明细', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } }, xAxis: { show: false }, yAxis: { show: false }, series: [] }, true);
@@ -3315,7 +3374,7 @@
           var m = String(r.日期).slice(0, 7);
           if (!monthBrandFull[m]) monthBrandFull[m] = {};
           var prev = monthBrandFull[m][r.品牌] || 0;
-          monthBrandFull[m][r.品牌] = prev + (r.销量 != null ? Number(r.销量) : 0);
+          monthBrandFull[m][r.品牌] = prev + (r[valueField] != null ? Number(r[valueField]) : 0);
         });
         var monthBrand = {};
         raw.forEach(function (r) {
@@ -3323,7 +3382,7 @@
           var m = String(r.日期).slice(0, 7);
           if (!monthBrand[m]) monthBrand[m] = {};
           var prev = monthBrand[m][r.品牌] || 0;
-          monthBrand[m][r.品牌] = prev + (r.销量 != null ? Number(r.销量) : 0);
+          monthBrand[m][r.品牌] = prev + (r[valueField] != null ? Number(r[valueField]) : 0);
         });
         var months = Object.keys(monthBrand);
         months.sort();
@@ -3380,7 +3439,7 @@
           legend: { data: topBrands.map(brandDisplayName), top: 6, left: 'center', type: 'scroll' },
           grid: { left: 56, right: 24, top: 48, bottom: 92 },
           xAxis: { type: 'category', data: monthsFull, boundaryGap: false, axisLabel: { margin: 14, rotate: 35, interval: 0, fontSize: 11 } },
-          yAxis: { type: 'value', name: '同比%', axisLabel: { formatter: formatAxisPercentInt } },
+          yAxis: { type: 'value', name: yAxisName, axisLabel: { formatter: formatAxisPercentInt } },
           series: series
         };
         if (!charts.chartB9) charts.chartB9 = echarts.init(el);
@@ -3739,11 +3798,11 @@
         }
         return out;
       }
-      /** 类目轴/悬浮：完整展示日期（至多取 YYYY-MM-DD） */
+      /** 类目轴/悬浮：展示到月份（取 YYYY-MM） */
       function chartAxisDateLabel(v) {
         if (v == null) return '';
         var s = String(v);
-        return s.length > 10 ? s.slice(0, 10) : s;
+        return s.length > 7 ? s.slice(0, 7) : s;
       }
       /** 在 [start,end] 内补齐每个自然日，无数据用 emptyFactory(date) */
       function denseFillCalendarDaysForRange(pts, startStr, endStr, emptyFactory) {
