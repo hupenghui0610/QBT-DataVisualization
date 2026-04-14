@@ -240,7 +240,8 @@ export async function onRequestGet(context) {
       valueRange2: data2.valueRange,
     };
     // 写入缓存
-    await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
+    // 写入缓存（已禁用）
+    // await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: {
