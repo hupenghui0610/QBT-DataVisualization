@@ -3,7 +3,7 @@ import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
 import { getCache, setCache } from '../../_lib/cache.js';
 
-var CACHE_KEY = 'feishu-newretail-daily';
+var CACHE_KEY = 'feishu-newretail-daily-v6';
 var CACHE_TTL_HOURS = 48;
 import {
   PLATFORM_CONFIG,
@@ -21,6 +21,11 @@ import {
   aggregateDpByChannelWeekly,
   aggregateDpByChannelMonthly,
   aggregateDpByDarenMonthly,
+  aggregateZhiduiByBusinessPerson,
+  aggregateZhiduiByBusinessPersonWeekly,
+  aggregateZhiduiByBusinessPersonMonthly,
+  aggregateZhiduiRefundRateByBusinessPerson,
+  calculateZhiduiTotalsByBusinessPerson,
   aggregateModelDistributionByDay,
   aggregateModelDistributionByDayFiltered,
   aggregateModelDistributionByDaren,
@@ -88,7 +93,8 @@ export async function onRequestGet(context) {
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
 
-  // 优先读取缓存
+  // 禁用缓存，实时读取数据
+  /*
   var cached = await getCache(env, CACHE_KEY);
   if (cached) {
     return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
@@ -100,6 +106,7 @@ export async function onRequestGet(context) {
       },
     });
   }
+  */
 
   if (!env.FEISHU_APP_ID || !env.FEISHU_APP_SECRET) {
     return jsonResponse(
@@ -143,7 +150,7 @@ export async function onRequestGet(context) {
     globalThis.__unmatchedDarenStats = {};
 
     // 1. 读取渠道映射表
-    var chRange = CHANNEL_MAP_CONFIG.sheetId + '!A1:E2000';
+    var chRange = CHANNEL_MAP_CONFIG.sheetId + '!A1:F2000';
     var chJson = await fetchSheetValuesV2(env, spreadsheetToken, chRange, { valueRenderOption: 'FormattedValue' });
     if (!chJson || chJson.code !== 0) {
       return jsonResponse({ error: chJson?.msg || '渠道映射表读取失败', feishuCode: chJson?.code }, 502, origin);
@@ -356,6 +363,50 @@ export async function onRequestGet(context) {
     var dpTotalsWeekly = calculateDpTotalsByChannel(dpByChannelWeekly, dpByChannelGsvWeekly);
     var dpTotalsMonthly = calculateDpTotalsByChannel(dpByChannelMonthly, dpByChannelGsvMonthly);
 
+    // 4k. 直对按商务人员汇总
+    console.log('[直对商务] channelToBusinessPerson映射:', JSON.stringify(channelMaps.channelToBusinessPerson, null, 2));
+    var zhiduiOrders = allOrdersGmv.filter(o => o.category === 'zhidui');
+    console.log('[直对商务] 直对订单数量:', zhiduiOrders.length);
+    console.log('[直对商务] 前5条直对订单的channel:', zhiduiOrders.slice(0, 5).map(o => o.channel));
+
+    // 检查匹配情况
+    var unmatchedChannels = [];
+    zhiduiOrders.forEach(o => {
+      if (!channelMaps.channelToBusinessPerson[o.channel]) {
+        unmatchedChannels.push(o.channel);
+      }
+    });
+    console.log('[直对商务] 未匹配到商务人员的渠道:', [...new Set(unmatchedChannels)]);
+
+    var zhiduiByBusinessPerson = aggregateZhiduiByBusinessPerson(allOrdersGmv, channelMaps.darenIdToBusinessPerson);
+    console.log('[直对商务] 聚合结果channels:', zhiduiByBusinessPerson.channels);
+
+    // 调试信息：直对商务人员数据诊断
+    var zhiduiDebugInfo = {
+      darenIdToBusinessPerson: channelMaps.darenIdToBusinessPerson,
+      zhiduiOrderCount: zhiduiOrders.length,
+      first5DarenIds: zhiduiOrders.slice(0, 5).map(o => o.darenId || o.channel),
+      allDarenIds: [...new Set(zhiduiOrders.map(o => o.darenId || o.channel))],
+      unmatchedDarenIds: [...new Set(unmatchedChannels)],
+      finalChannels: zhiduiByBusinessPerson.channels
+    };
+
+    var zhiduiByBusinessPersonWeekly = aggregateZhiduiByBusinessPersonWeekly(zhiduiByBusinessPerson.data);
+    var zhiduiByBusinessPersonMonthly = aggregateZhiduiByBusinessPersonMonthly(zhiduiByBusinessPerson.data);
+    var zhiduiByBusinessPersonGsv = aggregateZhiduiByBusinessPerson(allOrdersGsv, channelMaps.darenIdToBusinessPerson);
+    var zhiduiByBusinessPersonGsvWeekly = aggregateZhiduiByBusinessPersonWeekly(zhiduiByBusinessPersonGsv.data);
+    var zhiduiByBusinessPersonGsvMonthly = aggregateZhiduiByBusinessPersonMonthly(zhiduiByBusinessPersonGsv.data);
+
+    // 4l. 直对按商务人员退款率
+    var zhiduiRefundRateDaily = aggregateZhiduiRefundRateByBusinessPerson(zhiduiByBusinessPerson, zhiduiByBusinessPersonGsv);
+    var zhiduiRefundRateWeekly = aggregateZhiduiRefundRateByBusinessPerson(zhiduiByBusinessPersonWeekly, zhiduiByBusinessPersonGsvWeekly);
+    var zhiduiRefundRateMonthly = aggregateZhiduiRefundRateByBusinessPerson(zhiduiByBusinessPersonMonthly, zhiduiByBusinessPersonGsvMonthly);
+
+    // 4m. 直对各商务人员总计
+    var zhiduiTotalsDaily = calculateZhiduiTotalsByBusinessPerson(zhiduiByBusinessPerson, zhiduiByBusinessPersonGsv);
+    var zhiduiTotalsWeekly = calculateZhiduiTotalsByBusinessPerson(zhiduiByBusinessPersonWeekly, zhiduiByBusinessPersonGsvWeekly);
+    var zhiduiTotalsMonthly = calculateZhiduiTotalsByBusinessPerson(zhiduiByBusinessPersonMonthly, zhiduiByBusinessPersonGsvMonthly);
+
     // 4j. DP类按达人月度汇总（原有功能）
     var dpByDarenMonthly = aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv);
 
@@ -487,6 +538,21 @@ export async function onRequestGet(context) {
         weekly: dpRefundRateWeekly,
         monthly: dpRefundRateMonthly
       },
+      zhiduiBusinessGmv: {
+        daily: zhiduiByBusinessPerson,
+        weekly: zhiduiByBusinessPersonWeekly,
+        monthly: zhiduiByBusinessPersonMonthly
+      },
+      zhiduiBusinessGsv: {
+        daily: zhiduiByBusinessPersonGsv,
+        weekly: zhiduiByBusinessPersonGsvWeekly,
+        monthly: zhiduiByBusinessPersonGsvMonthly
+      },
+      zhiduiBusinessRefundRate: {
+        daily: zhiduiRefundRateDaily,
+        weekly: zhiduiRefundRateWeekly,
+        monthly: zhiduiRefundRateMonthly
+      },
       totals: {
         fourPlatform: fourPlatformTotals,
         fuwuDaily: fuwuTotalsDaily,
@@ -494,7 +560,10 @@ export async function onRequestGet(context) {
         fuwuMonthly: fuwuTotalsMonthly,
         dpDaily: dpTotalsDaily,
         dpWeekly: dpTotalsWeekly,
-        dpMonthly: dpTotalsMonthly
+        dpMonthly: dpTotalsMonthly,
+        zhiduiBusinessDaily: zhiduiTotalsDaily,
+        zhiduiBusinessWeekly: zhiduiTotalsWeekly,
+        zhiduiBusinessMonthly: zhiduiTotalsMonthly
       },
       dpGmvGsv: {
         monthly: dpByDarenMonthly
@@ -514,7 +583,8 @@ export async function onRequestGet(context) {
         platforms: platformKeys,
         cached: false,
         debugUnmatchedDarenIds: globalThis.__unmatchedDarenIds ? Array.from(globalThis.__unmatchedDarenIds) : [],
-        debugUnmatchedDarenStats: globalThis.__unmatchedDarenStats || {}
+        debugUnmatchedDarenStats: globalThis.__unmatchedDarenStats || {},
+        debugZhiduiBusiness: zhiduiDebugInfo
       }
     };
 

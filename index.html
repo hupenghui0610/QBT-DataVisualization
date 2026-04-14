@@ -1297,7 +1297,7 @@
     <!-- 服务商图表（按渠道拆分） -->
     <div class="card wide">
       <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>服务商</span>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>渠道分布</span>
         <span class="chart-view-switch metric-switch" id="fuwuGmvGsvModeSwitch" style="margin-right:8px">
           <button type="button" class="view-btn active" data-fuwu-metric="gmv">GMV</button>
           <button type="button" class="view-btn" data-fuwu-metric="gsv">GSV</button>
@@ -1320,6 +1320,34 @@
         </div>
       </div>
       <div id="fuwuGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期服务商合计"></div>
+    </div>
+
+    <!-- 直对-商务业绩图表（按商务人员拆分） -->
+    <div class="card wide">
+      <h3>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>直对-商务业绩</span>
+        <span class="chart-view-switch metric-switch" id="zhiduiBusinessGmvGsvModeSwitch" style="margin-right:8px">
+          <button type="button" class="view-btn active" data-zhidui-business-metric="gmv">GMV</button>
+          <button type="button" class="view-btn" data-zhidui-business-metric="gsv">GSV</button>
+          <button type="button" class="view-btn" data-zhidui-business-metric="refundRate">退款率</button>
+        </span>
+        <span class="chart-view-switch" id="zhiduiBusinessGmvModeSwitch">
+          <button type="button" class="view-btn active" data-zhidui-business-gmv-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-zhidui-business-gmv-mode="weekly">周度</button>
+          <button type="button" class="view-btn" data-zhidui-business-gmv-mode="monthly">月度</button>
+        </span>
+      </h3>
+      <span id="zhiduiBusinessGmvStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="zhiduiBusinessGmvStart"></select> 结束：<select id="zhiduiBusinessGmvEnd"></select></div>
+      <div class="chart-wrap--overlay">
+        <div id="chartZhiduiBusinessGmv" class="chart"></div>
+        <!-- 维度切换加载覆盖层 -->
+        <div class="chart-dim-loading-overlay" id="zhiduiBusinessGmvDimLoading">
+          <div class="dim-spinner"></div>
+          <span class="dim-loading-text" id="zhiduiBusinessGmvDimLoadingText">正在计算数据...</span>
+        </div>
+      </div>
+      <div id="zhiduiBusinessGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期直对商务业绩合计"></div>
     </div>
 
     <!-- DP图表（按渠道拆分） -->
@@ -9113,6 +9141,7 @@
         function refreshFourPlatformCharts() {
           initFourPlatformSwitches();
           initFuwuGmvSwitches();
+          initZhiduiBusinessGmvSwitches();
           initDpGmvSwitches();
           initNewretailModelDist();
           initNewretailModelDistGsv();
@@ -9121,6 +9150,7 @@
           initModelDistDaren();
           renderFourPlatform();
           renderFuwuGmv();
+          renderZhiduiBusinessGmv();
           renderDpGmv();
           renderNewretailModelDist();
           renderNewretailModelDistGsv();
@@ -9324,8 +9354,7 @@
               var refundRate = t.gmv > 0 ? 1 - t.gsv / t.gmv : null;
               return { label: ch, val: refundRate, gmv: t.gmv, gsv: t.gsv, color: defaultColors[i % defaultColors.length] };
             }).filter(function (it) { return it.val != null; })
-              .sort(function (a, b) { return b.val - a.val; })
-              .slice(0, 8);
+              .sort(function (a, b) { return b.val - a.val; });
 
             wrap.innerHTML = items
               .map(function (it) {
@@ -9357,12 +9386,12 @@
               if (p[ch] != null && isFinite(Number(p[ch]))) acc[ch] += Number(p[ch]);
             });
           });
-          // 按金额排序，取前8个（避免过多）
+          // 按金额排序，显示所有
           var items = channels.map(function (ch, i) {
             return { label: ch, val: acc[ch], color: defaultColors[i % defaultColors.length] };
           }).sort(function (a, b) {
             return b.val - a.val;
-          }).slice(0, 8);
+          });
           wrap.innerHTML = items
             .map(function (it) {
               return (
@@ -9592,6 +9621,391 @@
               }
             });
             sw.__bound__ = true;
+          }
+        }
+
+        // ==================== 直对-商务业绩图表（按商务人员拆分，支持GMV/GSV/退款率切换） ====================
+        window.zhiduiBusinessGmvMode = 'daily';
+        window.zhiduiBusinessMetric = 'gmv'; // 'gmv' 或 'gsv' 或 'refundRate'
+
+        function renderZhiduiBusinessGmv() {
+          var el = document.getElementById('chartZhiduiBusinessGmv');
+          if (!el) return;
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!charts.chartZhiduiBusinessGmv) charts.chartZhiduiBusinessGmv = echarts.init(el);
+
+          var metric = window.zhiduiBusinessMetric || 'gmv';
+          var isRefundRate = metric === 'refundRate';
+          var dataKey = isRefundRate ? 'zhiduiBusinessRefundRate' : (metric === 'gsv' ? 'zhiduiBusinessGsv' : 'zhiduiBusinessGmv');
+          var metricName = isRefundRate ? '退款率' : (metric === 'gsv' ? 'GSV' : 'GMV');
+
+          if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.data || !raw[dataKey].daily.data.length) {
+            var err = window.__FOUR_PLATFORM_ERROR__ || '';
+            charts.chartZhiduiBusinessGmv.setOption(
+              {
+                title: { text: err || '暂无直对商务业绩数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+                series: [],
+              },
+              true
+            );
+            return;
+          }
+          var startVal = document.getElementById('zhiduiBusinessGmvStart') && document.getElementById('zhiduiBusinessGmvStart').value;
+          var endVal = document.getElementById('zhiduiBusinessGmvEnd') && document.getElementById('zhiduiBusinessGmvEnd').value;
+          var daily = raw[dataKey].daily;
+          var weekly = raw[dataKey].weekly || { data: [], channels: [] };
+          var monthly = raw[dataKey].monthly || { data: [], channels: [] };
+          var mode = window.zhiduiBusinessGmvMode || 'daily';
+          var pts = mode === 'monthly' ? monthly.data : (mode === 'weekly' ? weekly.data : daily.data);
+          var channels = mode === 'monthly' ? monthly.channels : (mode === 'weekly' ? weekly.channels : daily.channels);
+
+          // 生成完整的日期序列（补全缺失日期）
+          var filtered = pts;
+          if (startVal && endVal && startVal <= endVal) {
+            filtered = pts.filter(function (p) {
+              return p.date >= startVal && p.date <= endVal;
+            });
+          }
+
+          // 构建日期到数据的映射
+          var dataMap = {};
+          filtered.forEach(function(p) {
+            dataMap[p.date] = p;
+          });
+
+          // 生成完整的日期序列
+          var fullDates = [];
+          if (startVal && endVal) {
+            if (mode === 'monthly') {
+              var cur = new Date(startVal + '-01');
+              var end = new Date(endVal + '-01');
+              while (cur <= end) {
+                var y = cur.getFullYear();
+                var m = String(cur.getMonth() + 1).padStart(2, '0');
+                fullDates.push(y + '-' + m);
+                cur.setMonth(cur.getMonth() + 1);
+              }
+            } else if (mode === 'weekly') {
+              fullDates = filtered.map(function(p) { return p.date; });
+            } else {
+              var cur = new Date(startVal);
+              var end = new Date(endVal);
+              while (cur <= end) {
+                fullDates.push(cur.toISOString().split('T')[0]);
+                cur.setDate(cur.getDate() + 1);
+              }
+            }
+          } else {
+            fullDates = filtered.map(function(p) { return p.date; });
+          }
+
+          var x = fullDates;
+          var series = channels.map(function (ch) {
+            return {
+              name: ch,
+              type: 'line',
+              smooth: true,
+              data: fullDates.map(function (d) {
+                var p = dataMap[d];
+                return p && p[ch] != null ? p[ch] : (isRefundRate ? null : 0);
+              }),
+              showSymbol: x.length <= 40,
+              connectNulls: false
+            };
+          });
+          var opt = {
+            tooltip: {
+              trigger: 'axis',
+              formatter: function (params) {
+                var p0 = params[0] || {};
+                var html = (p0.axisValue || '') + '<br/>';
+                params.forEach(function (p) {
+                  var val = p.value != null ? Number(p.value) : null;
+                  var isZero = val === 0 || val === null || isNaN(val);
+                  var lineStyle = isZero ? ' style="color:#999"' : '';
+                  var displayVal = isRefundRate ? (val != null ? (val * 100).toFixed(2) + '%' : '-') : (val != null && !isNaN(val) ? val.toFixed(2) : '-');
+                  html += '<span' + lineStyle + '>' + (p.marker || '') + p.seriesName + ': ' + displayVal + (isRefundRate ? '' : ' 万') + '</span><br/>';
+                });
+                return html;
+              },
+            },
+            legend: { data: channels, top: 6, left: 'center', type: 'scroll' },
+            grid: { left: 56, right: 40, top: 40, bottom: 60 },
+            xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabel } },
+            yAxis: {
+              type: 'value',
+              name: isRefundRate ? '退款率（%）' : metricName + '（万）',
+              axisLabel: {
+                formatter: function (v) {
+                  if (isRefundRate) return (v * 100).toFixed(0) + '%';
+                  return Number(v).toFixed(0) + '万';
+                }
+              },
+              max: isRefundRate ? 1 : undefined
+            },
+            series: series,
+          };
+          charts.chartZhiduiBusinessGmv.setOption(applyMobileChartOption(opt), true);
+          // 构建完整数据用于计算总计（缺失日期填充0）
+          var fullData = fullDates.map(function(d) {
+            var p = dataMap[d];
+            if (p) return p;
+            var zeroObj = { date: d };
+            channels.forEach(function(ch) { zeroObj[ch] = 0; });
+            return zeroObj;
+          });
+          renderZhiduiBusinessGmvPeriodTotals(fullData, channels, metricName, isRefundRate);
+        }
+
+        function renderZhiduiBusinessGmvPeriodTotals(rows, channels, metricName, isRefundRate) {
+          var wrap = document.getElementById('zhiduiBusinessGmvPeriodTotals');
+          if (!wrap) return;
+          if (!rows || !rows.length || !channels || !channels.length) {
+            wrap.innerHTML = '<div class="all-channel-gmv-period-totals__cell"><div class="all-channel-gmv-period-totals__label">暂无数据</div><div class="all-channel-gmv-period-totals__value">—</div></div>';
+            return;
+          }
+          var defaultColors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+
+          // 退款率模式
+          if (isRefundRate) {
+            var raw = window.__FOUR_PLATFORM_DATA__;
+            var mode = window.zhiduiBusinessGmvMode || 'daily';
+
+            var selStart = document.getElementById('zhiduiBusinessGmvStart');
+            var selEnd = document.getElementById('zhiduiBusinessGmvEnd');
+            var startDate = selStart && selStart.value ? selStart.value : null;
+            var endDate = selEnd && selEnd.value ? selEnd.value : null;
+
+            var gmvData = raw && raw.zhiduiBusinessGmv && raw.zhiduiBusinessGmv.daily && raw.zhiduiBusinessGmv.daily.data ? raw.zhiduiBusinessGmv.daily.data : [];
+            var gsvData = raw && raw.zhiduiBusinessGsv && raw.zhiduiBusinessGsv.daily && raw.zhiduiBusinessGsv.daily.data ? raw.zhiduiBusinessGsv.daily.data : [];
+            var allChannels = raw && raw.zhiduiBusinessGmv && raw.zhiduiBusinessGmv.daily && raw.zhiduiBusinessGmv.daily.channels ? raw.zhiduiBusinessGmv.daily.channels : [];
+
+            var filteredGmv = gmvData;
+            var filteredGsv = gsvData;
+            if (startDate && endDate) {
+              filteredGmv = gmvData.filter(function(p) { return p.date >= startDate && p.date <= endDate; });
+              filteredGsv = gsvData.filter(function(p) { return p.date >= startDate && p.date <= endDate; });
+            }
+
+            var totals = {};
+            allChannels.forEach(function(ch) {
+              totals[ch] = { gmv: 0, gsv: 0 };
+            });
+
+            filteredGmv.forEach(function(p) {
+              allChannels.forEach(function(ch) {
+                totals[ch].gmv += p[ch] || 0;
+              });
+            });
+
+            filteredGsv.forEach(function(p) {
+              allChannels.forEach(function(ch) {
+                totals[ch].gsv += p[ch] || 0;
+              });
+            });
+
+            var items = allChannels.map(function (ch, i) {
+              var t = totals[ch];
+              var refundRate = t.gmv > 0 ? 1 - t.gsv / t.gmv : null;
+              return { label: ch, val: refundRate, gmv: t.gmv, gsv: t.gsv, color: defaultColors[i % defaultColors.length] };
+            }).filter(function (it) { return it.val != null; })
+              .sort(function (a, b) { return b.val - a.val; });
+
+            wrap.innerHTML = items
+              .map(function (it) {
+                var tooltip = it.gmv > 0 ? 'GMV: ' + it.gmv.toFixed(2) + '万, GSV: ' + it.gsv.toFixed(2) + '万' : '';
+                return (
+                  '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                  it.color +
+                  '" title="' + tooltip +
+                  '"><div class="all-channel-gmv-period-totals__label">' +
+                  it.label +
+                  ' 合计退款率</div><div class="all-channel-gmv-period-totals__value">' +
+                  (it.val * 100).toFixed(2) + '%' +
+                  '</div></div>'
+                );
+              })
+              .join('');
+            return;
+          }
+
+          // GMV/GSV模式下显示总计
+          var acc = {};
+          channels.forEach(function (ch) {
+            acc[ch] = 0;
+          });
+          rows.forEach(function (p) {
+            if (!p) return;
+            channels.forEach(function (ch) {
+              if (p[ch] != null && isFinite(Number(p[ch]))) acc[ch] += Number(p[ch]);
+            });
+          });
+          var items = channels.map(function (ch, i) {
+            return { label: ch, val: acc[ch], color: defaultColors[i % defaultColors.length] };
+          }).sort(function (a, b) {
+            return b.val - a.val;
+          });
+          wrap.innerHTML = items
+            .map(function (it) {
+              return (
+                '<div class="all-channel-gmv-period-totals__cell" style="border-top-color:' +
+                it.color +
+                '"><div class="all-channel-gmv-period-totals__label">' +
+                it.label +
+                '</div><div class="all-channel-gmv-period-totals__value">' +
+                (isRefundRate ? (it.val * 100).toFixed(2) + '%' : it.val.toFixed(2) + '万') +
+                '</div></div>'
+              );
+            })
+            .join('');
+        }
+
+        function initZhiduiBusinessGmvSwitches() {
+          var selStart = document.getElementById('zhiduiBusinessGmvStart');
+          var selEnd = document.getElementById('zhiduiBusinessGmvEnd');
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!selStart || !selEnd) return;
+
+          var metric = window.zhiduiBusinessMetric || 'gmv';
+          var dataKey = metric === 'refundRate' ? 'zhiduiBusinessRefundRate' : (metric === 'gsv' ? 'zhiduiBusinessGsv' : 'zhiduiBusinessGmv');
+
+          if (!raw || !raw[dataKey] || !raw[dataKey].daily || !raw[dataKey].daily.data || !raw[dataKey].daily.data.length) {
+            selStart.innerHTML = '<option value="">-</option>';
+            selEnd.innerHTML = '<option value="">-</option>';
+            return;
+          }
+          var mode = window.zhiduiBusinessGmvMode || 'daily';
+          var dataPoints = mode === 'monthly' ? (raw[dataKey].monthly.data || []) : (mode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
+          if (!dataPoints.length) {
+            selStart.innerHTML = '<option value="">-</option>';
+            selEnd.innerHTML = '<option value="">-</option>';
+            return;
+          }
+          var dates = dataPoints.map(function (p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+
+          var defaultStart, defaultEnd;
+          if (mode === 'monthly') {
+            defaultEnd = '2026-04';
+            defaultStart = '2026-01';
+          } else if (mode === 'weekly') {
+            defaultEnd = dates[dates.length - 1];
+            defaultStart = dates[Math.max(0, dates.length - 12)];
+          } else {
+            var today = new Date();
+            var yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            var thirtyDaysAgo = new Date(yesterday);
+            thirtyDaysAgo.setDate(yesterday.getDate() - 30);
+            defaultEnd = yesterday.toISOString().split('T')[0];
+            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+          }
+
+          var curStart = selStart.value;
+          var curEnd = selEnd.value;
+          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
+          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          if (curStart < minD) curStart = minD;
+          if (curEnd > maxD) curEnd = maxD;
+
+          var optsHtml = dates.map(function (d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          selStart.innerHTML = optsHtml;
+          selEnd.innerHTML = dates.map(function (d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          if (!selStart.value || dates.indexOf(selStart.value) === -1) selStart.value = curStart;
+          if (!selEnd.value || dates.indexOf(selEnd.value) === -1) selEnd.value = curEnd;
+          selStart.onchange = renderZhiduiBusinessGmv;
+          selEnd.onchange = renderZhiduiBusinessGmv;
+
+          // 绑定GMV/GSV/退款率切换
+          var gmvGsvSw = document.getElementById('zhiduiBusinessGmvGsvModeSwitch');
+          if (gmvGsvSw && !gmvGsvSw.__bound__) {
+            gmvGsvSw.addEventListener('click', function(e) {
+              var btn = e.target.closest && e.target.closest('[data-zhidui-business-metric]');
+              if (!btn) return;
+              var metric = btn.getAttribute('data-zhidui-business-metric');
+              if (metric !== 'gmv' && metric !== 'gsv' && metric !== 'refundRate') return;
+              var currentStart = selStart.value;
+              var currentEnd = selEnd.value;
+              window.zhiduiBusinessMetric = metric;
+              Array.from(gmvGsvSw.querySelectorAll('[data-zhidui-business-metric]')).forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-zhidui-business-metric') === metric);
+              });
+              initZhiduiBusinessGmvSwitches();
+              if (currentStart && currentEnd) {
+                var zhiduiMode = window.zhiduiBusinessGmvMode || 'daily';
+                var newMetric = window.zhiduiBusinessMetric || 'gmv';
+                var dataKey = newMetric === 'refundRate' ? 'zhiduiBusinessRefundRate' : (newMetric === 'gsv' ? 'zhiduiBusinessGsv' : 'zhiduiBusinessGmv');
+                var raw = window.__FOUR_PLATFORM_DATA__;
+                var dates = [];
+                if (raw && raw[dataKey]) {
+                  var dataPoints = zhiduiMode === 'monthly' ? (raw[dataKey].monthly.data || []) : (zhiduiMode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
+                  dates = dataPoints.map(function(p) { return p.date; });
+                }
+                var minD = dates[0];
+                var maxD = dates[dates.length - 1];
+                if (currentStart >= minD && currentStart <= maxD) {
+                  selStart.value = currentStart;
+                } else if (currentStart < minD) {
+                  selStart.value = minD;
+                } else if (currentStart > maxD) {
+                  selStart.value = maxD;
+                }
+                if (currentEnd >= minD && currentEnd <= maxD) {
+                  selEnd.value = currentEnd;
+                } else if (currentEnd < minD) {
+                  selEnd.value = minD;
+                } else if (currentEnd > maxD) {
+                  selEnd.value = maxD;
+                }
+              }
+              renderZhiduiBusinessGmv();
+            });
+            gmvGsvSw.__bound__ = true;
+          }
+
+          // 绑定日度/周度/月度切换
+          var modeSw = document.getElementById('zhiduiBusinessGmvModeSwitch');
+          if (modeSw && !modeSw.__bound__) {
+            modeSw.addEventListener('click', function(e) {
+              var btn = e.target.closest && e.target.closest('[data-zhidui-business-gmv-mode]');
+              if (!btn) return;
+              var mode = btn.getAttribute('data-zhidui-business-gmv-mode');
+              if (mode !== 'daily' && mode !== 'weekly' && mode !== 'monthly') return;
+              var currentStart = selStart.value;
+              var currentEnd = selEnd.value;
+              window.zhiduiBusinessGmvMode = mode;
+              Array.from(modeSw.querySelectorAll('[data-zhidui-business-gmv-mode]')).forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-zhidui-business-gmv-mode') === mode);
+              });
+              initZhiduiBusinessGmvSwitches();
+              if (currentStart && currentEnd) {
+                var zhiduiMode = window.zhiduiBusinessGmvMode || 'daily';
+                var metric = window.zhiduiBusinessMetric || 'gmv';
+                var dataKey = metric === 'refundRate' ? 'zhiduiBusinessRefundRate' : (metric === 'gsv' ? 'zhiduiBusinessGsv' : 'zhiduiBusinessGmv');
+                var raw = window.__FOUR_PLATFORM_DATA__;
+                var dates = [];
+                if (raw && raw[dataKey]) {
+                  var dataPoints = zhiduiMode === 'monthly' ? (raw[dataKey].monthly.data || []) : (zhiduiMode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
+                  dates = dataPoints.map(function(p) { return p.date; });
+                }
+                // 月度模式：截取年月部分匹配
+                var lookupStart = zhiduiMode === 'monthly' ? currentStart.substring(0, 7) : currentStart;
+                var lookupEnd = zhiduiMode === 'monthly' ? currentEnd.substring(0, 7) : currentEnd;
+                if (dates.indexOf(lookupStart) >= 0) {
+                  selStart.value = lookupStart;
+                } else if (dates.length > 0) {
+                  selStart.value = dates[0];
+                }
+                if (dates.indexOf(lookupEnd) >= 0) {
+                  selEnd.value = lookupEnd;
+                } else if (dates.length > 0) {
+                  selEnd.value = dates[dates.length - 1];
+                }
+              }
+              renderZhiduiBusinessGmv();
+            });
+            modeSw.__bound__ = true;
           }
         }
 
@@ -11012,6 +11426,27 @@
                       console.log('fuwuGsv.daily.data长度:', o.data.fuwuGsv.daily.data.length);
                       console.log('fuwuGsv.daily.channels:', o.data.fuwuGsv.daily.channels);
                     }
+                  }
+                  // 输出直对商务人员数据信息
+                  if (o.data.zhiduiBusinessGsv) {
+                    console.log('=== 直对商务人员数据 ===');
+                    console.log('zhiduiBusinessGsv.daily:', o.data.zhiduiBusinessGsv.daily);
+                    if (o.data.zhiduiBusinessGsv.daily && o.data.zhiduiBusinessGsv.daily.data) {
+                      console.log('zhiduiBusinessGsv.daily.data长度:', o.data.zhiduiBusinessGsv.daily.data.length);
+                      console.log('zhiduiBusinessGsv.daily.channels:', o.data.zhiduiBusinessGsv.daily.channels);
+                    }
+                  } else {
+                    console.log('=== 直对商务人员数据为空 ===');
+                  }
+                  // 输出直对商务人员调试信息
+                  if (o.data.meta && o.data.meta.debugZhiduiBusiness) {
+                    console.log('=== 直对商务人员调试信息 ===');
+                    console.log('渠道->商务人员映射:', o.data.meta.debugZhiduiBusiness.channelToBusinessPerson);
+                    console.log('直对订单数量:', o.data.meta.debugZhiduiBusiness.zhiduiOrderCount);
+                    console.log('前5个渠道:', o.data.meta.debugZhiduiBusiness.first5Channels);
+                    console.log('所有渠道:', o.data.meta.debugZhiduiBusiness.allChannels);
+                    console.log('未匹配到商务人员的渠道:', o.data.meta.debugZhiduiBusiness.unmatchedChannels);
+                    console.log('最终商务人员:', o.data.meta.debugZhiduiBusiness.finalChannels);
                   }
                   // 输出DP类每个达人每个月的GMV和GSV
                   if (o.data.dpGmvGsv && o.data.dpGmvGsv.monthly && o.data.dpGmvGsv.monthly.length > 0) {

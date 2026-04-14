@@ -142,7 +142,8 @@ export async function onRequestGet(context) {
     );
   }
 
-  // 优先读取缓存
+  // 禁用缓存，实时读取数据
+  /*
   var cached = await getCache(env, CACHE_KEY);
   if (cached) {
     return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
@@ -154,6 +155,7 @@ export async function onRequestGet(context) {
       },
     });
   }
+  */
 
   var spreadsheetToken = env.FEISHU_TMALL_SPREADSHEET_TOKEN || DEFAULT_SPREADSHEET_TOKEN;
   var range = env.FEISHU_TMALL_SHEET_RANGE || DEFAULT_RANGE;
