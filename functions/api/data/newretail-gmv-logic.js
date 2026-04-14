@@ -145,13 +145,17 @@ function parseQuantity(value) {
 }
 
 /** ==================== 构建渠道映射索引 ====================
- * 渠道映射表: A=渠道名, B=平台, D=视频号昵称, E=达人ID
+ * 渠道映射表: A=渠道名, B=平台, D=视频号昵称, E=达人ID, F=商务人员
  */
 function buildChannelMaps(chValues) {
-  // 达人ID → {渠道名称, 平台}
+  // 达人ID → {渠道名称, 平台, 商务人员}
   const darenIdToChannel = {};
   // 视频号专用: 达人昵称 → 渠道名称
   const shipinhaoNameToChannel = {};
+  // 渠道名 → 商务人员（用于直对类订单）- 保留用于兼容
+  const channelToBusinessPerson = {};
+  // 达人ID → 商务人员（正确的方式：订单用达人ID匹配商务人员）
+  const darenIdToBusinessPerson = {};
   const channelList = []; // 调试：记录所有渠道名
 
   for (let r = 1; r < chValues.length; r++) { // skip header
@@ -160,9 +164,20 @@ function buildChannelMaps(chValues) {
     const platform = String(row[1] || '').trim();
     const darenName = String(row[3] || '').trim();
     const darenId = String(row[4] || '').trim();
+    const businessPerson = String(row[5] || '').trim();
 
     if (!channelName) continue;
     channelList.push(channelName);
+
+    // 记录渠道对应的商务人员（兼容旧逻辑）
+    if (businessPerson) {
+      channelToBusinessPerson[channelName] = businessPerson;
+    }
+
+    // 记录达人ID对应的商务人员（正确逻辑：订单用达人ID匹配）
+    if (darenId && businessPerson) {
+      darenIdToBusinessPerson[darenId] = businessPerson;
+    }
 
     // 视频号: 用昵称索引
     if (platform === '视频号' && darenName) {
@@ -175,7 +190,7 @@ function buildChannelMaps(chValues) {
     }
   }
 
-  return { darenIdToChannel, shipinhaoNameToChannel };
+  return { darenIdToChannel, shipinhaoNameToChannel, channelToBusinessPerson, darenIdToBusinessPerson };
 }
 
 /** ==================== 订单分类 ====================
@@ -492,22 +507,30 @@ function aggregateByDayAndCategory(allOrders) {
   });
 }
 
-/** ==================== 按日期和渠道汇总（服务商订单） ====================
+/** ==================== 按日期和渠道汇总（服务商订单 + 直对渠道） ====================
  * 输出: 每天每条渠道一条记录，用于服务商GMV图表
+ * 特殊处理: 直对类订单统一归入"直对"渠道，与其他服务商渠道并列展示
  */
 function aggregateFuwuByChannel(allOrders) {
   const bucket = {};
   const channels = new Set();
 
   allOrders.forEach(order => {
-    // 只处理服务商订单
-    if (order.category !== 'fuwu') return;
+    // 只处理服务商订单和直对订单
+    if (order.category !== 'fuwu' && order.category !== 'zhidui') return;
 
     const day = order.date;
-    const channel = order.channel || '未知';
+    let channel;
 
-    // 过滤掉"未知"渠道
-    if (channel === '未知') return;
+    if (order.category === 'zhidui') {
+      // 直对类订单统一归入"直对"渠道
+      channel = '直对';
+    } else {
+      // 服务商类订单按原渠道名
+      channel = order.channel || '未知';
+      // 过滤掉"未知"渠道
+      if (channel === '未知') return;
+    }
 
     channels.add(channel);
 
@@ -522,7 +545,12 @@ function aggregateFuwuByChannel(allOrders) {
 
   // 转换为数组格式
   const sortedDays = Object.keys(bucket).sort();
-  const sortedChannels = Array.from(channels).sort();
+  const sortedChannels = Array.from(channels).sort((a, b) => {
+    // 确保"直对"渠道排在最前面
+    if (a === '直对') return -1;
+    if (b === '直对') return 1;
+    return a.localeCompare(b, 'zh-CN');
+  });
 
   return {
     days: sortedDays,
@@ -653,6 +681,211 @@ function aggregateDpByChannel(allOrders) {
       return dayData;
     })
   };
+}
+
+/** ==================== 按商务人员聚合直对数据（日度）====================
+ * 输出: 每天每个商务人员一条记录，用于直对-商务业绩图表
+ * 规则: 直对类订单按渠道映射表中的F列商务人员分组
+ * 注意: 使用达人ID(E列)匹配商务人员(F列)，而不是渠道名
+ */
+function aggregateZhiduiByBusinessPerson(allOrders, darenIdToBusinessPerson) {
+  const bucket = {};
+  const businessPersons = new Set();
+
+  allOrders.forEach(order => {
+    // 只处理直对订单
+    if (order.category !== 'zhidui') return;
+
+    const day = order.date;
+    // 使用达人ID匹配商务人员，而不是channel
+    const darenId = order.darenId || order.channel || '';
+
+    // 获取商务人员名字（用达人ID匹配）
+    const businessPerson = darenIdToBusinessPerson[darenId] || '未分配';
+
+    businessPersons.add(businessPerson);
+
+    if (!bucket[day]) {
+      bucket[day] = {};
+    }
+    if (!bucket[day][businessPerson]) {
+      bucket[day][businessPerson] = 0;
+    }
+    bucket[day][businessPerson] += order.amount;
+  });
+
+  // 转换为数组格式
+  const sortedDays = Object.keys(bucket).sort();
+  const sortedBusinessPersons = Array.from(businessPersons).sort((a, b) => {
+    // "未分配"排到最后
+    if (a === '未分配') return 1;
+    if (b === '未分配') return -1;
+    return a.localeCompare(b, 'zh-CN');
+  });
+
+  return {
+    days: sortedDays,
+    channels: sortedBusinessPersons,
+    data: sortedDays.map(day => {
+      const dayData = { date: day };
+      sortedBusinessPersons.forEach(person => {
+        const amount = bucket[day][person] || 0;
+        dayData[person] = Number((amount / 10000).toFixed(2));
+      });
+      return dayData;
+    })
+  };
+}
+
+/** ==================== 月度聚合（直对按商务人员） ==================== */
+function aggregateZhiduiByBusinessPersonMonthly(dailyPoints) {
+  const bucket = {};
+  const businessPersons = new Set();
+
+  dailyPoints.forEach(p => {
+    const month = p.date.substring(0, 7); // YYYY-MM
+    Object.keys(p).forEach(key => {
+      if (key === 'date') return;
+      businessPersons.add(key);
+      if (!bucket[month]) {
+        bucket[month] = {};
+      }
+      if (!bucket[month][key]) {
+        bucket[month][key] = 0;
+      }
+      bucket[month][key] += p[key];
+    });
+  });
+
+  const sortedMonths = Object.keys(bucket).sort();
+  const sortedBusinessPersons = Array.from(businessPersons).sort((a, b) => {
+    if (a === '未分配') return 1;
+    if (b === '未分配') return -1;
+    return a.localeCompare(b, 'zh-CN');
+  });
+
+  return {
+    days: sortedMonths,
+    channels: sortedBusinessPersons,
+    data: sortedMonths.map(month => {
+      const monthData = { date: month };
+      sortedBusinessPersons.forEach(person => {
+        monthData[person] = Number((bucket[month][person] || 0).toFixed(2));
+      });
+      return monthData;
+    })
+  };
+}
+
+/** ==================== 周度聚合（直对按商务人员） ==================== */
+function aggregateZhiduiByBusinessPersonWeekly(dailyPoints) {
+  const bucket = {};
+  const businessPersons = new Set();
+
+  dailyPoints.forEach(p => {
+    const week = weekStartFromDateStr(p.date);
+    if (!week) return;
+    Object.keys(p).forEach(key => {
+      if (key === 'date') return;
+      businessPersons.add(key);
+      if (!bucket[week]) {
+        bucket[week] = {};
+      }
+      if (!bucket[week][key]) {
+        bucket[week][key] = 0;
+      }
+      bucket[week][key] += p[key];
+    });
+  });
+
+  const sortedWeeks = Object.keys(bucket).sort();
+  const sortedBusinessPersons = Array.from(businessPersons).sort((a, b) => {
+    if (a === '未分配') return 1;
+    if (b === '未分配') return -1;
+    return a.localeCompare(b, 'zh-CN');
+  });
+
+  return {
+    days: sortedWeeks,
+    channels: sortedBusinessPersons,
+    data: sortedWeeks.map(week => {
+      const weekData = { date: week };
+      sortedBusinessPersons.forEach(person => {
+        weekData[person] = Number((bucket[week][person] || 0).toFixed(2));
+      });
+      return weekData;
+    })
+  };
+}
+
+/** ==================== 直对按商务人员计算退款率（按日/周/月） ==================== */
+function aggregateZhiduiRefundRateByBusinessPerson(zhiduiGmvData, zhiduiGsvData) {
+  const days = zhiduiGmvData.days || [];
+  const businessPersons = Array.from(new Set([
+    ...(zhiduiGmvData.channels || []),
+    ...(zhiduiGsvData.channels || [])
+  ])).sort((a, b) => {
+    if (a === '未分配') return 1;
+    if (b === '未分配') return -1;
+    return a.localeCompare(b, 'zh-CN');
+  });
+
+  const gmvMap = {};
+  zhiduiGmvData.data.forEach(row => {
+    gmvMap[row.date] = row;
+  });
+  const gsvMap = {};
+  zhiduiGsvData.data.forEach(row => {
+    gsvMap[row.date] = row;
+  });
+
+  const refundData = days.map(date => {
+    const gmvRow = gmvMap[date] || {};
+    const gsvRow = gsvMap[date] || {};
+    const rateRow = { date: date };
+
+    businessPersons.forEach(person => {
+      const gmvVal = gmvRow[person] || 0;
+      const gsvVal = gsvRow[person] || 0;
+      rateRow[person] = gmvVal > 0 ? Number((1 - gsvVal / gmvVal).toFixed(4)) : null;
+    });
+
+    return rateRow;
+  });
+
+  return {
+    days: days,
+    channels: businessPersons,
+    data: refundData
+  };
+}
+
+/** ==================== 计算直对各商务人员的总计（用于前端计算总退款率） ==================== */
+function calculateZhiduiTotalsByBusinessPerson(zhiduiGmvData, zhiduiGsvData) {
+  const totals = {};
+  const businessPersons = zhiduiGmvData.channels || [];
+
+  businessPersons.forEach(person => {
+    totals[person] = { gmv: 0, gsv: 0, refundRate: null };
+  });
+
+  zhiduiGmvData.data.forEach(row => {
+    businessPersons.forEach(person => {
+      totals[person].gmv += row[person] || 0;
+    });
+  });
+
+  zhiduiGsvData.data.forEach(row => {
+    businessPersons.forEach(person => {
+      totals[person].gsv += row[person] || 0;
+    });
+  });
+
+  businessPersons.forEach(person => {
+    totals[person].refundRate = totals[person].gmv > 0 ? Number((1 - totals[person].gsv / totals[person].gmv).toFixed(4)) : null;
+  });
+
+  return totals;
 }
 
 /** ==================== 月度聚合（DP按渠道） ==================== */
@@ -1524,6 +1757,11 @@ export {
   aggregateDpByChannelMonthly,
   aggregateDpRefundRateByChannel,
   calculateDpTotalsByChannel,
+  aggregateZhiduiByBusinessPerson,
+  aggregateZhiduiByBusinessPersonWeekly,
+  aggregateZhiduiByBusinessPersonMonthly,
+  aggregateZhiduiRefundRateByBusinessPerson,
+  calculateZhiduiTotalsByBusinessPerson,
   aggregateDpByDarenMonthly,
   aggregateModelDistributionByDay,
   aggregateModelDistributionByDayFiltered,

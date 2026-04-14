@@ -336,7 +336,8 @@ export async function onRequestGet(context) {
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
 
-  // 优先读取缓存
+  // 禁用缓存，实时读取数据
+  /*
   var cached = await getCache(env, CACHE_KEY);
   console.log('[feishu-gmv-combined] 缓存查询结果:', cached ? '命中' : '未命中');
   if (cached) {
@@ -350,6 +351,7 @@ export async function onRequestGet(context) {
       },
     });
   }
+  */
 
   if (!env.FEISHU_APP_ID || !env.FEISHU_APP_SECRET) {
     return jsonResponse(
