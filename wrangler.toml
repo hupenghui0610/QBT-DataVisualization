@@ -1,25 +1,24 @@
-# Cloudflare Pages：测试服配置
-# 测试环境配置 - 对应 test 分支
+# Cloudflare Pages：正式服配置
+# 生产环境配置 - 对应 main 分支
 
-name = "qbt-datavisualization-test"
+name = "qbt-datavisualization"
 compatibility_date = "2024-11-01"
 pages_build_output_dir = "dist"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "qbt-auth-test"
-database_id = "d4ba5d46-53b6-4eac-9a42-a15a5a268ad0"
+database_name = "qbt-auth"
+database_id = "8e33f508-e226-4040-a4ba-df1754713733"
 
 # Pages Functions 环境变量（非密钥）
-# 测试环境与正式服共用飞书数据源（只读，不修改）
 [vars]
 FEISHU_DOUYIN_MODEL_ORDER_RANGE = "tuec5U!A2:AO20000"
 FEISHU_LIVESTREAM_FUNNEL_SPREADSHEET_TOKEN = "P1zusUMg2haMGctskH6cydLqn5e"
 # 行业数据（大盘 sheet1 / 品牌 sheet2）
 # FEISHU_INDUSTRY_SPREADSHEET_TOKEN = "your_spreadsheet_token"
 
-# OpenClaw 配置（测试服使用测试URL）
-OPENCLAW_MONTHLY_API_URL = "https://qbt-datavisualization-test.pages.dev/api/data/monthly-cumulative-summary"
+# OpenClaw 配置（正式服使用正式URL）
+OPENCLAW_MONTHLY_API_URL = "https://qbt-datavisualization.pages.dev/api/data/monthly-cumulative-summary"
 OPENCLAW_MONTHLY_API_KEY = "qbt_openclaw_monthly_2026_key"
 OPENCLAW_MONTHLY_API_SECRET = "sk_7a9f3e2d1c8b4a5f6e0d9c2b8a4f7e1d3c6b0a5f9e2d8c1b7a3f6e0d4c9b2a5"
 FEISHU_WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/YOUR_WEBHOOK_TOKEN_HERE"
