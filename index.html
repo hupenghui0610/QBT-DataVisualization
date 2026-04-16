@@ -7167,6 +7167,212 @@
         charts.chartAllChannelGsv.setOption(applyMobileChartOption(opt), true);
         renderAllChannelGsvPeriodTotals(filtered);
       }
+      // ============ 全渠道型号销量趋势图表 ============
+      var chartModelDailyTrend = null;
+      var modelDailyTrendData = null;
+
+      function initModelDailyTrend() {
+        var el = document.getElementById('chartModelDailyTrend');
+        if (!el) return;
+        chartModelDailyTrend = echarts.init(el);
+        loadModelDailyTrendData();
+
+        // 绑定指标切换事件
+        var metricBtns = document.querySelectorAll('#modelDailyTrendMetricSwitch .view-btn');
+        metricBtns.forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            metricBtns.forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            renderModelDailyTrend();
+          });
+        });
+
+        // 绑定型号显示模式切换事件
+        var modelBtns = document.querySelectorAll('#modelDailyTrendModelSwitch .view-btn');
+        modelBtns.forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            modelBtns.forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            renderModelDailyTrend();
+          });
+        });
+      }
+
+      function loadModelDailyTrendData() {
+        var statusEl = document.getElementById('modelDailyTrendStatus');
+        if (statusEl) statusEl.textContent = '正在加载数据...';
+
+        fetch('/api/data/model-daily-sales-trend')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.error) throw new Error(data.error);
+            modelDailyTrendData = data;
+            populateModelDailyTrendSelects();
+            renderModelDailyTrend();
+            if (statusEl) {
+              statusEl.textContent = '数据已加载 | 共 ' + data.totalDays + ' 天, ' + data.totalModels + ' 个型号';
+            }
+          })
+          .catch(function(e) {
+            if (statusEl) statusEl.textContent = '加载失败: ' + e.message;
+          });
+      }
+
+      function populateModelDailyTrendSelects() {
+        if (!modelDailyTrendData || !modelDailyTrendData.dates) return;
+        var dates = modelDailyTrendData.dates;
+        var selS = document.getElementById('modelDailyTrendStart');
+        var selE = document.getElementById('modelDailyTrendEnd');
+        if (!selS || !selE) return;
+
+        var prevS = selS.value || '';
+        var prevE = selE.value || '';
+        selS.innerHTML = '';
+        selE.innerHTML = '';
+        dates.forEach(function(d) {
+          var optS = document.createElement('option');
+          optS.value = d; optS.textContent = d;
+          selS.appendChild(optS);
+          var optE = document.createElement('option');
+          optE.value = d; optE.textContent = d;
+          selE.appendChild(optE);
+        });
+        selS.value = prevS && dates.indexOf(prevS) >= 0 ? prevS : dates[0];
+        selE.value = prevE && dates.indexOf(prevE) >= 0 ? prevE : dates[dates.length - 1];
+        selS.onchange = renderModelDailyTrend;
+        selE.onchange = renderModelDailyTrend;
+      }
+
+      function renderModelDailyTrend() {
+        if (!modelDailyTrendData || !chartModelDailyTrend) return;
+        var data = modelDailyTrendData;
+        var dates = data.dates;
+        var models = data.models;
+        var series = data.series;
+
+        var selS = document.getElementById('modelDailyTrendStart');
+        var selE = document.getElementById('modelDailyTrendEnd');
+        if (!selS || !selE) return;
+
+        var startVal = selS.value || dates[0];
+        var endVal = selE.value || dates[dates.length - 1];
+
+        var startIdx = dates.indexOf(startVal);
+        var endIdx = dates.indexOf(endVal);
+        if (startIdx < 0) startIdx = 0;
+        if (endIdx < 0) endIdx = dates.length - 1;
+        if (startIdx > endIdx) { var tmp = startIdx; startIdx = endIdx; endIdx = tmp; }
+
+        var filteredDates = dates.slice(startIdx, endIdx + 1);
+
+        // 获取当前选择的指标（销量/销额）
+        var metricMode = document.querySelector('#modelDailyTrendMetricSwitch .view-btn.active')?.dataset.metric || 'quantity';
+
+        // 获取当前型号显示模式（TOP10/全部）
+        var modelMode = document.querySelector('#modelDailyTrendModelSwitch .view-btn.active')?.dataset.modelMode || 'top10';
+
+        // 计算每个型号的总量用于排序和筛选
+        var modelTotals = models.map(function(model) {
+          var total = 0;
+          for (var i = startIdx; i <= endIdx; i++) {
+            total += series[model]?.[metricMode]?.[i] || 0;
+          }
+          return { model: model, total: total };
+        }).sort(function(a, b) { return b.total - a.total; });
+
+        var displayModels = modelMode === 'top10' ? modelTotals.slice(0, 10) : modelTotals;
+
+        var lineSeries = displayModels.map(function(item) {
+          var model = item.model;
+          var values = series[model]?.[metricMode]?.slice(startIdx, endIdx + 1) || [];
+          return {
+            name: model,
+            type: 'line',
+            data: values,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 6,
+            emphasis: { focus: 'series' }
+          };
+        });
+
+        var option = {
+          title: {
+            text: '各型号' + (metricMode === 'quantity' ? '销量' : '销额') + '趋势',
+            left: 'center',
+            textStyle: { fontSize: 14, fontWeight: 'normal' }
+          },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'cross' },
+            formatter: function(params) {
+              var result = params[0].axisValue + '<br/>';
+              params.forEach(function(item) {
+                var value = metricMode === 'amount' ? '¥' + (item.value / 10000).toFixed(2) + '万' : item.value;
+                result += item.marker + ' ' + item.seriesName + ': ' + value + '<br/>';
+              });
+              return result;
+            }
+          },
+          legend: {
+            type: 'scroll',
+            orient: 'horizontal',
+            top: 30,
+            data: displayModels.map(function(item) { return item.model; })
+          },
+          grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '15%',
+            top: '20%',
+            containLabel: true
+          },
+          xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: filteredDates,
+            axisLabel: { rotate: 45 }
+          },
+          yAxis: {
+            type: 'value',
+            name: metricMode === 'quantity' ? '销量' : '金额(元)',
+            axisLabel: {
+              formatter: function(value) {
+                if (metricMode === 'amount') {
+                  return value >= 10000 ? (value / 10000).toFixed(0) + '万' : value;
+                }
+                return value;
+              }
+            }
+          },
+          dataZoom: [
+            { type: 'inside', start: 0, end: 100 },
+            { type: 'slider', start: 0, end: 100, bottom: 10 }
+          ],
+          series: lineSeries
+        };
+
+        chartModelDailyTrend.setOption(option, true);
+
+        // 更新周期统计
+        var totalQuantity = 0, totalAmount = 0;
+        displayModels.forEach(function(item) {
+          var model = item.model;
+          for (var i = startIdx; i <= endIdx; i++) {
+            totalQuantity += series[model]?.quantity?.[i] || 0;
+            totalAmount += series[model]?.amount?.[i] || 0;
+          }
+        });
+        var totalsDiv = document.getElementById('modelDailyTrendPeriodTotals');
+        if (totalsDiv) {
+          totalsDiv.innerHTML = '<div style="display:flex;gap:24px;">' +
+            '<div><strong>所选周期合计</strong></div>' +
+            '<div>总销量: <strong>' + totalQuantity.toLocaleString() + '</strong></div>' +
+            '<div>总销额: <strong>¥' + (totalAmount / 10000).toFixed(2) + '万</strong></div>' +
+            '</div>';
+        }
+      }
+
       function renderAllChannelRefund() {
         var el = document.getElementById('chartAllChannelRefund');
         if (!el) return;
