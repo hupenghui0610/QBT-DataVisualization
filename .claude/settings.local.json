@@ -20,7 +20,12 @@
       "Bash(grep:*)",
       "Bash(xargs wc:*)",
       "Bash(sed 's/.*\\\\.//')",
-      "Bash(git checkout:*)"
+      "Bash(git merge:*)",
+      "Bash(git checkout:*)",
+      "Bash(curl -s \"https://4bb537e2.qbt-datavisualization.pages.dev/api/debug/jd-data-structure\")",
+      "Bash(curl:*)",
+      "Bash(rm -f functions/api/internal/daily-report.js functions/scheduled/daily-report-cron.js skills/daily-report-skill/README.md skills/daily-report-skill/KNOWLEDGE.md)",
+      "Bash(rmdir -p skills/daily-report-skill)"
     ]
   }
 }
