@@ -1174,6 +1174,25 @@
       <div class="date-range">起始：<select id="allChannelRefundStart"></select> 结束：<select id="allChannelRefundEnd"></select></div>
       <div id="chartAllChannelRefund" class="chart"></div>
     </div>
+
+    <!-- 全渠道型号销量趋势 -->
+    <div class="card wide">
+      <h3>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>全渠道型号销量趋势</span>
+        <span class="chart-view-switch metric-switch" id="modelDailyTrendMetricSwitch" style="margin-right:8px">
+          <button type="button" class="view-btn active" data-metric="quantity">销量</button>
+          <button type="button" class="view-btn" data-metric="amount">销额</button>
+        </span>
+        <span class="chart-view-switch" id="modelDailyTrendModelSwitch">
+          <button type="button" class="view-btn active" data-model-mode="top10">TOP10</button>
+          <button type="button" class="view-btn" data-model-mode="all">全部</button>
+        </span>
+      </h3>
+      <span id="modelDailyTrendStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="modelDailyTrendStart"></select> 结束：<select id="modelDailyTrendEnd"></select></div>
+      <div id="chartModelDailyTrend" class="chart"></div>
+      <div id="modelDailyTrendPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期型号销量合计"></div>
+    </div>
   </div>
   </div>
   </div>
