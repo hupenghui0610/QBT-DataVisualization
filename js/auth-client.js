@@ -5,7 +5,7 @@
 (function (global) {
   var TOKEN_KEY = 'xbs_token';
   console.log('[AuthClient] v2 loaded - Perf monitor fixed');
-  /** 本地打开页面时与 /api 不同源，跨域指向正式站（见下方 isLocalPageOrigin） */
+  /** 本地打开页面时与 /api 不同源，跨域指向正式站（见下方 isLocalPageOrigin）。多独立域名共用账号时，其它业务站也应把 API 指向同一鉴权入口，并在服务端配置 ALLOWED_ORIGINS。详见仓库根目录「多域名共用账号-部署说明.md」。 */
   var REMOTE_API_ORIGIN = 'https://qbt-datavisualization.pages.dev';
   /** 可选：仅在本地页下生效，覆盖正式 API 根（如预览环境），需在控制台设置 localStorage */
   var LS_API_ORIGIN_KEY = 'QBT_API_ORIGIN';
@@ -105,7 +105,13 @@
       return res.then(
         function (response) {
           var duration = performance.now() - start;
-          console.log('[Perf] ' + name + ' 成功: ' + duration.toFixed(2) + 'ms');
+          if (response && typeof response.ok === 'boolean' && !response.ok) {
+            console.log(
+              '[Perf] ' + name + ' HTTP ' + response.status + ': ' + duration.toFixed(2) + 'ms'
+            );
+          } else {
+            console.log('[Perf] ' + name + ' 成功: ' + duration.toFixed(2) + 'ms');
+          }
           return response;
         },
         function (err) {
@@ -182,6 +188,23 @@
         body: JSON.stringify({ name: name, phone: phone, password: password }),
       });
     }),
+    deleteAdminUser: timedFetch('deleteAdminUser', function (id) {
+      return fetch(getApiBase() + '/api/admin/users', {
+        method: 'DELETE',
+        headers: authHeaders(),
+        body: JSON.stringify({ id: id }),
+      });
+    }),
+    /** 任意已登录用户；团队 name+phone 列表（测算记录转发等） */
+    fetchTeamUsers: timedFetch('fetchTeamUsers', function () {
+      var h = {};
+      var tok = getToken();
+      if (tok) h['Authorization'] = 'Bearer ' + tok;
+      return fetch(getApiBase() + '/api/auth/team-users', {
+        method: 'GET',
+        headers: h,
+      });
+    }),
     /** 需登录；默认大盘 JSON（与 data/features-output.json 同源，经 Functions 鉴权） */
     fetchFeaturesOutput: timedFetch('fetchFeaturesOutput', function (refresh) {
       var qs = refresh ? '?refresh=1' : '';
@@ -242,6 +265,12 @@
     /** 需登录；直播间转化漏斗（sheet4 B/H/K/X/Y 按主播聚合） */
     fetchFeishuLivestreamFunnel: timedFetch('fetchFeishuLivestreamFunnel', function () {
       return fetchGetWithTimeout('/api/data/feishu-livestream-funnel', 90000);
+    }),
+    /** 需登录；全渠道型号销量趋势（多平台 sheet 聚合）。可选 query，如 '?nocache=1&debugModels=1' */
+    fetchModelDailySalesTrend: timedFetch('fetchModelDailySalesTrend', function (query) {
+      var q = query && typeof query === 'string' ? query : '';
+      if (q && q.charAt(0) !== '?') q = '?' + q;
+      return fetchGetWithTimeout('/api/data/model-daily-sales-trend' + q, 120000);
     }),
   };
 })(typeof window !== 'undefined' ? window : globalThis);

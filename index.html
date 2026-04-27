@@ -25,33 +25,20 @@
   <style>
     * { box-sizing: border-box; }
     body { font-family: "Microsoft YaHei", sans-serif; margin: 0; padding: 12px; background: #f5f6fa; }
-    .page-header { position: relative; text-align: center; margin-bottom: 20px; padding-right: 0; }
-    .page-header h1 { margin: 0 0 10px 0; font-size: 1.4rem; color: #1a1a2e; }
-    .page-header .subtitle { font-size: 0.9rem; color: #666; }
-    .version-log-wrap { position: absolute; top: 0; right: 0; z-index: 5; text-align: right; }
-    .version-log-btn {
-      padding: 6px 12px; font-size: 13px; color: #4a69bd; background: #fff; border: 1px solid #c5cee8;
-      border-radius: 8px; cursor: pointer; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    .app-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 28px;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      margin: -12px -12px 16px -12px;
+      border-radius: 0; color: #fff; position: relative;
     }
-    .version-log-btn:hover { background: #f0f3fb; border-color: #4a69bd; }
-    .version-log-panel {
-      display: none; position: absolute; right: 0; top: calc(100% + 6px); width: min(520px, calc(100vw - 24px));
-      max-height: min(70vh, 420px); overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12); text-align: left;
+    .app-header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .app-main-title { margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; line-height: 1.3; }
+    .app-subtitle {
+      margin: 0; font-size: 0.75rem; font-weight: 400;
+      display: inline-flex; align-items: center; gap: 4px;
+      color: rgba(255,255,255,0.55); background: none; padding: 0; border-radius: 0;
     }
-    .version-log-wrap.is-open .version-log-panel { display: block; }
-    .version-log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .version-log-table th,
-    .version-log-table td { padding: 10px 12px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
-    .version-log-table th { background: #f8fafc; color: #334155; font-weight: 600; text-align: left; position: sticky; top: 0; z-index: 1; }
-    .version-log-table .col-date { white-space: nowrap; width: 7.5em; color: #1e293b; font-variant-numeric: tabular-nums; }
-    .version-log-table th:nth-child(2),
-    .version-log-table .col-type { width: 1%; min-width: 9em; white-space: nowrap; }
-    .version-log-table .col-type .version-type-badge { white-space: nowrap; }
-    .version-log-table .col-desc { color: #475569; line-height: 1.5; word-break: break-word; }
-    .version-type-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
-    .version-type-badge.is-feature { background: #e8f0fe; color: #1a56c4; }
-    .version-type-badge.is-data { background: #ecfdf5; color: #047857; }
     .load-bar { margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .load-bar label { cursor: pointer; padding: 6px 12px; background: #4a69bd; color: #fff; border-radius: 6px; font-size: 14px; }
     .load-bar input[type="file"] { display: none; }
@@ -284,46 +271,58 @@
     .section-block.section-brand { margin-top: 32px; padding-top: 32px; border-top: 2px solid #e2e8f0; border-radius: 0 0 12px 12px; padding-bottom: 4px; }
     .daily-feishu-status { font-size: 13px; color: #64748b; margin-bottom: 8px; display: block; }
     .section-title { font-size: 1.35rem; font-weight: 700; color: #1a1a2e; margin: 0 0 12px 0; padding: 8px 16px; border-left: 4px solid #4a69bd; border-radius: 0 10px 10px 0; letter-spacing: 0.03em; line-height: 1.3; }
-    /* 主导航 Tab：与页内图表切换按钮区分，整宽深色底 + 滑块式选中 */
+    /* 主导航 Tab：浅灰底 pill 风格 + 蓝色选中 */
     .main-nav-tabs {
       display: flex;
       flex-wrap: wrap;
-      gap: 0;
-      margin: 18px 0 0 0;
-      padding: 6px;
-      background: linear-gradient(165deg, #1e293b 0%, #0f172a 55%, #1e293b 100%);
-      border-radius: 12px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px rgba(15,23,42,0.25);
-      border: 1px solid rgba(148,163,184,0.2);
+      align-items: center;
+      gap: 2px;
+      margin: 0 0 16px 0;
+      padding: 4px;
+      background: #e2e8f0;
+      border-radius: 10px;
     }
     .main-nav-tab {
       flex: 1 1 auto;
       min-width: 5.5em;
       margin: 0;
-      padding: 12px 14px;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      color: #94a3b8;
+      padding: 8px 18px;
+      font-size: 13.5px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: #64748b;
       background: transparent;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+      transition: all 0.2s ease;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
     }
     .main-nav-tab:hover {
-      color: #e2e8f0;
-      background: rgba(255,255,255,0.06);
+      color: #475569;
+      background: rgba(255,255,255,0.35);
     }
     .main-nav-tab:focus-visible {
       outline: 2px solid #38bdf8;
       outline-offset: 2px;
     }
     .main-nav-tab.active {
-      color: #0f172a;
-      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      color: #fff;
+      font-weight: 600;
+      background: #4a69bd;
+      box-shadow: 0 1px 3px rgba(74,105,189,0.25);
     }
+    .main-nav-tab.active .calc-tab-icon { color: #fff; }
+    .main-nav-tab:not(.active) .calc-tab-icon { opacity: 0.5; }
+    .calc-tab-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 1.2em; height: 1.2em; flex-shrink: 0; color: inherit;
+    }
+    .calc-tab-icon svg { width: 100%; height: 100%; display: block; }
     .main-tab-panels { margin-top: 4px; }
     .main-tab-panel { display: none; }
     .main-tab-panel.is-active { display: block; }
@@ -374,31 +373,44 @@
     }
     #auth-gate input[type="password"] { margin-bottom: 15px; }
     .user-session-bar {
-      position: absolute;
-      left: 0;
-      top: 0;
-      z-index: 6;
+      position: static;
       display: none;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px 12px;
+      gap: 6px 8px;
       font-size: 13px;
-      color: #334155;
-      max-width: calc(100% - 130px);
-      text-align: left;
+      justify-self: end;
+      align-self: center;
+      text-align: right;
+      max-width: 100%;
+      z-index: 6;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      border: none;
     }
-    .user-session-bar .user-display-name { font-weight: 600; color: #1a1a2e; }
+    .user-session-bar .user-display-name {
+      font-weight: 600;
+      color: #e2e8f0;
+      font-size: 13px;
+      padding-right: 6px;
+      border-right: 1px solid rgba(255,255,255,0.2);
+      margin-right: 2px;
+    }
     .user-session-btn {
-      padding: 4px 10px;
-      font-size: 12px;
-      color: #4a69bd;
-      background: #fff;
-      border: 1px solid #c5cee8;
+      padding: 3px 9px;
+      font-size: 11.5px;
+      color: #cbd5e1;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 6px;
       cursor: pointer;
       font-family: inherit;
+      transition: all 0.15s ease;
+      line-height: 1.5;
     }
-    .user-session-btn:hover { background: #f0f3fb; }
+    .user-session-btn:hover { background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.25); }
+    .user-session-btn:active { background: rgba(255,255,255,0.25); }
     .xbs-modal {
       position: fixed;
       inset: 0;
@@ -434,7 +446,7 @@
     .xbs-modal-actions .primary { background: #4a69bd; color: #fff; }
     .xbs-modal-actions .secondary { background: #e2e8f0; color: #334155; }
     .admin-logs-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .admin-logs-table th, .admin-logs-table td { padding: 8px; border-bottom: 1px solid #eef2f7; text-align: left; vertical-align: top; }
+    .admin-logs-table th, .admin-logs-table td { padding: 8px; border-bottom: 1px solid #eef2f7; text-align: center; vertical-align: middle; }
     /* 仅访问记录表：按内容排布列宽，IP 单行不换行 */
     .admin-access-logs-table { table-layout: auto; }
     .admin-access-logs-table th:nth-child(1),
@@ -780,30 +792,23 @@
       margin-top: 20px;
       padding-top: 20px;
     }
-    html.mobile-client .page-header { margin-bottom: 14px; padding-top: 32px; }
-    html.mobile-client .user-session-bar { max-width: 72%; font-size: 11px; gap: 6px; }
-    html.mobile-client .version-log-wrap { top: 0; right: 0; }
-    html.mobile-client .version-log-btn { padding: 5px 10px; font-size: 12px; }
-    html.mobile-client .version-log-panel { width: calc(100vw - 24px); max-width: none; right: 0; left: auto; }
-    html.mobile-client .page-header h1 {
-      font-size: 1.12rem;
-      line-height: 1.35;
+    html.mobile-client .app-header {
+      flex-direction: column; align-items: flex-start; gap: 10px;
+      margin-left: -12px; margin-right: -12px; padding: 12px 16px;
     }
+    html.mobile-client .user-session-bar {
+      width: 100%; padding: 5px 8px; gap: 4px 6px; font-size: 11px;
+    }
+    html.mobile-client .user-session-bar .user-display-name {
+      border-right: none; padding-right: 0; margin-right: 0;
+    }
+    html.mobile-client .app-main-title { font-size: 1.1rem; }
+    html.mobile-client .app-subtitle { font-size: 0.7rem; }
     html.mobile-client .main-nav-tabs {
-      margin-top: 12px;
-      padding: 4px;
-      border-radius: 10px;
+      margin-top: 0; margin-bottom: 12px; padding: 4px; border-radius: 10px;
     }
     html.mobile-client .main-nav-tab {
-      padding: 10px 8px;
-      font-size: 13px;
-      letter-spacing: 0.02em;
-      min-width: 4.5em;
-    }
-    html.mobile-client .page-header .subtitle {
-      font-size: 0.82rem;
-      line-height: 1.45;
-      padding: 0 4px;
+      padding: 10px 8px; font-size: 13px; letter-spacing: 0.02em; min-width: 4.5em;
     }
     html.mobile-client .card h3 {
       font-size: 16px;
@@ -1097,7 +1102,14 @@
   </div>
   <div id="main-content" style="display:none">
   <div style="position:relative;z-index:1">
-  <div class="page-header">
+  <header class="app-header">
+    <div class="app-header-left">
+      <h1 class="app-main-title">希倍思 - 电商数据可视化</h1>
+      <p class="app-subtitle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        仅限于希倍思人员使用，切勿分享至外部！
+      </p>
+    </div>
     <div class="user-session-bar" id="userSessionBar">
       <span class="user-display-name" id="userDisplayName"></span>
       <button type="button" class="user-session-btn" id="authChangePwdBtn">修改密码</button>
@@ -1106,26 +1118,13 @@
       <button type="button" class="user-session-btn" id="adminLogsBtn" style="display:none">访问记录</button>
       <button type="button" class="user-session-btn" id="adminSecurityBtn" style="display:none">登录安全</button>
     </div>
-    <div class="version-log-wrap">
-      <button type="button" class="version-log-btn" id="versionLogBtn" aria-expanded="false" aria-controls="versionLogPanel">版本记录</button>
-      <div id="versionLogPanel" class="version-log-panel" role="region" aria-label="版本记录" hidden>
-        <table class="version-log-table">
-          <thead>
-            <tr><th scope="col">版本时间</th><th scope="col">发布类型</th><th scope="col">修改内容</th></tr>
-          </thead>
-          <tbody id="versionLogTbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <h1>希倍思 - 电商数据可视化</h1>
-    <div class="subtitle">仅限于希倍思人员使用，切勿分享至外部！</div>
-    <nav class="main-nav-tabs" role="tablist" aria-label="数据分区">
-      <button type="button" class="main-nav-tab active" role="tab" aria-selected="true" aria-controls="main-tab-panel-home" id="main-tab-btn-home" data-main-tab="home">首页</button>
-      <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-shelf" id="main-tab-btn-shelf" data-main-tab="shelf">货架电商</button>
-      <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-newretail" id="main-tab-btn-newretail" data-main-tab="newretail">新零售</button>
-      <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-industry" id="main-tab-btn-industry" data-main-tab="industry" onclick="window.activateMainTab && window.activateMainTab('industry')">行业数据</button>
-    </nav>
-  </div>
+  </header>
+  <nav class="main-nav-tabs" role="tablist" aria-label="数据分区">
+    <button type="button" class="main-nav-tab active" role="tab" aria-selected="true" aria-controls="main-tab-panel-home" id="main-tab-btn-home" data-main-tab="home"><span class="calc-tab-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="calc-tab-label">首页</span></button>
+    <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-shelf" id="main-tab-btn-shelf" data-main-tab="shelf"><span class="calc-tab-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span class="calc-tab-label">货架电商</span></button>
+    <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-newretail" id="main-tab-btn-newretail" data-main-tab="newretail"><span class="calc-tab-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/><line x1="12" y1="14" x2="12" y2="14.01"/></svg></span><span class="calc-tab-label">新零售</span></button>
+    <button type="button" class="main-nav-tab" role="tab" aria-selected="false" aria-controls="main-tab-panel-industry" id="main-tab-btn-industry" data-main-tab="industry" onclick="window.activateMainTab && window.activateMainTab('industry')"><span class="calc-tab-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="calc-tab-label">行业数据</span></button>
+  </nav>
   <div class="main-tab-panels">
   <div id="main-tab-panel-home" class="main-tab-panel is-active" role="tabpanel" aria-labelledby="main-tab-btn-home">
   <div class="section-block section-all-channel-gmv">
@@ -1175,18 +1174,10 @@
       <div id="chartAllChannelRefund" class="chart"></div>
     </div>
 
-    <!-- 全渠道型号销量趋势 -->
+    <!-- 全渠道型号销量趋势（仅销量：四平台 GSV 路径件数 + 京东/天猫表内数量） -->
     <div class="card wide">
       <h3>
         <i class="chart-title-icon fa fa-line-chart"></i><span>全渠道型号销量趋势</span>
-        <span class="chart-view-switch metric-switch" id="modelDailyTrendMetricSwitch" style="margin-right:8px">
-          <button type="button" class="view-btn active" data-metric="quantity">销量</button>
-          <button type="button" class="view-btn" data-metric="amount">销额</button>
-        </span>
-        <span class="chart-view-switch" id="modelDailyTrendModelSwitch">
-          <button type="button" class="view-btn active" data-model-mode="top10">TOP10</button>
-          <button type="button" class="view-btn" data-model-mode="all">全部</button>
-        </span>
       </h3>
       <span id="modelDailyTrendStatus" class="daily-feishu-status"></span>
       <div class="date-range">起始：<select id="modelDailyTrendStart"></select> 结束：<select id="modelDailyTrendEnd"></select></div>
@@ -1600,7 +1591,7 @@
       <div class="admin-users-wrap">
         <table class="admin-logs-table">
           <thead>
-            <tr><th>用户名</th><th>账号（手机）</th><th>用户身份</th></tr>
+            <tr><th>用户名</th><th>账号（手机）</th><th>用户身份</th><th>操作</th></tr>
           </thead>
           <tbody id="adminUsersTbody"></tbody>
         </table>
@@ -1889,6 +1880,10 @@
         tb.innerHTML = '';
         (users || []).forEach(function (u) {
           var tr = document.createElement('tr');
+          var delBtn = '';
+          if (currentUser && u.id !== currentUser.id) {
+            delBtn = '<button type="button" class="admin-user-del-btn" data-uid="' + u.id + '" data-uname="' + escapeHtml(u.name || '') + '" style="color:#e53e3e;cursor:pointer;background:none;border:none;padding:2px 8px;font-size:13px">删除</button>';
+          }
           tr.innerHTML =
             '<td>' +
             escapeHtml(u.name || '') +
@@ -1896,10 +1891,12 @@
             escapeHtml(u.phone || '') +
             '</td><td>' +
             (u.is_admin ? '管理员' : '普通用户') +
+            '</td><td>' +
+            delBtn +
             '</td>';
           tb.appendChild(tr);
         });
-        if (!users || !users.length) tb.innerHTML = '<tr><td colspan="3">暂无账号</td></tr>';
+        if (!users || !users.length) tb.innerHTML = '<tr><td colspan="4">暂无账号</td></tr>';
       }
       function wireSessionButtons() {
         document.getElementById('authLogoutBtn').addEventListener('click', function () {
@@ -2003,6 +2000,41 @@
             panel.classList.remove('show');
             panel.setAttribute('aria-hidden', 'true');
           }
+        });
+        document.getElementById('adminUsersTbody').addEventListener('click', function (e) {
+          var btn = e.target.closest('.admin-user-del-btn');
+          if (!btn) return;
+          var uid = Number(btn.getAttribute('data-uid'));
+          var uname = btn.getAttribute('data-uname');
+          if (!uid) return;
+          if (!confirm('确认删除用户「' + uname + '」？此操作不可撤销')) return;
+          var errEl = document.getElementById('adminUsersErr');
+          errEl.textContent = '';
+          btn.disabled = true;
+          XbsAuth.deleteAdminUser(uid)
+            .then(function (res) {
+              return res.json().then(function (data) {
+                return { res: res, data: data };
+              });
+            })
+            .then(function (o) {
+              if (!o.res.ok) {
+                errEl.textContent = (o.data && o.data.error) || '删除失败';
+                btn.disabled = false;
+                return;
+              }
+              return XbsAuth.fetchAdminUsers().then(function (r) {
+                return r.json().then(function (data) {
+                  return { r: r, data: data };
+                });
+              }).then(function (list) {
+                if (list.r.ok) renderAdminUsersRows((list.data && list.data.users) || []);
+              });
+            })
+            .catch(function () {
+              errEl.textContent = '网络错误';
+              btn.disabled = false;
+            });
         });
         document.getElementById('adminUsersBtn').addEventListener('click', function () {
           var errEl = document.getElementById('adminUsersErr');
@@ -7187,44 +7219,43 @@
         renderAllChannelGsvPeriodTotals(filtered);
       }
       // ============ 全渠道型号销量趋势图表 ============
-      var chartModelDailyTrend = null;
       var modelDailyTrendData = null;
 
       function initModelDailyTrend() {
         var el = document.getElementById('chartModelDailyTrend');
         if (!el) return;
-        chartModelDailyTrend = echarts.init(el);
-        loadModelDailyTrendData();
-
-        // 绑定指标切换事件
-        var metricBtns = document.querySelectorAll('#modelDailyTrendMetricSwitch .view-btn');
-        metricBtns.forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            metricBtns.forEach(function(b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            renderModelDailyTrend();
-          });
-        });
-
-        // 绑定型号显示模式切换事件
-        var modelBtns = document.querySelectorAll('#modelDailyTrendModelSwitch .view-btn');
-        modelBtns.forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            modelBtns.forEach(function(b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            renderModelDailyTrend();
-          });
-        });
+        charts.chartModelDailyTrend = echarts.init(el);
+        // 不在此处拉数：首屏执行时用户可能尚未登录；登录后由 loadDefaultData 统一拉取
       }
 
       function loadModelDailyTrendData() {
         var statusEl = document.getElementById('modelDailyTrendStatus');
         if (statusEl) statusEl.textContent = '正在加载数据...';
 
-        fetch('/api/data/model-daily-sales-trend')
-          .then(function(r) { return r.json(); })
+        if (typeof XbsAuth === 'undefined' || !XbsAuth.fetchModelDailySalesTrend) {
+          if (statusEl) statusEl.textContent = '加载失败: 请先加载 auth-client';
+          return;
+        }
+        (function () {
+          var dbg =
+            typeof location !== 'undefined' &&
+            new URLSearchParams(location.search || '').get('debugModels') === '1';
+          var qs = dbg ? '?nocache=1&debugModels=1' : '';
+          return XbsAuth.fetchModelDailySalesTrend(qs);
+        })()
+          .then(function(r) {
+            return r.json().then(function(data) {
+              if (!r.ok) throw new Error((data && data.error) || 'HTTP ' + r.status);
+              return data;
+            });
+          })
           .then(function(data) {
             if (data.error) throw new Error(data.error);
+            if (data.debug) {
+              console.log('[model-daily-sales-trend] 京东型号清单', data.debug.jdModels);
+              console.log('[model-daily-sales-trend] 天猫型号清单', data.debug.tmallModels);
+              console.log('[model-daily-sales-trend] 四平台GSV型号清单', data.debug.gsvModels);
+            }
             modelDailyTrendData = data;
             populateModelDailyTrendSelects();
             renderModelDailyTrend();
@@ -7263,7 +7294,7 @@
       }
 
       function renderModelDailyTrend() {
-        if (!modelDailyTrendData || !chartModelDailyTrend) return;
+        if (!modelDailyTrendData || !charts.chartModelDailyTrend) return;
         var data = modelDailyTrendData;
         var dates = data.dates;
         var models = data.models;
@@ -7284,26 +7315,18 @@
 
         var filteredDates = dates.slice(startIdx, endIdx + 1);
 
-        // 获取当前选择的指标（销量/销额）
-        var metricMode = document.querySelector('#modelDailyTrendMetricSwitch .view-btn.active')?.dataset.metric || 'quantity';
-
-        // 获取当前型号显示模式（TOP10/全部）
-        var modelMode = document.querySelector('#modelDailyTrendModelSwitch .view-btn.active')?.dataset.modelMode || 'top10';
-
-        // 计算每个型号的总量用于排序和筛选
+        // 仅销量：四平台（GSV 路径订单件数）+ 京东/天猫表内数量，后端已合并
         var modelTotals = models.map(function(model) {
           var total = 0;
           for (var i = startIdx; i <= endIdx; i++) {
-            total += series[model]?.[metricMode]?.[i] || 0;
+            total += series[model]?.quantity?.[i] || 0;
           }
           return { model: model, total: total };
         }).sort(function(a, b) { return b.total - a.total; });
 
-        var displayModels = modelMode === 'top10' ? modelTotals.slice(0, 10) : modelTotals;
-
-        var lineSeries = displayModels.map(function(item) {
+        var lineSeries = modelTotals.map(function(item) {
           var model = item.model;
-          var values = series[model]?.[metricMode]?.slice(startIdx, endIdx + 1) || [];
+          var values = series[model]?.quantity?.slice(startIdx, endIdx + 1) || [];
           return {
             name: model,
             type: 'line',
@@ -7317,7 +7340,7 @@
 
         var option = {
           title: {
-            text: '各型号' + (metricMode === 'quantity' ? '销量' : '销额') + '趋势',
+            text: '各型号销量趋势',
             left: 'center',
             textStyle: { fontSize: 14, fontWeight: 'normal' }
           },
@@ -7327,8 +7350,7 @@
             formatter: function(params) {
               var result = params[0].axisValue + '<br/>';
               params.forEach(function(item) {
-                var value = metricMode === 'amount' ? '¥' + (item.value / 10000).toFixed(2) + '万' : item.value;
-                result += item.marker + ' ' + item.seriesName + ': ' + value + '<br/>';
+                result += item.marker + ' ' + item.seriesName + ': ' + item.value + '<br/>';
               });
               return result;
             }
@@ -7337,7 +7359,7 @@
             type: 'scroll',
             orient: 'horizontal',
             top: 30,
-            data: displayModels.map(function(item) { return item.model; })
+            data: modelTotals.map(function(item) { return item.model; })
           },
           grid: {
             left: '3%',
@@ -7354,12 +7376,9 @@
           },
           yAxis: {
             type: 'value',
-            name: metricMode === 'quantity' ? '销量' : '金额(元)',
+            name: '销量',
             axisLabel: {
               formatter: function(value) {
-                if (metricMode === 'amount') {
-                  return value >= 10000 ? (value / 10000).toFixed(0) + '万' : value;
-                }
                 return value;
               }
             }
@@ -7371,23 +7390,21 @@
           series: lineSeries
         };
 
-        chartModelDailyTrend.setOption(option, true);
+        charts.chartModelDailyTrend.setOption(option, true);
+        if (charts.chartModelDailyTrend.resize) charts.chartModelDailyTrend.resize();
 
-        // 更新周期统计
-        var totalQuantity = 0, totalAmount = 0;
-        displayModels.forEach(function(item) {
+        var totalQuantity = 0;
+        modelTotals.forEach(function(item) {
           var model = item.model;
           for (var i = startIdx; i <= endIdx; i++) {
             totalQuantity += series[model]?.quantity?.[i] || 0;
-            totalAmount += series[model]?.amount?.[i] || 0;
           }
         });
         var totalsDiv = document.getElementById('modelDailyTrendPeriodTotals');
         if (totalsDiv) {
           totalsDiv.innerHTML = '<div style="display:flex;gap:24px;">' +
-            '<div><strong>所选周期合计</strong></div>' +
+            '<div><strong>所选周期合计（销量）</strong></div>' +
             '<div>总销量: <strong>' + totalQuantity.toLocaleString() + '</strong></div>' +
-            '<div>总销额: <strong>¥' + (totalAmount / 10000).toFixed(2) + '万</strong></div>' +
             '</div>';
         }
       }
@@ -11744,6 +11761,9 @@
           initMainTabNav();
           // 数据加载完成，显示主内容并隐藏骨架屏
           showMainContent();
+          if (typeof loadModelDailyTrendData === 'function') {
+            loadModelDailyTrendData();
+          }
           if (typeof done === 'function') done();
           requestAnimationFrame(function () {
             requestAnimationFrame(function () {
@@ -11765,61 +11785,6 @@
           window.loadCacheStatus();
         }
       };
-
-      /**
-       * 版本记录（仅手动维护）：按时间由早到晚排列，新版本在数组**末尾**追加一行。
-       * date：YYYY.MM.DD；type：仅「功能发布」或「数据更新」；desc：纯文字说明。
-       */
-      (function initVersionLog() {
-        var APP_VERSION_LOG = [
-          { date: '2026.03.14', type: '功能发布', desc: '正式版release，更新至2026年2月数据' },
-          { date: '2026.03.20', type: '功能发布', desc: '增加了手机端适配，并修改了多项表格样式' },
-          { date: '2026.03.23', type: '功能发布', desc: '增加了版本记录功能' },
-          { date: '2026.03.23', type: '功能发布', desc: '登录升级为手机号+密码（服务端 D1），30 天免重复登录、修改密码、管理员可查看访问记录' },
-          { date: '2026.03.24', type: '数据更新', desc: '修正了2月数据剔除退货' },
-          { date: '2026.03.25', type: '功能发布', desc: '增加电商日销数据图表' }
-        ];
-        var wrap = document.querySelector('.version-log-wrap');
-        var btn = document.getElementById('versionLogBtn');
-        var panel = document.getElementById('versionLogPanel');
-        var tb = document.getElementById('versionLogTbody');
-        if (!wrap || !btn || !panel || !tb) return;
-        APP_VERSION_LOG.forEach(function (row) {
-          var tr = document.createElement('tr');
-          var td1 = document.createElement('td');
-          td1.className = 'col-date';
-          td1.textContent = row.date || '';
-          var td2 = document.createElement('td');
-          td2.className = 'col-type';
-          var span = document.createElement('span');
-          var t = row.type === '数据更新' ? '数据更新' : '功能发布';
-          span.className = 'version-type-badge ' + (t === '数据更新' ? 'is-data' : 'is-feature');
-          span.textContent = t;
-          td2.appendChild(span);
-          var td3 = document.createElement('td');
-          td3.className = 'col-desc';
-          td3.textContent = row.desc || '';
-          tr.appendChild(td1);
-          tr.appendChild(td2);
-          tr.appendChild(td3);
-          tb.appendChild(tr);
-        });
-        panel.hidden = true;
-        btn.addEventListener('click', function (e) {
-          e.stopPropagation();
-          var open = !wrap.classList.contains('is-open');
-          wrap.classList.toggle('is-open', open);
-          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-          panel.hidden = !open;
-        });
-        document.addEventListener('click', function () {
-          if (!wrap.classList.contains('is-open')) return;
-          wrap.classList.remove('is-open');
-          btn.setAttribute('aria-expanded', 'false');
-          panel.hidden = true;
-        });
-        wrap.addEventListener('click', function (e) { e.stopPropagation(); });
-      })();
 
       function initMainTabNav() {
         var nav = document.querySelector('.main-nav-tabs');
