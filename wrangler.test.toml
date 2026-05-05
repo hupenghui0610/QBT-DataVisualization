@@ -1,0 +1,19 @@
+# Cloudflare Pages：测试服（与 项目技术说明.md 一致）
+name = "qbt-datavisualization-test"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qbt-auth-test"
+database_id = "d4ba5d46-53b6-4eac-9a42-a15a5a268ad0"
+
+[vars]
+# JWT_SECRET 由 scripts/deploy-pages-test.js 从环境变量 JWT_SECRET 写入临时 wrangler.toml（勿把密钥提交进仓库）
+FEISHU_DOUYIN_MODEL_ORDER_RANGE = "tuec5U!A2:AO20000"
+FEISHU_LIVESTREAM_FUNNEL_SPREADSHEET_TOKEN = "P1zusUMg2haMGctskH6cydLqn5e"
+
+OPENCLAW_MONTHLY_API_URL = "https://qbt-datavisualization-test.pages.dev/api/data/monthly-cumulative-summary"
+OPENCLAW_MONTHLY_API_KEY = "qbt_openclaw_monthly_2026_key"
+OPENCLAW_MONTHLY_API_SECRET = "sk_7a9f3e2d1c8b4a5f6e0d9c2b8a4f7e1d3c6b0a5f9e2d8c1b7a3f6e0d4c9b2a5"
+FEISHU_WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/YOUR_WEBHOOK_TOKEN_HERE"

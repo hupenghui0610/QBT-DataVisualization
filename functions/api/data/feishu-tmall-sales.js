@@ -1,4 +1,4 @@
-import { jsonResponse, corsHeaders } from '../../_lib/http.js';
+import { jsonResponse, corsHeaders, resolveCorsOrigin } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
 import { getCache, setCache } from '../../_lib/cache.js';
@@ -129,7 +129,7 @@ function mergeDateAndModelValues(dateValues, modelValues, modelStartCol) {
 export async function onRequestGet(context) {
   var request = context.request;
   var env = context.env;
-  var origin = request.headers.get('Origin') || undefined;
+  var origin = resolveCorsOrigin(request, env);
 
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
@@ -218,7 +218,7 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestOptions(context) {
-  var origin = context.request.headers.get('Origin') || '*';
+  var origin = resolveCorsOrigin(context.request, context.env);
   return new Response(null, { status: 204, headers: corsHeaders(origin) });
 }
 

@@ -3,7 +3,7 @@
  * 提供手动/自动刷新全站缓存功能
  */
 
-import { jsonResponse, corsHeaders } from '../../_lib/http.js';
+import { jsonResponse, corsHeaders, resolveCorsOrigin } from '../../_lib/http.js';
 import { authenticateRequest, isAdmin } from '../../_lib/session.js';
 import { getCache, setCache, getAllCacheStatus, logCacheUpdate } from '../../_lib/cache.js';
 
@@ -27,7 +27,7 @@ const CACHE_KEYS = [
  */
 export async function onRequestGet(context) {
   const { request, env } = context;
-  const origin = request.headers.get('Origin') || undefined;
+  const origin = resolveCorsOrigin(request, env);
 
   const auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
@@ -70,7 +70,7 @@ export async function onRequestGet(context) {
  */
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const origin = request.headers.get('Origin') || undefined;
+  const origin = resolveCorsOrigin(request, env);
 
   const auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
@@ -117,7 +117,7 @@ export async function onRequestPost(context) {
 }
 
 export async function onRequestOptions(context) {
-  const origin = context.request.headers.get('Origin') || '*';
+  const origin = resolveCorsOrigin(context.request, context.env);
   return new Response(null, { status: 204, headers: corsHeaders(origin) });
 }
 

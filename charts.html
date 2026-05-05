@@ -28,30 +28,6 @@
     .page-header { position: relative; text-align: center; margin-bottom: 20px; padding-right: 0; }
     .page-header h1 { margin: 0 0 10px 0; font-size: 1.4rem; color: #1a1a2e; }
     .page-header .subtitle { font-size: 0.9rem; color: #666; }
-    .version-log-wrap { position: absolute; top: 0; right: 0; z-index: 5; text-align: right; }
-    .version-log-btn {
-      padding: 6px 12px; font-size: 13px; color: #4a69bd; background: #fff; border: 1px solid #c5cee8;
-      border-radius: 8px; cursor: pointer; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
-    .version-log-btn:hover { background: #f0f3fb; border-color: #4a69bd; }
-    .version-log-panel {
-      display: none; position: absolute; right: 0; top: calc(100% + 6px); width: min(520px, calc(100vw - 24px));
-      max-height: min(70vh, 420px); overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12); text-align: left;
-    }
-    .version-log-wrap.is-open .version-log-panel { display: block; }
-    .version-log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .version-log-table th,
-    .version-log-table td { padding: 10px 12px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
-    .version-log-table th { background: #f8fafc; color: #334155; font-weight: 600; text-align: left; position: sticky; top: 0; z-index: 1; }
-    .version-log-table .col-date { white-space: nowrap; width: 7.5em; color: #1e293b; font-variant-numeric: tabular-nums; }
-    .version-log-table th:nth-child(2),
-    .version-log-table .col-type { width: 1%; min-width: 9em; white-space: nowrap; }
-    .version-log-table .col-type .version-type-badge { white-space: nowrap; }
-    .version-log-table .col-desc { color: #475569; line-height: 1.5; word-break: break-word; }
-    .version-type-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
-    .version-type-badge.is-feature { background: #e8f0fe; color: #1a56c4; }
-    .version-type-badge.is-data { background: #ecfdf5; color: #047857; }
     .load-bar { margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .load-bar label { cursor: pointer; padding: 6px 12px; background: #4a69bd; color: #fff; border-radius: 6px; font-size: 14px; }
     .load-bar input[type="file"] { display: none; }
@@ -484,9 +460,6 @@
     }
     html.mobile-client .page-header { margin-bottom: 14px; padding-top: 32px; }
     html.mobile-client .user-session-bar { max-width: 72%; font-size: 11px; gap: 6px; }
-    html.mobile-client .version-log-wrap { top: 0; right: 0; }
-    html.mobile-client .version-log-btn { padding: 5px 10px; font-size: 12px; }
-    html.mobile-client .version-log-panel { width: calc(100vw - 24px); max-width: none; right: 0; left: auto; }
     html.mobile-client .page-header h1 {
       font-size: 1.12rem;
       line-height: 1.35;
@@ -617,17 +590,6 @@
       <button type="button" class="user-session-btn" id="authChangePwdBtn">修改密码</button>
       <button type="button" class="user-session-btn" id="authLogoutBtn">退出登录</button>
       <button type="button" class="user-session-btn" id="adminLogsBtn" style="display:none">访问记录</button>
-    </div>
-    <div class="version-log-wrap">
-      <button type="button" class="version-log-btn" id="versionLogBtn" aria-expanded="false" aria-controls="versionLogPanel">版本记录</button>
-      <div id="versionLogPanel" class="version-log-panel" role="region" aria-label="版本记录" hidden>
-        <table class="version-log-table">
-          <thead>
-            <tr><th scope="col">版本时间</th><th scope="col">发布类型</th><th scope="col">修改内容</th></tr>
-          </thead>
-          <tbody id="versionLogTbody"></tbody>
-        </table>
-      </div>
     </div>
     <h1>希倍思 - 电商数据可视化</h1>
     <div class="subtitle">仅限于希倍思人员使用，切勿分享至外部！</div>
@@ -812,8 +774,8 @@
     <div class="card wide"><h3><i class="chart-title-icon fa fa-bar-chart"></i><span>品牌销量/销额对比</span></h3><div class="date-range">起始：<select id="dimB1Start"></select> 结束：<select id="dimB1End"></select></div><div id="chartB1" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销量</span></h3><div class="date-range">起始：<select id="dimB8Start"></select> 结束：<select id="dimB8End"></select></div><div id="chartB8" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销量同比</span></h3><div class="date-range">起始：<select id="dimB9Start"></select> 结束：<select id="dimB9End"></select></div><div id="chartB9" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌渠道占比</span></h3><div class="date-range">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select></div><div id="chartB2" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span></h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select></div><div id="chartB3" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌渠道占比</span></h3><div class="date-range">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select> 价格段：<select id="dimB2PriceSeg"><option value="">全部</option><option value="1-2k">1-2k</option><option value="2-3k">2-3k</option><option value="3-4k">3-4k</option><option value="4-6k">4-6k</option><option value="6k以上">6k以上</option></select></div><div id="chartB2" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span></h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select> 价格段：<select id="dimB3PriceSeg"><option value="">全部</option><option value="1-2k">1-2k</option><option value="2-3k">2-3k</option><option value="3-4k">3-4k</option><option value="4-6k">4-6k</option><option value="6k以上">6k以上</option></select></div><div id="chartB3" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌价格段销量</span></h3><div class="load-bar" style="margin-bottom:8px"><select id="brandTop10Select"><option value="">选择品牌</option></select><span style="margin-left:8px">起始：<select id="dimB6Start"></select> 结束：<select id="dimB6End"></select></span></div><div id="chartB6" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-money"></i><span>客单价对比</span></h3><div class="date-range">起始：<select id="dimB5Start"></select> 结束：<select id="dimB5End"></select></div><div id="chartB5" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌客单价趋势</span></h3><div class="date-range">起始：<select id="dimB7Start"></select> 结束：<select id="dimB7End"></select></div><div id="chartB7" class="chart"></div></div>
@@ -1947,8 +1909,8 @@
         function onB8() { renderBrand8(); }
         function onB9() { renderBrand9(); }
         ['dimB1Start','dimB1End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB1; });
-        ['dimB2Start','dimB2End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB2; });
-        ['dimB3Start','dimB3End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB3; });
+        ['dimB2Start','dimB2End','dimB2PriceSeg'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB2; });
+        ['dimB3Start','dimB3End','dimB3PriceSeg'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB3; });
         ['dimB5Start','dimB5End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB5; });
         ['dimB6Start','dimB6End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB6; });
         ['dimB7Start','dimB7End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onB7; });
@@ -2033,35 +1995,63 @@
         var topBrands = (fp && fp.数据说明 && fp.数据说明.前十大品牌) || [];
         var startVal = document.getElementById('dimB2Start') && document.getElementById('dimB2Start').value;
         var endVal = document.getElementById('dimB2End') && document.getElementById('dimB2End').value;
+        var priceSeg = document.getElementById('dimB2PriceSeg') && document.getElementById('dimB2PriceSeg').value || '';
         var byBrandCh = {};
+        var byBrandChSales = {};
+        var byBrandChAmount = {};
         var channels = ['天猫', '京东', '抖音'];
         if (startVal && endVal && startVal <= endVal && fp && fp.品牌与渠道与日期 && fp.品牌与渠道与日期.length) {
           var raw = fp.品牌与渠道与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
+          if (priceSeg) raw = raw.filter(function (r) { return r.价格段 === priceSeg; });
           var byBrand = {};
           raw.forEach(function (r) {
             if (!byBrandCh[r.品牌]) byBrandCh[r.品牌] = {};
+            if (!byBrandChSales[r.品牌]) byBrandChSales[r.品牌] = {};
+            if (!byBrandChAmount[r.品牌]) byBrandChAmount[r.品牌] = {};
             if (!byBrandCh[r.品牌][r.渠道]) byBrandCh[r.品牌][r.渠道] = 0;
+            if (!byBrandChSales[r.品牌][r.渠道]) byBrandChSales[r.品牌][r.渠道] = 0;
+            if (!byBrandChAmount[r.品牌][r.渠道]) byBrandChAmount[r.品牌][r.渠道] = 0;
             byBrandCh[r.品牌][r.渠道] += r.销量;
+            byBrandChSales[r.品牌][r.渠道] += r.销量;
+            byBrandChAmount[r.品牌][r.渠道] += r.销售额;
             byBrand[r.品牌] = (byBrand[r.品牌] || 0) + r.销量;
           });
           topBrands.forEach(function (b) {
             if (!byBrandCh[b]) byBrandCh[b] = {};
+            if (!byBrandChSales[b]) byBrandChSales[b] = {};
+            if (!byBrandChAmount[b]) byBrandChAmount[b] = {};
             var total = byBrand[b] || 0;
             channels.forEach(function (ch) {
               byBrandCh[b][ch] = total ? (byBrandCh[b][ch] || 0) / total : 0;
+              if (byBrandChSales[b][ch] == null) byBrandChSales[b][ch] = 0;
+              if (byBrandChAmount[b][ch] == null) byBrandChAmount[b][ch] = 0;
             });
           });
         } else {
           var d = fp && fp['品牌渠道占比'];
-          if (!d || !d.按品牌与渠道 || !d.按品牌与渠道.length) return;
-          d.按品牌与渠道.forEach(function (r) {
+          var dataSource = d;
+          if (priceSeg && d && d.按价格段 && d.按价格段[priceSeg]) {
+            dataSource = d.按价格段[priceSeg];
+          }
+          if (!dataSource || !dataSource.按品牌与渠道 || !dataSource.按品牌与渠道.length) return;
+          dataSource.按品牌与渠道.forEach(function (r) {
             if (topBrands.indexOf(r.品牌) === -1) return;
             if (!byBrandCh[r.品牌]) byBrandCh[r.品牌] = {};
+            if (!byBrandChSales[r.品牌]) byBrandChSales[r.品牌] = {};
+            if (!byBrandChAmount[r.品牌]) byBrandChAmount[r.品牌] = {};
             byBrandCh[r.品牌][r.渠道] = r.品牌内销量占比 || 0;
+            byBrandChSales[r.品牌][r.渠道] = r.销量 || 0;
+            byBrandChAmount[r.品牌][r.渠道] = r.销售额 || 0;
           });
           topBrands.forEach(function (b) {
             if (!byBrandCh[b]) byBrandCh[b] = {};
-            channels.forEach(function (ch) { if (byBrandCh[b][ch] == null) byBrandCh[b][ch] = 0; });
+            if (!byBrandChSales[b]) byBrandChSales[b] = {};
+            if (!byBrandChAmount[b]) byBrandChAmount[b] = {};
+            channels.forEach(function (ch) {
+              if (byBrandCh[b][ch] == null) byBrandCh[b][ch] = 0;
+              if (byBrandChSales[b][ch] == null) byBrandChSales[b][ch] = 0;
+              if (byBrandChAmount[b][ch] == null) byBrandChAmount[b][ch] = 0;
+            });
           });
         }
         var series = channels.map(function (ch, i) {
@@ -2070,13 +2060,18 @@
             name: ch,
             type: 'bar',
             stack: 'channel',
-            data: topBrands.map(function (b) { return ((byBrandCh[b] && byBrandCh[b][ch]) || 0) * 100; }),
+            data: topBrands.map(function (b, idx) {
+              var pct = ((byBrandCh[b] && byBrandCh[b][ch]) || 0) * 100;
+              var sales = (byBrandChSales[b] && byBrandChSales[b][ch]) || 0;
+              var amount = (byBrandChAmount[b] && byBrandChAmount[b][ch]) || 0;
+              return { value: pct, sales: sales, amount: amount, brandIdx: idx };
+            }),
             itemStyle: { color: colors[i % colors.length] },
             label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (params) { var v = params.value; if (v == null || v < 5) return ''; return v.toFixed(1) + '%'; } }
           };
         });
         var opt = {
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { if (!params || !params.length) return ''; var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-'); }); return s; } },
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { if (!params || !params.length) return ''; var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { var d = p.data && typeof p.data === 'object' ? p.data : {}; var salesStr = d.sales != null ? Math.round(d.sales).toLocaleString() : '-'; var amountStr = d.amount != null ? (d.amount / 1e4).toFixed(2) + '万' : '-'; s += '<br/>' + p.marker + p.seriesName + '：销量 ' + salesStr + '，销额 ' + amountStr; }); return s; } },
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: topBrands.map(brandDisplayName), axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
@@ -2089,10 +2084,13 @@
       function renderBrand3() {
         var d = getFenPinPai() && getFenPinPai()['品牌市占率'];
         if (!d || !d.按日期 || !d.各品牌按日期市占率) return;
+        var priceSeg = document.getElementById('dimB3PriceSeg') && document.getElementById('dimB3PriceSeg').value || '';
+        var srcData = d;
+        if (priceSeg && d.按价格段 && d.按价格段[priceSeg]) srcData = d.按价格段[priceSeg];
         var startVal = document.getElementById('dimB3Start') && document.getElementById('dimB3Start').value;
         var endVal = document.getElementById('dimB3End') && document.getElementById('dimB3End').value;
-        var allDates = d.按日期;
-        var 各品牌按日期市占率 = d.各品牌按日期市占率;
+        var allDates = srcData.按日期;
+        var 各品牌按日期市占率 = srcData.各品牌按日期市占率;
         var dates = allDates;
         if (startVal && endVal && startVal <= endVal) {
           var idxStart = allDates.findIndex(function (dt) { return dt >= startVal; });
@@ -2101,8 +2099,8 @@
           if (idxStart >= 0 && idxEnd >= idxStart) {
             dates = allDates.slice(idxStart, idxEnd + 1);
             各品牌按日期市占率 = {};
-            Object.keys(d.各品牌按日期市占率).forEach(function (b) {
-              各品牌按日期市占率[b] = (d.各品牌按日期市占率[b] || []).slice(idxStart, idxEnd + 1);
+            Object.keys(srcData.各品牌按日期市占率).forEach(function (b) {
+              各品牌按日期市占率[b] = (srcData.各品牌按日期市占率[b] || []).slice(idxStart, idxEnd + 1);
             });
           }
         }
@@ -7833,61 +7831,6 @@
             }
           }, true);
         });
-      })();
-
-      /**
-       * 版本记录（仅手动维护）：按时间由早到晚排列，新版本在数组**末尾**追加一行。
-       * date：YYYY.MM.DD；type：仅「功能发布」或「数据更新」；desc：纯文字说明。
-       */
-      (function initVersionLog() {
-        var APP_VERSION_LOG = [
-          { date: '2026.03.14', type: '功能发布', desc: '正式版release，更新至2026年2月数据' },
-          { date: '2026.03.20', type: '功能发布', desc: '增加了手机端适配，并修改了多项表格样式' },
-          { date: '2026.03.23', type: '功能发布', desc: '增加了版本记录功能' },
-          { date: '2026.03.23', type: '功能发布', desc: '登录升级为手机号+密码（服务端 D1），30 天免重复登录、修改密码、管理员可查看访问记录' },
-          { date: '2026.03.24', type: '数据更新', desc: '修正了2月数据剔除退货' },
-          { date: '2026.03.25', type: '功能发布', desc: '增加电商日销数据图表' }
-        ];
-        var wrap = document.querySelector('.version-log-wrap');
-        var btn = document.getElementById('versionLogBtn');
-        var panel = document.getElementById('versionLogPanel');
-        var tb = document.getElementById('versionLogTbody');
-        if (!wrap || !btn || !panel || !tb) return;
-        APP_VERSION_LOG.forEach(function (row) {
-          var tr = document.createElement('tr');
-          var td1 = document.createElement('td');
-          td1.className = 'col-date';
-          td1.textContent = row.date || '';
-          var td2 = document.createElement('td');
-          td2.className = 'col-type';
-          var span = document.createElement('span');
-          var t = row.type === '数据更新' ? '数据更新' : '功能发布';
-          span.className = 'version-type-badge ' + (t === '数据更新' ? 'is-data' : 'is-feature');
-          span.textContent = t;
-          td2.appendChild(span);
-          var td3 = document.createElement('td');
-          td3.className = 'col-desc';
-          td3.textContent = row.desc || '';
-          tr.appendChild(td1);
-          tr.appendChild(td2);
-          tr.appendChild(td3);
-          tb.appendChild(tr);
-        });
-        panel.hidden = true;
-        btn.addEventListener('click', function (e) {
-          e.stopPropagation();
-          var open = !wrap.classList.contains('is-open');
-          wrap.classList.toggle('is-open', open);
-          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-          panel.hidden = !open;
-        });
-        document.addEventListener('click', function () {
-          if (!wrap.classList.contains('is-open')) return;
-          wrap.classList.remove('is-open');
-          btn.setAttribute('aria-expanded', 'false');
-          panel.hidden = true;
-        });
-        wrap.addEventListener('click', function (e) { e.stopPropagation(); });
       })();
 
       // 包装渲染函数，添加性能监控

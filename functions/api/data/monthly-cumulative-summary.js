@@ -1,5 +1,5 @@
 import { signJwt } from '../../_lib/crypto.js';
-import { jsonResponse, corsHeaders } from '../../_lib/http.js';
+import { jsonResponse, corsHeaders, resolveCorsOrigin } from '../../_lib/http.js';
 import { authenticateOpenClawRequest } from '../../_lib/openclaw-auth.js';
 import { buildMonthlyCumulativeSummary, formatMonthlyCumulativeMessage, resolveMonthlyStatDate } from '../../_lib/monthly-cumulative.js';
 
@@ -63,7 +63,7 @@ async function fetchInternalJson(originBase, path, token) {
 export async function onRequestGet(context) {
   var request = context.request;
   var env = context.env;
-  var origin = request.headers.get('Origin') || undefined;
+  var origin = resolveCorsOrigin(request, env);
 
   var openclawAuth = await authenticateOpenClawRequest(request, env);
   if (openclawAuth.error) return openclawAuth.error;
@@ -106,6 +106,6 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestOptions(context) {
-  var origin = context.request.headers.get('Origin') || '*';
+  var origin = resolveCorsOrigin(context.request, context.env);
   return new Response(null, { status: 204, headers: corsHeaders(origin) });
 }

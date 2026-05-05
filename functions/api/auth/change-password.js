@@ -1,11 +1,11 @@
 import { verifyPassword, hashPassword } from '../../_lib/crypto.js';
-import { jsonResponse, corsHeaders } from '../../_lib/http.js';
+import { jsonResponse, corsHeaders, resolveCorsOrigin } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
 
 export async function onRequestPost(context) {
   var request = context.request;
   var env = context.env;
-  var origin = request.headers.get('Origin') || undefined;
+  var origin = resolveCorsOrigin(request, env);
 
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
@@ -40,6 +40,6 @@ export async function onRequestPost(context) {
 }
 
 export async function onRequestOptions(context) {
-  var origin = context.request.headers.get('Origin') || '*';
+  var origin = resolveCorsOrigin(context.request, context.env);
   return new Response(null, { status: 204, headers: corsHeaders(origin) });
 }

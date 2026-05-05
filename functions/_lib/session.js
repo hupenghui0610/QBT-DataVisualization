@@ -1,5 +1,5 @@
 import { verifyJwt } from './crypto.js';
-import { getBearer, jsonResponse } from './http.js';
+import { getBearer, jsonResponse, resolveCorsOrigin } from './http.js';
 
 export function publicUser(row) {
   return {
@@ -23,7 +23,7 @@ export function isAdmin(user) {
  * @returns {{ user: object, row: object } | { error: Response }}
  */
 export async function authenticateRequest(request, env) {
-  var origin = request.headers.get('Origin') || undefined;
+  var origin = resolveCorsOrigin(request, env);
   var secret = env.JWT_SECRET;
   if (!secret) {
     return { error: jsonResponse({ error: '服务器未配置 JWT_SECRET' }, 500, origin) };

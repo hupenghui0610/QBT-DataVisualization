@@ -1,4 +1,4 @@
-import { jsonResponse } from './http.js';
+import { jsonResponse, resolveCorsOrigin } from './http.js';
 
 var enc = new TextEncoder();
 var CLOCK_SKEW_MS = 5 * 60 * 1000;
@@ -33,7 +33,7 @@ export function buildOpenClawSignatureMessage(method, pathname, yearMonth, times
 }
 
 export async function authenticateOpenClawRequest(request, env) {
-  var origin = request.headers.get('Origin') || undefined;
+  var origin = resolveCorsOrigin(request, env);
   if (!env.OPENCLAW_MONTHLY_API_KEY || !env.OPENCLAW_MONTHLY_API_SECRET) {
     return { error: jsonResponse({ error: '服务器未配置 OPENCLAW_MONTHLY_API_KEY / OPENCLAW_MONTHLY_API_SECRET' }, 503, origin) };
   }

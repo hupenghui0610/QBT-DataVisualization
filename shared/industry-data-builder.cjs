@@ -457,51 +457,82 @@ function feature1_销量销额对比(rows, topBrands) {
 }
 
 function feature2_各品牌三大渠道占比(rows, topBrands) {
-  const byBrand = {};
-  const byBrandAmount = {};
-  rows.forEach((r) => {
-    byBrand[r.品牌] = (byBrand[r.品牌] || 0) + r.销量;
-    byBrandAmount[r.品牌] = (byBrandAmount[r.品牌] || 0) + r.销售额;
+  const priceSegments = [...new Set(rows.map((r) => r.价格段))].filter(Boolean);
+  function calcForRows(subRows) {
+    const byBrand = {};
+    const byBrandAmount = {};
+    subRows.forEach((r) => {
+      byBrand[r.品牌] = (byBrand[r.品牌] || 0) + r.销量;
+      byBrandAmount[r.品牌] = (byBrandAmount[r.品牌] || 0) + r.销售额;
+    });
+    const byKey = {};
+    subRows.forEach((r) => {
+      const key = `${r.品牌}\t${r.渠道}`;
+      if (!byKey[key]) byKey[key] = { 品牌: r.品牌, 渠道: r.渠道, 销量: 0, 销售额: 0 };
+      byKey[key].销量 += r.销量;
+      byKey[key].销售额 += r.销售额;
+    });
+    const 按品牌与渠道 = Object.values(byKey)
+      .filter((v) => topBrands.includes(v.品牌))
+      .map((v) => ({
+        ...v,
+        品牌内销量占比: byBrand[v.品牌] ? v.销量 / byBrand[v.品牌] : 0,
+        品牌内销售额占比: byBrandAmount[v.品牌] ? v.销售额 / byBrandAmount[v.品牌] : 0,
+      }));
+    return 按品牌与渠道;
+  }
+  const 按品牌与渠道 = calcForRows(rows);
+  const 按价格段 = {};
+  priceSegments.forEach((seg) => {
+    按价格段[seg] = { 按品牌与渠道: calcForRows(rows.filter((r) => r.价格段 === seg)) };
   });
-  const byKey = {};
-  rows.forEach((r) => {
-    const key = `${r.品牌}\t${r.渠道}`;
-    if (!byKey[key]) byKey[key] = { 品牌: r.品牌, 渠道: r.渠道, 销量: 0, 销售额: 0 };
-    byKey[key].销量 += r.销量;
-    byKey[key].销售额 += r.销售额;
-  });
-  const 按品牌与渠道 = Object.values(byKey)
-    .filter((v) => topBrands.includes(v.品牌))
-    .map((v) => ({
-      ...v,
-      品牌内销量占比: byBrand[v.品牌] ? v.销量 / byBrand[v.品牌] : 0,
-      品牌内销售额占比: byBrandAmount[v.品牌] ? v.销售额 / byBrandAmount[v.品牌] : 0,
-    }));
-  return { 说明: '前十大品牌在三大渠道的销量、销售额及品牌内占比', 按品牌与渠道 };
+  return { 说明: '前十大品牌在三大渠道的销量、销售额及品牌内占比', 按品牌与渠道, 按价格段 };
 }
 
 function feature3_各月份市场占有率(allRows, topRows, topBrands) {
-  const byDateTotal = {};
-  allRows.forEach((r) => {
-    byDateTotal[r.日期_str] = (byDateTotal[r.日期_str] || 0) + r.销量;
-  });
-  const byBrandDate = {};
-  topRows.forEach((r) => {
-    const key = `${r.品牌}\t${r.日期_str}`;
-    if (!byBrandDate[key]) byBrandDate[key] = { 品牌: r.品牌, 日期: r.日期_str, 销量: 0 };
-    byBrandDate[key].销量 += r.销量;
-  });
-  const dates = [...new Set(allRows.map((r) => r.日期_str))].sort();
-  const 各品牌按日期市占率 = {};
-  topBrands.forEach((品牌) => {
-    各品牌按日期市占率[品牌] = dates.map((日期) => {
-      const total = byDateTotal[日期] || 0;
-      const key = `${品牌}\t${日期}`;
-      const 销量 = (byBrandDate[key] && byBrandDate[key].销量) || 0;
-      return total ? 销量 / total : 0;
+  const priceSegments = [...new Set(allRows.map((r) => r.价格段))].filter(Boolean);
+  function calcForRows(subAll, subTop) {
+    const byDateTotal = {};
+    const byDateTotalAmount = {};
+    subAll.forEach((r) => {
+      byDateTotal[r.日期_str] = (byDateTotal[r.日期_str] || 0) + r.销量;
+      byDateTotalAmount[r.日期_str] = (byDateTotalAmount[r.日期_str] || 0) + r.销售额;
     });
+    const byBrandDate = {};
+    subTop.forEach((r) => {
+      const key = `${r.品牌}\t${r.日期_str}`;
+      if (!byBrandDate[key]) byBrandDate[key] = { 品牌: r.品牌, 日期: r.日期_str, 销量: 0, 销售额: 0 };
+      byBrandDate[key].销量 += r.销量;
+      byBrandDate[key].销售额 += r.销售额;
+    });
+    const dates = [...new Set(subAll.map((r) => r.日期_str))].sort();
+    const 各品牌按日期市占率 = {};
+    const 各品牌按日期市占率_销额 = {};
+    topBrands.forEach((品牌) => {
+      各品牌按日期市占率[品牌] = dates.map((日期) => {
+        const total = byDateTotal[日期] || 0;
+        const key = `${品牌}\t${日期}`;
+        const 销量 = (byBrandDate[key] && byBrandDate[key].销量) || 0;
+        return total ? 销量 / total : 0;
+      });
+      各品牌按日期市占率_销额[品牌] = dates.map((日期) => {
+        const total = byDateTotalAmount[日期] || 0;
+        const key = `${品牌}\t${日期}`;
+        const 销售额 = (byBrandDate[key] && byBrandDate[key].销售额) || 0;
+        return total ? 销售额 / total : 0;
+      });
+    });
+    return { 按日期: dates, 各品牌按日期市占率, 各品牌按日期市占率_销额 };
+  }
+  const result = calcForRows(allRows, topRows);
+  const 按价格段 = {};
+  priceSegments.forEach((seg) => {
+    按价格段[seg] = calcForRows(
+      allRows.filter((r) => r.价格段 === seg),
+      topRows.filter((r) => r.价格段 === seg),
+    );
   });
-  return { 说明: '前十大品牌各月份市场占有率，用于堆叠面积图', 按日期: dates, 各品牌按日期市占率 };
+  return { 说明: '前十大品牌各月份市场占有率，用于堆叠面积图', 按日期: result.按日期, 各品牌按日期市占率: result.各品牌按日期市占率, 各品牌按日期市占率_销额: result.各品牌按日期市占率_销额, 按价格段 };
 }
 
 function feature5_客单价对比(rows, topBrands) {
@@ -566,8 +597,8 @@ function feature_品牌与日期(rowsTop) {
 function feature_品牌与渠道与日期(rowsTop) {
   const byKey = {};
   rowsTop.forEach((r) => {
-    const key = `${r.品牌}\t${r.渠道}\t${r.日期_str}`;
-    if (!byKey[key]) byKey[key] = { 品牌: r.品牌, 渠道: r.渠道, 日期: r.日期_str, 销量: 0, 销售额: 0 };
+    const key = `${r.品牌}\t${r.渠道}\t${r.价格段}\t${r.日期_str}`;
+    if (!byKey[key]) byKey[key] = { 品牌: r.品牌, 渠道: r.渠道, 价格段: r.价格段, 日期: r.日期_str, 销量: 0, 销售额: 0 };
     byKey[key].销量 += r.销量;
     byKey[key].销售额 += r.销售额;
   });

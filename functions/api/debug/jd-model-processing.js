@@ -1,4 +1,4 @@
-import { jsonResponse, corsHeaders } from '../../_lib/http.js';
+import { jsonResponse, corsHeaders, resolveCorsOrigin } from '../../_lib/http.js';
 import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
 
 function mergeMainAndModelData(mainValues, modelValues) {
@@ -157,7 +157,7 @@ function aggregateModelSalesByDateRange(values, colIndices, startVal, endVal, st
 export async function onRequestGet(context) {
   var request = context.request;
   var env = context.env;
-  var origin = request.headers.get('Origin') || undefined;
+  var origin = resolveCorsOrigin(request, env);
 
   try {
     var spreadsheetToken = env.FEISHU_SPREADSHEET_TOKEN || 'EBwmsjjArhutvWtM2E9cLUMGnYd';

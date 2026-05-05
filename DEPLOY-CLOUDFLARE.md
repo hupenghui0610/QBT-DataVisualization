@@ -98,6 +98,18 @@ npx wrangler pages secret put JWT_SECRET --project-name=qbt-datavisualization
 
 通过 Cursor 对话生成哈希与 `INSERT` SQL，在本机执行 `wrangler d1 execute --remote` 写入；勿使用已废弃的源码内明文密码。
 
+### 4.1 多独立域名共用同一套账号（`ALLOWED_ORIGINS`）
+
+当多个 **不同域名** 的 Cloudflare Pages 前端需要调用**本仓库部署的同一套** `/api/*`（方案 A：单一鉴权与数据入口）时，必须在承载 API 的 Pages 项目中配置 **CORS 白名单**：
+
+| 变量名 | 说明 |
+|--------|------|
+| `ALLOWED_ORIGINS` | 逗号分隔的**完整 Origin**（须含协议与端口），例如：`https://qbt-datavisualization.pages.dev,https://app-example.com`。**未配置**时行为与旧版一致：按请求 `Origin` 回显，缺省为 `*`。**已配置**时：仅白名单内的 Origin 会收到 `Access-Control-Allow-Origin`，其它浏览器跨域请求将无法读响应。 |
+
+在 **Workers & Pages → 项目（API 所在项目）→ Settings → Environment variables** 中新增 `ALLOWED_ORIGINS`（可放在 `[vars]` 非敏感项，与 `wrangler.toml` 一致）。
+
+各业务站静态页需将 API 根指向该入口（见 [`js/auth-client.js`](js/auth-client.js) 的 `REMOTE_API_ORIGIN` / `localStorage['QBT_API_ORIGIN']`）。更完整的架构说明见仓库根目录 [`多域名共用账号-部署说明.md`](多域名共用账号-部署说明.md)。
+
 ### 5. 飞书日销在线表格（可选）
 
 登录后页面会请求 `GET /api/data/feishu-daily-sales`，由 Pages Functions 使用飞书开放平台读取电子表格，**App Secret 仅保存在服务端**。

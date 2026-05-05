@@ -100,20 +100,6 @@
       color: #fff;
       border-color: #2563eb;
     }
-    /* 品牌月销同比切换按钮样式 */
-    #brandB9MetricSwitch .view-btn[data-b9-metric="sales"],
-    #brandB9MetricSwitch .view-btn[data-b9-metric="amount"] {
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      color: #334155;
-    }
-    #brandB9MetricSwitch .view-btn[data-b9-metric="sales"].active,
-    #brandB9MetricSwitch .view-btn[data-b9-metric="amount"].active {
-      background: #10b981;
-      color: #fff;
-      border-color: #10b981;
-      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-    }
     .chart-view-switch.metric-switch { gap: 8px; }
     .chart-view-switch.metric-switch .view-btn {
       padding: 4px 12px;
@@ -847,6 +833,21 @@
       justify-content: flex-end;
       margin-top: 4px;
     }
+    /* 含销量/销额切换按钮的图表控制栏：移动端取消绝对定位，改为纵向堆叠 */
+    html.mobile-client .card > div[style*="position:relative"] {
+      position: static !important;
+      height: auto !important;
+      margin-bottom: 8px;
+    }
+    html.mobile-client .card > div[style*="position:relative"] > * {
+      position: static !important;
+      transform: none !important;
+    }
+    html.mobile-client .card > div[style*="position:relative"] > .chart-view-switch,
+    html.mobile-client .card > div[style*="position:relative"] span.chart-view-switch {
+      justify-content: center;
+      margin-top: 8px;
+    }
     html.mobile-client .date-range {
       flex-direction: column;
       align-items: stretch;
@@ -1476,8 +1477,8 @@
     <div class="card wide"><h3><i class="chart-title-icon fa fa-bar-chart"></i><span>品牌销量/销额对比</span></h3><div class="date-range">起始：<select id="dimB1Start"></select> 结束：<select id="dimB1End"></select></div><div id="chartB1" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB8Start"></select> 结束：<select id="dimB8End"></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB8MetricSwitch"><button type="button" class="view-btn active" data-b8-metric="sales">销量</button><button type="button" class="view-btn" data-b8-metric="amount">销额</button></span></div></div><div id="chartB8" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销同比</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB9Start"></select> 结束：<select id="dimB9End"></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB9MetricSwitch"><button type="button" class="view-btn active" data-b9-metric="sales">销量</button><button type="button" class="view-btn" data-b9-metric="amount">销额</button></span></div></div><div id="chartB9" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌渠道占比</span></h3><div class="date-range">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select></div><div id="chartB2" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span></h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select></div><div id="chartB3" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌渠道占比</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select> 价格段：<select id="dimB2PriceSeg"><option value="">全部</option><option value="1-2k">1-2k</option><option value="2-3k">2-3k</option><option value="3-4k">3-4k</option><option value="4-6k">4-6k</option><option value="6k以上">6k以上</option></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB2MetricSwitch"><button type="button" class="view-btn active" data-b2-metric="sales">销量</button><button type="button" class="view-btn" data-b2-metric="amount">销额</button></span></div></div><div id="chartB2" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select> 价格段：<select id="dimB3PriceSeg"><option value="">全部</option><option value="1-2k">1-2k</option><option value="2-3k">2-3k</option><option value="3-4k">3-4k</option><option value="4-6k">4-6k</option><option value="6k以上">6k以上</option></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB3MetricSwitch"><button type="button" class="view-btn active" data-b3-metric="sales">销量</button><button type="button" class="view-btn" data-b3-metric="amount">销额</button></span></div></div><div id="chartB3" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌价格段销量</span></h3><div class="load-bar" style="margin-bottom:8px"><select id="brandTop10Select"><option value="">选择品牌</option></select><span style="margin-left:8px">起始：<select id="dimB6Start"></select> 结束：<select id="dimB6End"></select></span></div><div id="chartB6" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-money"></i><span>客单价对比</span></h3><div class="date-range">起始：<select id="dimB5Start"></select> 结束：<select id="dimB5End"></select></div><div id="chartB5" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌客单价趋势</span></h3><div class="date-range">起始：<select id="dimB7Start"></select> 结束：<select id="dimB7End"></select></div><div id="chartB7" class="chart"></div></div>
@@ -2228,6 +2229,10 @@
       window.brandB8Metric = 'sales';
       // 品牌月销同比图表当前指标模式: 'sales'(销量) 或 'amount'(销额)
       window.brandB9Metric = 'sales';
+      // 品牌渠道占比图表当前指标模式: 'sales'(销量) 或 'amount'(销额)
+      window.brandB2Metric = 'sales';
+      // 品牌市占率图表当前指标模式: 'sales'(销量) 或 'amount'(销额)
+      window.brandB3Metric = 'sales';
       // 部署 Worker 后在此填写，例如 https://qbt-ai-assistant.xxx.workers.dev
       var AI_ASSISTANT_WORKER_URL = '';
 
@@ -2943,6 +2948,50 @@
           });
           b8MetricSw.__bound__ = true;
         }
+        // 品牌渠道占比指标切换绑定
+        var b2MetricSw = document.getElementById('brandB2MetricSwitch');
+        if (b2MetricSw && !b2MetricSw.__bound__) {
+          b2MetricSw.addEventListener('click', function(e) {
+            var btn = e.target.closest && e.target.closest('[data-b2-metric]');
+            if (!btn) return;
+            var newMetric = btn.getAttribute('data-b2-metric');
+            if (newMetric === window.brandB2Metric) return;
+            window.brandB2Metric = newMetric;
+            Array.from(b2MetricSw.querySelectorAll('[data-b2-metric]')).forEach(function(b) {
+              b.classList.toggle('active', b.getAttribute('data-b2-metric') === newMetric);
+            });
+            renderBrand2();
+          });
+          b2MetricSw.__bound__ = true;
+        }
+        // 品牌渠道占比价格段筛选绑定
+        var b2PriceSeg = document.getElementById('dimB2PriceSeg');
+        if (b2PriceSeg && !b2PriceSeg.__bound__) {
+          b2PriceSeg.addEventListener('change', function() { renderBrand2(); });
+          b2PriceSeg.__bound__ = true;
+        }
+        // 品牌市占率指标切换绑定
+        var b3MetricSw = document.getElementById('brandB3MetricSwitch');
+        if (b3MetricSw && !b3MetricSw.__bound__) {
+          b3MetricSw.addEventListener('click', function(e) {
+            var btn = e.target.closest && e.target.closest('[data-b3-metric]');
+            if (!btn) return;
+            var newMetric = btn.getAttribute('data-b3-metric');
+            if (newMetric === window.brandB3Metric) return;
+            window.brandB3Metric = newMetric;
+            Array.from(b3MetricSw.querySelectorAll('[data-b3-metric]')).forEach(function(b) {
+              b.classList.toggle('active', b.getAttribute('data-b3-metric') === newMetric);
+            });
+            renderBrand3();
+          });
+          b3MetricSw.__bound__ = true;
+        }
+        // 品牌市占率价格段筛选绑定
+        var b3PriceSeg = document.getElementById('dimB3PriceSeg');
+        if (b3PriceSeg && !b3PriceSeg.__bound__) {
+          b3PriceSeg.addEventListener('change', function() { renderBrand3(); });
+          b3PriceSeg.__bound__ = true;
+        }
         // 品牌月销同比指标切换绑定
         var b9MetricSw = document.getElementById('brandB9MetricSwitch');
         if (b9MetricSw && !b9MetricSw.__bound__) {
@@ -3041,37 +3090,68 @@
         var topBrands = (fp && fp.数据说明 && fp.数据说明.前十大品牌) || [];
         var startVal = document.getElementById('dimB2Start') && document.getElementById('dimB2Start').value;
         var endVal = document.getElementById('dimB2End') && document.getElementById('dimB2End').value;
+        var metric = window.brandB2Metric || 'sales';
+        var isAmount = metric === 'amount';
+        var valueField = isAmount ? '销售额' : '销量';
+        var priceSeg = document.getElementById('dimB2PriceSeg') && document.getElementById('dimB2PriceSeg').value || '';
         var byBrandCh = {};
+        var byBrandChSales = {};
+        var byBrandChAmount = {};
         var channels = ['天猫', '京东', '抖音'];
         if (startVal && endVal && startVal <= endVal && fp && fp.品牌与渠道与日期 && fp.品牌与渠道与日期.length) {
           // 结束月份转为该月最后一天，确保当月数据被包含
           var endMonthLastDay = endVal + '-31';
           var raw = fp.品牌与渠道与日期.filter(function (r) { return r.日期 >= startVal && r.日期 <= endMonthLastDay; });
+          if (priceSeg) raw = raw.filter(function (r) { return r.价格段 === priceSeg; });
           var byBrand = {};
           raw.forEach(function (r) {
             if (!byBrandCh[r.品牌]) byBrandCh[r.品牌] = {};
+            if (!byBrandChSales[r.品牌]) byBrandChSales[r.品牌] = {};
+            if (!byBrandChAmount[r.品牌]) byBrandChAmount[r.品牌] = {};
             if (!byBrandCh[r.品牌][r.渠道]) byBrandCh[r.品牌][r.渠道] = 0;
-            byBrandCh[r.品牌][r.渠道] += r.销量;
-            byBrand[r.品牌] = (byBrand[r.品牌] || 0) + r.销量;
+            if (!byBrandChSales[r.品牌][r.渠道]) byBrandChSales[r.品牌][r.渠道] = 0;
+            if (!byBrandChAmount[r.品牌][r.渠道]) byBrandChAmount[r.品牌][r.渠道] = 0;
+            byBrandCh[r.品牌][r.渠道] += r[valueField];
+            byBrandChSales[r.品牌][r.渠道] += r.销量;
+            byBrandChAmount[r.品牌][r.渠道] += r.销售额;
+            byBrand[r.品牌] = (byBrand[r.品牌] || 0) + r[valueField];
           });
           topBrands.forEach(function (b) {
             if (!byBrandCh[b]) byBrandCh[b] = {};
+            if (!byBrandChSales[b]) byBrandChSales[b] = {};
+            if (!byBrandChAmount[b]) byBrandChAmount[b] = {};
             var total = byBrand[b] || 0;
             channels.forEach(function (ch) {
               byBrandCh[b][ch] = total ? (byBrandCh[b][ch] || 0) / total : 0;
+              if (byBrandChSales[b][ch] == null) byBrandChSales[b][ch] = 0;
+              if (byBrandChAmount[b][ch] == null) byBrandChAmount[b][ch] = 0;
             });
           });
         } else {
           var d = fp && fp['品牌渠道占比'];
-          if (!d || !d.按品牌与渠道 || !d.按品牌与渠道.length) return;
-          d.按品牌与渠道.forEach(function (r) {
+          var dataSource = d;
+          if (priceSeg && d && d.按价格段 && d.按价格段[priceSeg]) {
+            dataSource = d.按价格段[priceSeg];
+          }
+          if (!dataSource || !dataSource.按品牌与渠道 || !dataSource.按品牌与渠道.length) return;
+          dataSource.按品牌与渠道.forEach(function (r) {
             if (topBrands.indexOf(r.品牌) === -1) return;
             if (!byBrandCh[r.品牌]) byBrandCh[r.品牌] = {};
-            byBrandCh[r.品牌][r.渠道] = r.品牌内销量占比 || 0;
+            if (!byBrandChSales[r.品牌]) byBrandChSales[r.品牌] = {};
+            if (!byBrandChAmount[r.品牌]) byBrandChAmount[r.品牌] = {};
+            byBrandCh[r.品牌][r.渠道] = isAmount ? (r.品牌内销售额占比 || 0) : (r.品牌内销量占比 || 0);
+            byBrandChSales[r.品牌][r.渠道] = r.销量 || 0;
+            byBrandChAmount[r.品牌][r.渠道] = r.销售额 || 0;
           });
           topBrands.forEach(function (b) {
             if (!byBrandCh[b]) byBrandCh[b] = {};
-            channels.forEach(function (ch) { if (byBrandCh[b][ch] == null) byBrandCh[b][ch] = 0; });
+            if (!byBrandChSales[b]) byBrandChSales[b] = {};
+            if (!byBrandChAmount[b]) byBrandChAmount[b] = {};
+            channels.forEach(function (ch) {
+              if (byBrandCh[b][ch] == null) byBrandCh[b][ch] = 0;
+              if (byBrandChSales[b][ch] == null) byBrandChSales[b][ch] = 0;
+              if (byBrandChAmount[b][ch] == null) byBrandChAmount[b][ch] = 0;
+            });
           });
         }
         var series = channels.map(function (ch, i) {
@@ -3080,13 +3160,18 @@
             name: ch,
             type: 'bar',
             stack: 'channel',
-            data: topBrands.map(function (b) { return ((byBrandCh[b] && byBrandCh[b][ch]) || 0) * 100; }),
+            data: topBrands.map(function (b, idx) {
+              var pct = ((byBrandCh[b] && byBrandCh[b][ch]) || 0) * 100;
+              var sales = (byBrandChSales[b] && byBrandChSales[b][ch]) || 0;
+              var amount = (byBrandChAmount[b] && byBrandChAmount[b][ch]) || 0;
+              return { value: pct, sales: sales, amount: amount, brandIdx: idx };
+            }),
             itemStyle: { color: colors[i % colors.length] },
             label: { show: true, position: 'inside', fontSize: 11, color: '#fff', formatter: function (params) { var v = params.value; if (v == null || v < 5) return ''; return v.toFixed(1) + '%'; } }
           };
         });
         var opt = {
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { if (!params || !params.length) return ''; var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { s += '<br/>' + p.marker + p.seriesName + ': ' + (p.value != null ? Number(p.value).toFixed(2) + '%' : '-'); }); return s; } },
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (params) { if (!params || !params.length) return ''; var s = (params[0] && params[0].axisValue) || ''; params.forEach(function (p) { var d = p.data && typeof p.data === 'object' ? p.data : {}; var salesStr = d.sales != null ? Math.round(d.sales).toLocaleString() : '-'; var amountStr = d.amount != null ? (d.amount / 1e4).toFixed(2) + '万' : '-'; s += '<br/>' + p.marker + p.seriesName + '：销量 ' + salesStr + '，销额 ' + amountStr; }); return s; } },
           legend: { data: channels, top: 6, left: 'center' },
           grid: { left: 56, right: 24, top: 40, bottom: 92 },
           xAxis: { type: 'category', data: topBrands.map(brandDisplayName), axisLabel: { margin: 14, rotate: 45, interval: 0, fontSize: 11 } },
@@ -3099,10 +3184,16 @@
       function renderBrand3() {
         var d = getFenPinPai() && getFenPinPai()['品牌市占率'];
         if (!d || !d.按日期 || !d.各品牌按日期市占率) return;
+        var metric = window.brandB3Metric || 'sales';
+        var isAmount = metric === 'amount';
+        var sourceKey = isAmount ? '各品牌按日期市占率_销额' : '各品牌按日期市占率';
+        var priceSeg = document.getElementById('dimB3PriceSeg') && document.getElementById('dimB3PriceSeg').value || '';
+        var srcData = d;
+        if (priceSeg && d.按价格段 && d.按价格段[priceSeg]) srcData = d.按价格段[priceSeg];
         var startVal = document.getElementById('dimB3Start') && document.getElementById('dimB3Start').value;
         var endVal = document.getElementById('dimB3End') && document.getElementById('dimB3End').value;
-        var allDates = d.按日期;
-        var 各品牌按日期市占率 = d.各品牌按日期市占率;
+        var allDates = srcData.按日期;
+        var 各品牌按日期市占率 = srcData[sourceKey] || srcData.各品牌按日期市占率;
         var dates = allDates;
         if (startVal && endVal && startVal <= endVal) {
           // 结束月份转为该月最后一天，确保当月数据被包含
@@ -3113,8 +3204,8 @@
           if (idxStart >= 0 && idxEnd >= idxStart) {
             dates = allDates.slice(idxStart, idxEnd + 1);
             各品牌按日期市占率 = {};
-            Object.keys(d.各品牌按日期市占率).forEach(function (b) {
-              各品牌按日期市占率[b] = (d.各品牌按日期市占率[b] || []).slice(idxStart, idxEnd + 1);
+            Object.keys(srcData[sourceKey] || srcData.各品牌按日期市占率).forEach(function (b) {
+              各品牌按日期市占率[b] = ((srcData[sourceKey] || srcData.各品牌按日期市占率)[b] || []).slice(idxStart, idxEnd + 1);
             });
           }
         }
@@ -3882,6 +3973,10 @@
         if (v == null) return '';
         var s = String(v);
         return s.length > 7 ? s.slice(0, 7) : s;
+      }
+      /** Date对象转本地日期字符串 YYYY-MM-DD（避免toISOString的UTC偏移问题） */
+      function localDateStr(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       }
       /** 类目轴/悬浮：展示到日期（取 YYYY-MM-DD）- 新零售专用 */
       function chartAxisDateLabelDay(v) {
@@ -9076,7 +9171,7 @@
               var cur = new Date(startVal);
               var end = new Date(endVal);
               while (cur <= end) {
-                fullDates.push(cur.toISOString().split('T')[0]);
+                fullDates.push(localDateStr(cur));
                 cur.setDate(cur.getDate() + 1);
               }
             }
@@ -9289,8 +9384,8 @@
             yesterday.setDate(today.getDate() - 1);
             var thirtyDaysAgo = new Date(yesterday);
             thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-            defaultEnd = yesterday.toISOString().split('T')[0];
-            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+            defaultEnd = localDateStr(yesterday);
+            defaultStart = localDateStr(thirtyDaysAgo);
           }
 
           var curStart = selStart.value;
@@ -9482,7 +9577,7 @@
               var cur = new Date(startVal);
               var end = new Date(endVal);
               while (cur <= end) {
-                fullDates.push(cur.toISOString().split('T')[0]);
+                fullDates.push(localDateStr(cur));
                 cur.setDate(cur.getDate() + 1);
               }
             }
@@ -9702,8 +9797,8 @@
             yesterday.setDate(today.getDate() - 1);
             var thirtyDaysAgo = new Date(yesterday);
             thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-            defaultEnd = yesterday.toISOString().split('T')[0];
-            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+            defaultEnd = localDateStr(yesterday);
+            defaultStart = localDateStr(thirtyDaysAgo);
           }
 
           // 如果当前值在有效范围内则保留，否则使用默认值
@@ -9944,7 +10039,7 @@
               var cur = new Date(startVal);
               var end = new Date(endVal);
               while (cur <= end) {
-                fullDates.push(cur.toISOString().split('T')[0]);
+                fullDates.push(localDateStr(cur));
                 cur.setDate(cur.getDate() + 1);
               }
             }
@@ -10151,8 +10246,8 @@
             yesterday.setDate(today.getDate() - 1);
             var thirtyDaysAgo = new Date(yesterday);
             thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-            defaultEnd = yesterday.toISOString().split('T')[0];
-            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+            defaultEnd = localDateStr(yesterday);
+            defaultStart = localDateStr(thirtyDaysAgo);
           }
 
           var curStart = selStart.value;
@@ -10329,7 +10424,7 @@
               var cur = new Date(startVal);
               var end = new Date(endVal);
               while (cur <= end) {
-                fullDates.push(cur.toISOString().split('T')[0]);
+                fullDates.push(localDateStr(cur));
                 cur.setDate(cur.getDate() + 1);
               }
             }
@@ -10537,8 +10632,8 @@
             yesterday.setDate(today.getDate() - 1);
             var thirtyDaysAgo = new Date(yesterday);
             thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-            defaultEnd = yesterday.toISOString().split('T')[0];
-            defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+            defaultEnd = localDateStr(yesterday);
+            defaultStart = localDateStr(thirtyDaysAgo);
           }
 
           var curStart = selStart.value;
@@ -10878,8 +10973,8 @@
           yesterday.setDate(today.getDate() - 1);
           var thirtyDaysAgo = new Date(yesterday);
           thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-          var defaultEnd = yesterday.toISOString().split('T')[0];
-          var defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+          var defaultEnd = localDateStr(yesterday);
+          var defaultStart = localDateStr(thirtyDaysAgo);
 
           // 确保默认值在数据范围内
           if (defaultEnd > maxD) defaultEnd = maxD;
@@ -11101,8 +11196,8 @@
           yesterday.setDate(today.getDate() - 1);
           var thirtyDaysAgo = new Date(yesterday);
           thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-          var defaultEnd = yesterday.toISOString().split('T')[0];
-          var defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+          var defaultEnd = localDateStr(yesterday);
+          var defaultStart = localDateStr(thirtyDaysAgo);
 
           // 确保默认值在数据范围内
           if (defaultEnd > maxD) defaultEnd = maxD;
@@ -11591,8 +11686,8 @@
           yesterday.setDate(today.getDate() - 1);
           var thirtyDaysAgo = new Date(yesterday);
           thirtyDaysAgo.setDate(yesterday.getDate() - 30);
-          var defaultEnd = yesterday.toISOString().split('T')[0];
-          var defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+          var defaultEnd = localDateStr(yesterday);
+          var defaultStart = localDateStr(thirtyDaysAgo);
 
           if (defaultEnd > maxD) defaultEnd = maxD;
           if (defaultStart < minD) defaultStart = minD;

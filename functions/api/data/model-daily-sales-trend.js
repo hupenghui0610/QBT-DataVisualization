@@ -1,43 +1,58 @@
-import { jsonResponse, corsHeaders } from '../../_lib/http.js';
+/**
+ * 全渠道型号销量趋势 API（仅返回销量 quantity）
+ *
+ * - 四平台：与新零售 GSV 路径一致，使用 processPlatformOrdersGsv 产出订单后汇总 **order.quantity**（件数），
+ *   经 NYYiAs 映射到型号；订单需过渠道映射与 classifyOrder（与 newretail-gmv-logic 一致）。
+ * - 京东/天猫：表内「数量」列与四平台按同一型号键合并；表头型号经 normalizeShelfModelName 与映射表对齐。
+ *
+ * 排查：Worker 在聚合后会 console 打印京东/天猫/四平台 GSV 各自型号清单（前缀 [model-daily-sales-trend]）。
+ * 命中缓存时不会执行聚合与打印，请使用 `?nocache=1` 后查看 Cloudflare 实时日志或 wrangler tail。
+ * 浏览器 F12：`?debugModels=1` 时响应含 `debug.jdModels/tmallModels/gsvModels`（不入 D1 缓存），前端会 console 输出。
+ */
+import { jsonResponse, corsHeaders, resolveCorsOrigin } from '../../_lib/http.js';
 import { authenticateRequest } from '../../_lib/session.js';
-import { fetchSheetValuesV2, fetchSpreadsheetSheetsV3 } from '../../_lib/feishu.js';
+import { fetchSheetValuesV2 } from '../../_lib/feishu.js';
 import { getCache, setCache } from '../../_lib/cache.js';
+import {
+  PLATFORM_CONFIG,
+  CHANNEL_MAP_CONFIG,
+  buildChannelMaps,
+  processPlatformOrdersGsv,
+} from './newretail-gmv-logic.js';
 
-var CACHE_KEY = 'model-daily-sales-trend';
+var CACHE_KEY = 'model-daily-sales-trend-v5';
 var CACHE_TTL_HOURS = 48;
 
-// ============ 四平台配置（从 newretail-gmv-logic.js 复用）============
-const PLATFORM_CONFIG = {
-  douyin: {
-    name: '抖音',
-    sheetId: 'tuec5U',
-    cols: { product: 2, amount: 8, quantity: 4, time: 33, status: 36, darenId: 40 }
-  },
-  xiaohongshu: {
-    name: '小红书',
-    sheetId: 'v3JEoi',
-    cols: { product: 17, amount: 23, quantity: 19, time: 34, status: 1, darenId: 15 }
-  },
-  shipinhao: {
-    name: '视频号',
-    sheetId: 'LoahCg',
-    cols: { product: 40, amount: 18, quantity: 49, time: 25, status: 5, darenName: 34 }
-  },
-  kuaishou: {
-    name: '快手',
-    sheetId: '7uRPyy',
-    cols: { product: 25, amount: 7, quantity: 15, time: 4, status: 6, darenId: 31 }
-  }
-};
-
-const CHANNEL_MAP_CONFIG = {
-  sheetId: 'ghju03',
-  cols: { channelName: 0, platform: 1, darenName: 3, darenId: 4 }
-};
+var TMALL_MODEL_START_COL = 46; // AU，与 feishu-tmall-sales mergeDateAndModelValues 一致
 
 // ============ 工具函数 ============
 function pad2(n) {
   return n < 10 ? '0' + n : String(n);
+}
+
+/** 飞书 FormattedValue 可能返回 {text}、嵌套或数组，直接 String 会得到 [object Object] */
+function unwrapFeishuCell(cell) {
+  if (cell == null) return '';
+  if (typeof cell === 'object') {
+    if (Array.isArray(cell)) {
+      return cell
+        .map(function (x) {
+          return unwrapFeishuCell(x);
+        })
+        .filter(Boolean)
+        .join('');
+    }
+    if (cell.text != null) return unwrapFeishuCell(cell.text);
+    if (cell.value != null) return unwrapFeishuCell(cell.value);
+    return '';
+  }
+  return cell;
+}
+
+function feishuCellToPlainString(cell) {
+  var u = unwrapFeishuCell(cell);
+  if (u == null) return '';
+  return String(u).replace(/\r\n/g, '\n').trim();
 }
 
 function ymdFromExcelSerial(serial) {
@@ -50,55 +65,49 @@ function ymdFromExcelSerial(serial) {
   return dt.getFullYear() + '-' + pad2(dt.getMonth() + 1) + '-' + pad2(dt.getDate());
 }
 
-function parseDateFromPlatform(value, platform) {
-  if (value == null || value === '') return null;
-  if (typeof value === 'number') {
-    return ymdFromExcelSerial(value);
+/** 货架表第一列日期：数字序列 / 2026-1-1 / 2026年1月1日 等 */
+function parseShelfDateCell(dateVal) {
+  var v = unwrapFeishuCell(dateVal);
+  if (v === '' || v == null) return '';
+  if (typeof v === 'number' && isFinite(v)) {
+    var ymd = ymdFromExcelSerial(v);
+    return ymd || '';
   }
-  var str = String(value).trim();
-  if (!str) return null;
-  var numOnly = parseFloat(str);
-  if (!isNaN(numOnly) && /^-?\d+(\.\d+)?$/.test(str) && numOnly >= 40000 && numOnly < 60000) {
-    return ymdFromExcelSerial(numOnly);
+  var str = String(v).trim();
+  var m = str.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?/);
+  if (m) {
+    return m[1] + '-' + pad2(parseInt(m[2], 10)) + '-' + pad2(parseInt(m[3], 10));
   }
-  // 标准日期解析
-  var isoMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-  if (isoMatch) {
-    var y = parseInt(isoMatch[1], 10);
-    var m = parseInt(isoMatch[2], 10);
-    var d = parseInt(isoMatch[3], 10);
-    if (y && m && d) return y + '-' + pad2(m) + '-' + pad2(d);
+  m = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (m) {
+    return m[1] + '-' + pad2(parseInt(m[2], 10)) + '-' + pad2(parseInt(m[3], 10));
   }
-  var normalized = str.replace(/\//g, '-');
-  var t = Date.parse(normalized);
-  if (!isNaN(t)) {
-    var dt = new Date(t);
-    return dt.getFullYear() + '-' + pad2(dt.getMonth() + 1) + '-' + pad2(dt.getDate());
-  }
-  return null;
+  return '';
 }
 
-function parseAmount(value) {
-  if (value == null || value === '') return 0;
-  if (typeof value === 'number') return value;
-  var str = String(value).replace(/[¥$€,，\s]/g, '');
-  var n = parseFloat(str);
-  return isNaN(n) ? 0 : n;
+/** 与 feishu-tmall-sales：A 列日期 + AU:ZZ 型号块合并到同一行 */
+function mergeDateAndModelValues(dateValues, modelValues, modelStartCol) {
+  var a = Array.isArray(dateValues) ? dateValues : [];
+  var b = Array.isArray(modelValues) ? modelValues : [];
+  var n = Math.max(a.length, b.length);
+  var start = typeof modelStartCol === 'number' ? modelStartCol : TMALL_MODEL_START_COL;
+  var out = [];
+  for (var r = 0; r < n; r++) {
+    var row = [];
+    var ra = a[r] || [];
+    var rb = b[r] || [];
+    row[0] = ra[0] == null ? '' : ra[0];
+    for (var c = 0; c < rb.length; c++) {
+      row[start + c] = rb[c];
+    }
+    out.push(row);
+  }
+  return out;
 }
 
-function parseQuantity(value) {
-  if (value == null || value === '') return 1;
-  if (typeof value === 'number') {
-    return isNaN(value) || value <= 0 ? 1 : Math.round(value);
-  }
-  var str = String(value).trim();
-  if (!str) return 1;
-  var cleaned = str.replace(/,/g, '').replace(/，/g, '').replace(/[\s\u3000]/g, '');
-  var halfWidth = cleaned.replace(/[０-９]/g, function(ch) {
-    return String.fromCharCode(ch.charCodeAt(0) - 0xfee0);
-  });
-  var num = parseInt(halfWidth, 10);
-  return isNaN(num) || num <= 0 ? 1 : num;
+function sheetNameFromRange(fullRange) {
+  var s = String(fullRange || '').split('!')[0];
+  return s || '2joAvv';
 }
 
 // ============ 四平台数据读取与聚合 ============
@@ -138,41 +147,25 @@ function numToColLetter(n) {
   return s || 'A';
 }
 
-// 处理四平台订单数据并提取型号信息
-function processPlatformOrdersForModels(platformResults, modelMapping) {
+/** 四平台：与新零售 GSV 一致，按订单聚合后再映射型号 */
+function aggregateGsvModelsFromPlatforms(platformResults, channelMaps, mappingList) {
   const dailyBucket = {};
-  const mappingList = modelMapping || [];
+  const list = mappingList || [];
 
   platformResults.forEach(function(result) {
     if (!result.values || result.values.length <= 1) return;
-
-    const cfg = PLATFORM_CONFIG[result.platform];
-    if (!cfg) return;
-
-    for (let r = 1; r < result.values.length; r++) {
-      const row = result.values[r] || [];
-      if (row.length <= cfg.cols.amount) continue;
-
-      // 解析日期
-      const day = parseDateFromPlatform(row[cfg.cols.time], result.platform);
-      if (!day) continue;
-
-      // 解析数量和金额
-      const quantity = parseQuantity(row[cfg.cols.quantity]);
-      const amount = parseAmount(row[cfg.cols.amount]);
-
-      // 解析产品名称并匹配型号
-      const product = row[cfg.cols.product] || '';
-      const matchedModel = matchProductToModel(product, mappingList);
-
-      if (matchedModel) {
-        if (!dailyBucket[day]) dailyBucket[day] = {};
-        if (!dailyBucket[day][matchedModel]) {
-          dailyBucket[day][matchedModel] = { quantity: 0, amount: 0 };
-        }
-        dailyBucket[day][matchedModel].quantity += quantity;
-        dailyBucket[day][matchedModel].amount += amount;
+    const gsv = processPlatformOrdersGsv(result.values, result.platform, channelMaps);
+    const orders = gsv.orders || [];
+    for (let i = 0; i < orders.length; i++) {
+      const order = orders[i];
+      const matchedModel = matchProductToModel(order.product || '', list);
+      if (!matchedModel) continue;
+      const day = order.date;
+      if (!dailyBucket[day]) dailyBucket[day] = {};
+      if (!dailyBucket[day][matchedModel]) {
+        dailyBucket[day][matchedModel] = { quantity: 0 };
       }
+      dailyBucket[day][matchedModel].quantity += order.quantity || 0;
     }
   });
 
@@ -211,35 +204,89 @@ function matchProductToModel(product, mappingList) {
   return null;
 }
 
+/** 货架表头型号名与 NYYiAs 映射对齐，便于与四平台 canonical 型号合并 */
+function normalizeShelfModelName(raw, mappingList) {
+  var s = feishuCellToPlainString(raw);
+  if (!s) return null;
+  var via = matchProductToModel(s, mappingList || []);
+  if (via) return via;
+  var lower = s.toLowerCase();
+  var list = mappingList || [];
+  for (var i = 0; i < list.length; i++) {
+    var canon = list[i].model;
+    if (canon && String(canon).toLowerCase() === lower) return canon;
+  }
+  return s;
+}
+
+function countDistinctModelsInBucket(bucket) {
+  var set = new Set();
+  Object.keys(bucket || {}).forEach(function(d) {
+    Object.keys(bucket[d] || {}).forEach(function(m) {
+      set.add(m);
+    });
+  });
+  return set.size;
+}
+
+/** 从按日分桶结构收集全部型号键并排序（用于日志与排查） */
+function collectSortedModelKeysFromDailyBucket(bucket) {
+  var set = new Set();
+  Object.keys(bucket || {}).forEach(function(d) {
+    Object.keys(bucket[d] || {}).forEach(function(m) {
+      set.add(m);
+    });
+  });
+  return Array.from(set).sort();
+}
+
 // ============ 京东/天猫数据读取 ============
-async function fetchShelfEcommerceData(env) {
+async function fetchShelfEcommerceData(env, mappingList) {
   const results = { jd: { data: [], dates: [], models: [] }, tmall: { data: [], dates: [], models: [] } };
 
-  // 读取京东数据
+  // 京东：必须同一 range 同时含 A 列日期与 AO 起型号列。仅用 A:H 时 row 长度 < 41，型号列永远读不到（与 feishu-daily-sales 合并逻辑一致）。
   try {
     const jdToken = env.FEISHU_SPREADSHEET_TOKEN || 'EBwmsjjArhutvWtM2E9cLUMGnYd';
-    const jdRange = env.FEISHU_SHEET_RANGE_MODEL || '0VWscb!AO1:BZ20000';
-    const mainRange = env.FEISHU_SHEET_RANGE || '0VWscb!A1:H20000';
+    const jdFullRange =
+      env.FEISHU_SHEET_RANGE_JD_SHELF || '0VWscb!A1:BZ20000';
 
-    // 读取主表的日期列(A)和型号列(AO-BZ)
-    const mainResult = await fetchSheetValuesV2(env, jdToken, mainRange, { valueRenderOption: 'FormattedValue' });
-    if (mainResult && mainResult.code === 0) {
-      const values = mainResult.data?.valueRange?.values || [];
-      results.jd = processShelfData(values, 40); // AO列是40索引
+    const jdResult = await fetchSheetValuesV2(env, jdToken, jdFullRange, { valueRenderOption: 'FormattedValue' });
+    if (jdResult && jdResult.code === 0) {
+      const values = jdResult.data?.valueRange?.values || [];
+      results.jd = processShelfData(values, 40, mappingList); // AO = 0-based 40
     }
   } catch (e) {
     console.error('京东数据读取失败:', e);
   }
 
-  // 读取天猫数据
+  // 天猫：与 feishu-tmall-sales 相同——A1:A 日期 + AU1:ZZ 型号块合并（单列宽表易稀疏/截断导致读不到型号）
   try {
     const tmallToken = env.FEISHU_TMALL_SPREADSHEET_TOKEN || 'WkFuwdxnhio6AckVEeQcohMAnpc';
-    const tmallRange = env.FEISHU_TMALL_SHEET_RANGE || '2joAvv!A1:ZZ20000';
+    const tmallFullRange =
+      env.FEISHU_TMALL_SHELF_FULL_RANGE || '2joAvv!A1:ZZ20000';
+    const sheetName = sheetNameFromRange(tmallFullRange);
+    const maxRow = 20000;
 
-    const tmallResult = await fetchSheetValuesV2(env, tmallToken, tmallRange, { valueRenderOption: 'FormattedValue' });
-    if (tmallResult && tmallResult.code === 0) {
-      const values = tmallResult.data?.valueRange?.values || [];
-      results.tmall = processShelfData(values, 50); // AY列是50索引
+    const dateRange = sheetName + '!A1:A' + maxRow;
+    const modelRange = sheetName + '!AU1:ZZ' + maxRow;
+    const [rDate, rModel] = await Promise.all([
+      fetchSheetValuesV2(env, tmallToken, dateRange, { valueRenderOption: 'FormattedValue' }),
+      fetchSheetValuesV2(env, tmallToken, modelRange, { valueRenderOption: 'FormattedValue' }),
+    ]);
+
+    if (rDate && rDate.code === 0 && rModel && rModel.code === 0) {
+      const dv = rDate.data?.valueRange?.values || [];
+      const mv = rModel.data?.valueRange?.values || [];
+      const merged = mergeDateAndModelValues(dv, mv, TMALL_MODEL_START_COL);
+      results.tmall = processShelfData(merged, TMALL_MODEL_START_COL, mappingList);
+    } else {
+      const tmallResult = await fetchSheetValuesV2(env, tmallToken, tmallFullRange, {
+        valueRenderOption: 'FormattedValue',
+      });
+      if (tmallResult && tmallResult.code === 0) {
+        const values = tmallResult.data?.valueRange?.values || [];
+        results.tmall = processShelfData(values, TMALL_MODEL_START_COL, mappingList);
+      }
     }
   } catch (e) {
     console.error('天猫数据读取失败:', e);
@@ -248,48 +295,38 @@ async function fetchShelfEcommerceData(env) {
   return results;
 }
 
-function processShelfData(values, modelStartCol) {
+function processShelfData(values, modelStartCol, mappingList) {
   const dailyBucket = {};
   const modelSet = new Set();
+  const headerRow = values[0] || [];
 
   for (let r = 1; r < values.length; r++) {
     const row = values[r] || [];
-    if (row.length === 0) continue;
 
-    // 解析日期（第一列）
-    const dateVal = row[0];
-    if (!dateVal) continue;
-
-    let dateStr;
-    if (typeof dateVal === 'number') {
-      dateStr = ymdFromExcelSerial(dateVal);
-    } else {
-      const str = String(dateVal).trim();
-      // 尝试匹配日期格式 2026/1/1 或 2026-01-01
-      const m = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-      if (m) {
-        dateStr = m[1] + '-' + pad2(parseInt(m[2])) + '-' + pad2(parseInt(m[3]));
-      }
-    }
+    const dateStr = parseShelfDateCell(row[0]);
     if (!dateStr) continue;
 
     if (!dailyBucket[dateStr]) dailyBucket[dateStr] = {};
 
-    // 解析型号列（从 modelStartCol 开始，每两列为一组：数量、金额）
-    for (let c = modelStartCol; c < row.length; c += 2) {
-      const modelName = values[0]?.[c]; // 表头中的型号名
-      if (!modelName) continue;
+    var maxCol = Math.max(headerRow.length, row.length, modelStartCol + 2);
 
-      const qty = parseFloat(row[c]) || 0;
-      const amt = parseFloat(row[c + 1]) || 0;
+    // 解析型号列（从 modelStartCol 开始，每两列为一组：数量、金额）
+    for (let c = modelStartCol; c < maxCol; c += 2) {
+      const modelNameRaw = headerRow[c];
+      const modelKey = normalizeShelfModelName(modelNameRaw, mappingList);
+      if (!modelKey) continue;
+
+      var qtyRaw = unwrapFeishuCell(row[c]);
+      var amtRaw = unwrapFeishuCell(row[c + 1]);
+      const qty = parseFloat(String(qtyRaw == null ? '' : qtyRaw).replace(/[,，\s]/g, '')) || 0;
+      const amt = parseFloat(String(amtRaw == null ? '' : amtRaw).replace(/[,，\s]/g, '')) || 0;
 
       if (qty > 0 || amt > 0) {
-        modelSet.add(modelName);
-        if (!dailyBucket[dateStr][modelName]) {
-          dailyBucket[dateStr][modelName] = { quantity: 0, amount: 0 };
+        modelSet.add(modelKey);
+        if (!dailyBucket[dateStr][modelKey]) {
+          dailyBucket[dateStr][modelKey] = { quantity: 0 };
         }
-        dailyBucket[dateStr][modelName].quantity += qty;
-        dailyBucket[dateStr][modelName].amount += amt;
+        dailyBucket[dateStr][modelKey].quantity += qty;
       }
     }
   }
@@ -306,8 +343,8 @@ async function fetchModelMapping(env, spreadsheetToken) {
     const modelValues = modelMappingJson.data?.valueRange?.values || [];
     for (let i = 1; i < modelValues.length; i++) {
       const row = modelValues[i] || [];
-      const keyword = String(row[0] || '').trim();
-      const model = String(row[1] || '').trim();
+      const keyword = feishuCellToPlainString(row[0]);
+      const model = feishuCellToPlainString(row[1]);
       if (keyword && model) {
         mappingList.push({ keyword, model });
       }
@@ -320,7 +357,7 @@ async function fetchModelMapping(env, spreadsheetToken) {
 export async function onRequestGet(context) {
   var request = context.request;
   var env = context.env;
-  var origin = request.headers.get('Origin') || undefined;
+  var origin = resolveCorsOrigin(request, env);
 
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
@@ -333,9 +370,14 @@ export async function onRequestGet(context) {
     );
   }
 
-  // 检查缓存
+  var reqUrl = new URL(request.url);
+  var wantsDebugModels = reqUrl.searchParams.get('debugModels') === '1';
+  var skipCache =
+    reqUrl.searchParams.get('nocache') === '1' || wantsDebugModels;
+
+  // 检查缓存（debugModels=1 须重算，且 debug 不入库）
   var cached = await getCache(env, CACHE_KEY);
-  if (cached && !request.url.includes('nocache=1')) {
+  if (cached && !skipCache) {
     return new Response(JSON.stringify({ ...cached.data, _cached: true, _updatedAt: cached.updatedAt }), {
       status: 200,
       headers: {
@@ -347,15 +389,31 @@ export async function onRequestGet(context) {
   }
 
   try {
-    // 1. 读取四平台数据
     const newretailSpreadsheetToken = env.FEISHU_NEWRETAIL_SPREADSHEET_TOKEN || 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
     const modelMapping = await fetchModelMapping(env, newretailSpreadsheetToken);
 
-    const platformResults = await fetchNewretailModelData(env, newretailSpreadsheetToken);
-    const newretailBucket = processPlatformOrdersForModels(platformResults, modelMapping);
+    var chRange = CHANNEL_MAP_CONFIG.sheetId + '!A1:F2000';
+    var chJson = await fetchSheetValuesV2(env, newretailSpreadsheetToken, chRange, { valueRenderOption: 'FormattedValue' });
+    var chValues = chJson && chJson.code === 0 ? chJson.data?.valueRange?.values || [] : [];
+    var channelMaps = buildChannelMaps(chValues);
 
-    // 2. 读取京东/天猫数据
-    const shelfResults = await fetchShelfEcommerceData(env);
+    const platformResults = await fetchNewretailModelData(env, newretailSpreadsheetToken);
+    const newretailBucket = aggregateGsvModelsFromPlatforms(platformResults, channelMaps, modelMapping);
+
+    const shelfResults = await fetchShelfEcommerceData(env, modelMapping);
+
+    console.log(
+      '[model-daily-sales-trend] 京东型号清单',
+      JSON.stringify([...(shelfResults.jd.models || [])].sort())
+    );
+    console.log(
+      '[model-daily-sales-trend] 天猫型号清单',
+      JSON.stringify([...(shelfResults.tmall.models || [])].sort())
+    );
+    console.log(
+      '[model-daily-sales-trend] 四平台GSV型号清单',
+      JSON.stringify(collectSortedModelKeysFromDailyBucket(newretailBucket))
+    );
 
     // 合并所有数据源
     const mergedBucket = {};
@@ -366,9 +424,8 @@ export async function onRequestGet(context) {
       if (!mergedBucket[date]) mergedBucket[date] = {};
       Object.keys(newretailBucket[date]).forEach(model => {
         allModels.add(model);
-        if (!mergedBucket[date][model]) mergedBucket[date][model] = { quantity: 0, amount: 0 };
+        if (!mergedBucket[date][model]) mergedBucket[date][model] = { quantity: 0 };
         mergedBucket[date][model].quantity += newretailBucket[date][model].quantity;
-        mergedBucket[date][model].amount += newretailBucket[date][model].amount;
       });
     });
 
@@ -377,9 +434,8 @@ export async function onRequestGet(context) {
       if (!mergedBucket[date]) mergedBucket[date] = {};
       Object.keys(shelfResults.jd.data[date]).forEach(model => {
         allModels.add(model);
-        if (!mergedBucket[date][model]) mergedBucket[date][model] = { quantity: 0, amount: 0 };
+        if (!mergedBucket[date][model]) mergedBucket[date][model] = { quantity: 0 };
         mergedBucket[date][model].quantity += shelfResults.jd.data[date][model].quantity;
-        mergedBucket[date][model].amount += shelfResults.jd.data[date][model].amount;
       });
     });
 
@@ -388,9 +444,8 @@ export async function onRequestGet(context) {
       if (!mergedBucket[date]) mergedBucket[date] = {};
       Object.keys(shelfResults.tmall.data[date]).forEach(model => {
         allModels.add(model);
-        if (!mergedBucket[date][model]) mergedBucket[date][model] = { quantity: 0, amount: 0 };
+        if (!mergedBucket[date][model]) mergedBucket[date][model] = { quantity: 0 };
         mergedBucket[date][model].quantity += shelfResults.tmall.data[date][model].quantity;
-        mergedBucket[date][model].amount += shelfResults.tmall.data[date][model].amount;
       });
     });
 
@@ -402,15 +457,17 @@ export async function onRequestGet(context) {
     sortedModels.forEach(model => {
       series[model] = {
         quantity: sortedDates.map(date => mergedBucket[date]?.[model]?.quantity || 0),
-        amount: sortedDates.map(date => mergedBucket[date]?.[model]?.amount || 0)
       };
     });
 
-    // 统计信息
     const sourceSummary = {
-      newretail: { dateRange: getDateRange(newretailBucket), models: Object.keys(newretailBucket).length > 0 ? Object.keys(Object.values(newretailBucket)[0] || {}).length : 0 },
+      newretail: {
+        dateRange: getDateRange(newretailBucket),
+        models: countDistinctModelsInBucket(newretailBucket),
+        quantityMetric: 'processPlatformOrdersGsv_order_quantity',
+      },
       jd: { dateRange: getDateRange(shelfResults.jd.data || {}), models: shelfResults.jd.models?.length || 0 },
-      tmall: { dateRange: getDateRange(shelfResults.tmall.data || {}), models: shelfResults.tmall.models?.length || 0 }
+      tmall: { dateRange: getDateRange(shelfResults.tmall.data || {}), models: shelfResults.tmall.models?.length || 0 },
     };
 
     const payload = {
@@ -419,11 +476,23 @@ export async function onRequestGet(context) {
       series: series,
       sourceSummary: sourceSummary,
       totalDays: sortedDates.length,
-      totalModels: sortedModels.length
+      totalModels: sortedModels.length,
+      meta: {
+        fourPlatformQuantity: '四平台（抖音/小红书/视频号/快手）GSV 路径订单件数之和，与 processPlatformOrdersGsv 一致',
+        jdTmallQuantity: '京东/天猫货架表内数量列，与四平台按型号键合并为总销量',
+      },
     };
 
-    // 写入缓存
+    // 写入缓存（不含 debug）
     await setCache(env, CACHE_KEY, payload, CACHE_TTL_HOURS);
+
+    if (wantsDebugModels) {
+      payload.debug = {
+        jdModels: [...(shelfResults.jd.models || [])].sort(),
+        tmallModels: [...(shelfResults.tmall.models || [])].sort(),
+        gsvModels: collectSortedModelKeysFromDailyBucket(newretailBucket),
+      };
+    }
 
     return new Response(JSON.stringify(payload), {
       status: 200,
@@ -450,6 +519,6 @@ function getDateRange(bucket) {
 }
 
 export async function onRequestOptions(context) {
-  var origin = context.request.headers.get('Origin') || '*';
+  var origin = resolveCorsOrigin(context.request, context.env);
   return new Response(null, { status: 204, headers: corsHeaders(origin) });
 }

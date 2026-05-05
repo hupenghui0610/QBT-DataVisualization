@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "node scripts/prepare-dist.js && npx wrangler pages deploy dist --project-name=qbt-datavisualization --commit-dirty=true",
-    "deploy:test": "node scripts/prepare-dist.js && npx wrangler pages deploy dist --project-name=qbt-datavisualization-test --commit-dirty=true",
-    "deploy:prod": "node scripts/prepare-dist.js && npx wrangler pages deploy dist --project-name=qbt-datavisualization --commit-dirty=true",
+    "deploy": "node scripts/prepare-dist.js && node scripts/deploy-pages-prod.js",
+    "deploy:test": "node scripts/prepare-dist.js && node scripts/deploy-pages-test.js",
+    "deploy:prod": "node scripts/prepare-dist.js && node scripts/deploy-pages-prod.js",
     "db:migrate:test": "npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0001_init.sql && npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0002_login_security.sql && npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0003_cache_system.sql"
   },
   "keywords": [],

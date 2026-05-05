@@ -1,9 +1,11 @@
 .vscode/
 node_modules/
 .env
+.env.deploy.local
 *.log
 .DS_Store
 dist/
+wrangler.toml.deploy-backup
 /features-output.json
 read_excel.js
 read_excel.py

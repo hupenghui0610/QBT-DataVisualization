@@ -1,5 +1,5 @@
 import { verifyPassword, signJwt, JWT_EXP_SECONDS } from '../../_lib/crypto.js';
-import { jsonResponse, corsHeaders } from '../../_lib/http.js';
+import { jsonResponse, corsHeaders, resolveCorsOrigin } from '../../_lib/http.js';
 import { publicUser } from '../../_lib/session.js';
 import {
   getCurrentLoginRestrictions,
@@ -13,7 +13,7 @@ import {
 export async function onRequestPost(context) {
   var request = context.request;
   var env = context.env;
-  var origin = request.headers.get('Origin') || undefined;
+  var origin = resolveCorsOrigin(request, env);
 
   if (!env.JWT_SECRET) {
     return jsonResponse({ error: '服务器未配置 JWT_SECRET' }, 500, origin);
@@ -100,6 +100,6 @@ export async function onRequestPost(context) {
 }
 
 export async function onRequestOptions(context) {
-  var origin = context.request.headers.get('Origin') || '*';
+  var origin = resolveCorsOrigin(context.request, context.env);
   return new Response(null, { status: 204, headers: corsHeaders(origin) });
 }
