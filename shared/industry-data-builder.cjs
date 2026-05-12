@@ -491,6 +491,11 @@ function feature2_各品牌三大渠道占比(rows, topBrands) {
 
 function feature3_各月份市场占有率(allRows, topRows, topBrands) {
   const priceSegments = [...new Set(allRows.map((r) => r.价格段))].filter(Boolean);
+  function toQuarterStr(dateStr) {
+    const m = String(dateStr).match(/^(\d{4})-(\d{2})/);
+    if (!m) return dateStr;
+    return m[1] + '-Q' + Math.ceil(parseInt(m[2], 10) / 3);
+  }
   function calcForRows(subAll, subTop) {
     const byDateTotal = {};
     const byDateTotalAmount = {};
@@ -522,7 +527,40 @@ function feature3_各月份市场占有率(allRows, topRows, topBrands) {
         return total ? 销售额 / total : 0;
       });
     });
-    return { 按日期: dates, 各品牌按日期市占率, 各品牌按日期市占率_销额 };
+    // 季度聚合：按自然季汇总，不完整季度用已有数据
+    const byQuarterTotal = {};
+    const byQuarterTotalAmount = {};
+    subAll.forEach((r) => {
+      const q = toQuarterStr(r.日期_str);
+      byQuarterTotal[q] = (byQuarterTotal[q] || 0) + r.销量;
+      byQuarterTotalAmount[q] = (byQuarterTotalAmount[q] || 0) + r.销售额;
+    });
+    const byBrandQuarter = {};
+    subTop.forEach((r) => {
+      const q = toQuarterStr(r.日期_str);
+      const key = `${r.品牌}\t${q}`;
+      if (!byBrandQuarter[key]) byBrandQuarter[key] = { 品牌: r.品牌, 季度: q, 销量: 0, 销售额: 0 };
+      byBrandQuarter[key].销量 += r.销量;
+      byBrandQuarter[key].销售额 += r.销售额;
+    });
+    const quarters = [...new Set(subAll.map((r) => toQuarterStr(r.日期_str)))].sort();
+    const 各品牌按季度市占率 = {};
+    const 各品牌按季度市占率_销额 = {};
+    topBrands.forEach((品牌) => {
+      各品牌按季度市占率[品牌] = quarters.map((季度) => {
+        const total = byQuarterTotal[季度] || 0;
+        const key = `${品牌}\t${季度}`;
+        const 销量 = (byBrandQuarter[key] && byBrandQuarter[key].销量) || 0;
+        return total ? 销量 / total : 0;
+      });
+      各品牌按季度市占率_销额[品牌] = quarters.map((季度) => {
+        const total = byQuarterTotalAmount[季度] || 0;
+        const key = `${品牌}\t${季度}`;
+        const 销售额 = (byBrandQuarter[key] && byBrandQuarter[key].销售额) || 0;
+        return total ? 销售额 / total : 0;
+      });
+    });
+    return { 按日期: dates, 各品牌按日期市占率, 各品牌按日期市占率_销额, 按季度: quarters, 各品牌按季度市占率, 各品牌按季度市占率_销额 };
   }
   const result = calcForRows(allRows, topRows);
   const 按价格段 = {};
@@ -532,7 +570,7 @@ function feature3_各月份市场占有率(allRows, topRows, topBrands) {
       topRows.filter((r) => r.价格段 === seg),
     );
   });
-  return { 说明: '前十大品牌各月份市场占有率，用于堆叠面积图', 按日期: result.按日期, 各品牌按日期市占率: result.各品牌按日期市占率, 各品牌按日期市占率_销额: result.各品牌按日期市占率_销额, 按价格段 };
+  return { 说明: '前十大品牌各月份市场占有率，用于堆叠面积图', 按日期: result.按日期, 各品牌按日期市占率: result.各品牌按日期市占率, 各品牌按日期市占率_销额: result.各品牌按日期市占率_销额, 按季度: result.按季度, 各品牌按季度市占率: result.各品牌按季度市占率, 各品牌按季度市占率_销额: result.各品牌按季度市占率_销额, 按价格段 };
 }
 
 function feature5_客单价对比(rows, topBrands) {

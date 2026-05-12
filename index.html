@@ -1465,8 +1465,8 @@
   <div class="grid" id="chartGrid">
     <div class="card"><h3><i class="chart-title-icon fa fa-bar-chart"></i><span>渠道对比（销量 / 销售额）</span></h3><div class="date-range">起始：<select id="dim1Start"></select> 结束：<select id="dim1End"></select></div><div id="chart1" class="chart"></div></div>
     <div class="card"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>价格段结构（销量占比）</span></h3><div class="date-range">起始：<select id="dim2Start"></select> 结束：<select id="dim2End"></select></div><div id="chart2" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>大盘时间趋势</span></h3><div class="date-range">起始：<select id="dim3Start"></select> 结束：<select id="dim3End"></select></div><div id="chart3" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-area-chart"></i><span>分渠道销量趋势</span></h3><div class="date-range">起始：<select id="dim4Start"></select> 结束：<select id="dim4End"></select></div><div id="chart4" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>大盘时间趋势</span><span class="chart-view-switch" id="dim3ModeSwitch" role="group" aria-label="大盘时间趋势渠道切换"><button type="button" class="view-btn active" data-dim3-mode="all">全量</button><button type="button" class="view-btn" data-dim3-mode="抖音">抖音</button><button type="button" class="view-btn" data-dim3-mode="京东">京东</button><button type="button" class="view-btn" data-dim3-mode="天猫">天猫</button></span></h3><div class="date-range">起始：<select id="dim3Start"></select> 结束：<select id="dim3End"></select></div><div id="chart3" class="chart"></div></div>
+    <div class="card wide" hidden style="display:none"><h3><i class="chart-title-icon fa fa-area-chart"></i><span>分渠道销量趋势</span></h3><div class="date-range">起始：<select id="dim4Start"></select> 结束：<select id="dim4End"></select></div><div id="chart4" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>价格段销量占比</span></h3><div class="date-range">起始：<select id="dim5Start"></select> 结束：<select id="dim5End"></select></div><div id="chart5" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>各渠道销量占比</span></h3><div class="date-range">起始：<select id="dim6Start"></select> 结束：<select id="dim6End"></select></div><div id="chart9" class="chart"></div></div>
   </div>
@@ -1478,7 +1478,7 @@
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB8Start"></select> 结束：<select id="dimB8End"></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB8MetricSwitch"><button type="button" class="view-btn active" data-b8-metric="sales">销量</button><button type="button" class="view-btn" data-b8-metric="amount">销额</button></span></div></div><div id="chartB8" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌月销同比</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB9Start"></select> 结束：<select id="dimB9End"></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB9MetricSwitch"><button type="button" class="view-btn active" data-b9-metric="sales">销量</button><button type="button" class="view-btn" data-b9-metric="amount">销额</button></span></div></div><div id="chartB9" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌渠道占比</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB2Start"></select> 结束：<select id="dimB2End"></select> 价格段：<select id="dimB2PriceSeg"><option value="">全部</option><option value="1-2k">1-2k</option><option value="2-3k">2-3k</option><option value="3-4k">3-4k</option><option value="4-6k">4-6k</option><option value="6k以上">6k以上</option></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB2MetricSwitch"><button type="button" class="view-btn active" data-b2-metric="sales">销量</button><button type="button" class="view-btn" data-b2-metric="amount">销额</button></span></div></div><div id="chartB2" class="chart"></div></div>
-    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span></h3><div style="position:relative;height:32px;margin-bottom:8px"><div class="date-range" style="position:absolute;left:0;top:0">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select> 价格段：<select id="dimB3PriceSeg"><option value="">全部</option><option value="1-2k">1-2k</option><option value="2-3k">2-3k</option><option value="3-4k">3-4k</option><option value="4-6k">4-6k</option><option value="6k以上">6k以上</option></select></div><div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><span class="chart-view-switch metric-switch" id="brandB3MetricSwitch"><button type="button" class="view-btn active" data-b3-metric="sales">销量</button><button type="button" class="view-btn" data-b3-metric="amount">销额</button></span></div></div><div id="chartB3" class="chart"></div></div>
+    <div class="card wide"><h3><i class="chart-title-icon fa fa-pie-chart"></i><span>品牌市占率</span><span class="chart-view-switch metric-switch" id="brandB3MetricSwitch" style="margin-right:8px"><button type="button" class="view-btn active" data-b3-metric="sales">销量</button><button type="button" class="view-btn" data-b3-metric="amount">销额</button></span><span class="chart-view-switch" id="brandB3PeriodSwitch"><button type="button" class="view-btn active" data-b3-period="monthly">月度</button><button type="button" class="view-btn" data-b3-period="quarterly">季度</button></span></h3><div class="date-range">起始：<select id="dimB3Start"></select> 结束：<select id="dimB3End"></select> 价格段：<select id="dimB3PriceSeg"><option value="">全部</option><option value="1-2k">1-2k</option><option value="2-3k">2-3k</option><option value="3-4k">3-4k</option><option value="4-6k">4-6k</option><option value="6k以上">6k以上</option></select></div><div id="chartB3" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌价格段销量</span></h3><div class="load-bar" style="margin-bottom:8px"><select id="brandTop10Select"><option value="">选择品牌</option></select><span style="margin-left:8px">起始：<select id="dimB6Start"></select> 结束：<select id="dimB6End"></select></span></div><div id="chartB6" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-money"></i><span>客单价对比</span></h3><div class="date-range">起始：<select id="dimB5Start"></select> 结束：<select id="dimB5End"></select></div><div id="chartB5" class="chart"></div></div>
     <div class="card wide"><h3><i class="chart-title-icon fa fa-line-chart"></i><span>品牌客单价趋势</span></h3><div class="date-range">起始：<select id="dimB7Start"></select> 结束：<select id="dimB7End"></select></div><div id="chartB7" class="chart"></div></div>
@@ -2233,6 +2233,8 @@
       window.brandB2Metric = 'sales';
       // 品牌市占率图表当前指标模式: 'sales'(销量) 或 'amount'(销额)
       window.brandB3Metric = 'sales';
+      // 品牌市占率图表当前周期模式: 'monthly'(月度) 或 'quarterly'(季度)
+      window.brandB3Period = 'monthly';
       // 部署 Worker 后在此填写，例如 https://qbt-ai-assistant.xxx.workers.dev
       var AI_ASSISTANT_WORKER_URL = '';
 
@@ -2408,6 +2410,16 @@
         ['dim1Start','dim1End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onDim1; });
         ['dim2Start','dim2End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onDim2; });
         ['dim3Start','dim3End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onDim3; });
+        var dim3ModeSwitch = document.getElementById('dim3ModeSwitch');
+        if (dim3ModeSwitch) {
+          dim3ModeSwitch.querySelectorAll('.view-btn').forEach(function (btn) {
+            btn.onclick = function () {
+              window.dim3TrendMode = btn.getAttribute('data-dim3-mode') || 'all';
+              dim3ModeSwitch.querySelectorAll('.view-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+              render3();
+            };
+          });
+        }
         ['dim4Start','dim4End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onDim4; });
         ['dim5Start','dim5End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onDim5; });
         ['dim6Start','dim6End'].forEach(function (id) { var el = document.getElementById(id); if (el) el.onchange = onDim6; });
@@ -2544,11 +2556,39 @@
 
       // 维度三：时间趋势 - 折线（销量 + 销量同比% 副坐标）
       function render3() {
-        var d = getDaPan()['维度三_时间趋势'];
-        if (!d || !d.按日期) return;
+        var dp = getDaPan();
+        var mode = window.dim3TrendMode || 'all';
         var startVal = document.getElementById('dim3Start') && document.getElementById('dim3Start').value;
         var endVal = document.getElementById('dim3End') && document.getElementById('dim3End').value;
-        var list = d.按日期;
+        var list = [];
+        if (mode === 'all') {
+          var d = dp && dp['维度三_时间趋势'];
+          if (!d || !d.按日期) return;
+          list = d.按日期.slice();
+        } else {
+          var d4 = dp && dp['维度四_渠道与时间'];
+          if (!d4 || !d4.按渠道与日期) return;
+          var byDateAgg = {};
+          d4.按渠道与日期.forEach(function (r) {
+            if (!r || r.渠道 !== mode || !r.日期) return;
+            if (!byDateAgg[r.日期]) byDateAgg[r.日期] = { 日期: r.日期, 销量: 0, 销售额: 0 };
+            byDateAgg[r.日期].销量 += Number(r.销量) || 0;
+            byDateAgg[r.日期].销售额 += Number(r.销售额) || 0;
+          });
+          var allChannelDates = Object.keys(byDateAgg).sort();
+          list = allChannelDates.map(function (dt) {
+            var curr = byDateAgg[dt];
+            var m = String(dt).match(/^(\d{4})-(\d{2})/);
+            var lastYearDate = m ? (String(Number(m[1]) - 1) + '-' + m[2] + '-01') : '';
+            var lastYear = byDateAgg[lastYearDate];
+            return {
+              日期: dt,
+              销量: curr.销量,
+              销售额: curr.销售额,
+              销量同比: lastYear && lastYear.销量 ? curr.销量 / lastYear.销量 - 1 : null
+            };
+          });
+        }
         if (startVal && endVal && startVal <= endVal) list = list.filter(function (r) { return r.日期 >= startVal && r.日期 <= endVal; });
         var byDate = {};
         list.forEach(function (r) {
@@ -2992,6 +3032,22 @@
           b3PriceSeg.addEventListener('change', function() { renderBrand3(); });
           b3PriceSeg.__bound__ = true;
         }
+        // 品牌市占率月度/季度切换绑定
+        var b3PeriodSw = document.getElementById('brandB3PeriodSwitch');
+        if (b3PeriodSw && !b3PeriodSw.__bound__) {
+          b3PeriodSw.addEventListener('click', function(e) {
+            var btn = e.target.closest && e.target.closest('[data-b3-period]');
+            if (!btn) return;
+            var newPeriod = btn.getAttribute('data-b3-period');
+            if (newPeriod === window.brandB3Period) return;
+            window.brandB3Period = newPeriod;
+            Array.from(b3PeriodSw.querySelectorAll('[data-b3-period]')).forEach(function(b) {
+              b.classList.toggle('active', b.getAttribute('data-b3-period') === newPeriod);
+            });
+            renderBrand3();
+          });
+          b3PeriodSw.__bound__ = true;
+        }
         // 品牌月销同比指标切换绑定
         var b9MetricSw = document.getElementById('brandB9MetricSwitch');
         if (b9MetricSw && !b9MetricSw.__bound__) {
@@ -3185,28 +3241,46 @@
         var d = getFenPinPai() && getFenPinPai()['品牌市占率'];
         if (!d || !d.按日期 || !d.各品牌按日期市占率) return;
         var metric = window.brandB3Metric || 'sales';
+        var period = window.brandB3Period || 'monthly';
         var isAmount = metric === 'amount';
-        var sourceKey = isAmount ? '各品牌按日期市占率_销额' : '各品牌按日期市占率';
+        var isQuarterly = period === 'quarterly';
+        var sourceKey = isAmount
+          ? (isQuarterly ? '各品牌按季度市占率_销额' : '各品牌按日期市占率_销额')
+          : (isQuarterly ? '各品牌按季度市占率' : '各品牌按日期市占率');
         var priceSeg = document.getElementById('dimB3PriceSeg') && document.getElementById('dimB3PriceSeg').value || '';
         var srcData = d;
         if (priceSeg && d.按价格段 && d.按价格段[priceSeg]) srcData = d.按价格段[priceSeg];
         var startVal = document.getElementById('dimB3Start') && document.getElementById('dimB3Start').value;
         var endVal = document.getElementById('dimB3End') && document.getElementById('dimB3End').value;
-        var allDates = srcData.按日期;
+        var allDates = isQuarterly ? (srcData.按季度 || srcData.按日期) : srcData.按日期;
         var 各品牌按日期市占率 = srcData[sourceKey] || srcData.各品牌按日期市占率;
         var dates = allDates;
         if (startVal && endVal && startVal <= endVal) {
-          // 结束月份转为该月最后一天，确保当月数据被包含
-          var endMonthLastDay = endVal + '-31';
-          var idxStart = allDates.findIndex(function (dt) { return dt >= startVal; });
-          var idxEnd = allDates.length - 1;
-          for (var i = allDates.length - 1; i >= 0; i--) { if (allDates[i] <= endMonthLastDay) { idxEnd = i; break; } }
-          if (idxStart >= 0 && idxEnd >= idxStart) {
-            dates = allDates.slice(idxStart, idxEnd + 1);
-            各品牌按日期市占率 = {};
-            Object.keys(srcData[sourceKey] || srcData.各品牌按日期市占率).forEach(function (b) {
-              各品牌按日期市占率[b] = ((srcData[sourceKey] || srcData.各品牌按日期市占率)[b] || []).slice(idxStart, idxEnd + 1);
-            });
+          if (isQuarterly) {
+            var startQ = startVal.slice(0, 4) + '-Q' + Math.ceil(parseInt(startVal.slice(5, 7), 10) / 3);
+            var endQ = endVal.slice(0, 4) + '-Q' + Math.ceil(parseInt(endVal.slice(5, 7), 10) / 3);
+            var idxStart = allDates.findIndex(function (dt) { return dt >= startQ; });
+            var idxEnd = allDates.length - 1;
+            for (var i = allDates.length - 1; i >= 0; i--) { if (allDates[i] <= endQ) { idxEnd = i; break; } }
+            if (idxStart >= 0 && idxEnd >= idxStart) {
+              dates = allDates.slice(idxStart, idxEnd + 1);
+              各品牌按日期市占率 = {};
+              Object.keys(srcData[sourceKey] || {}).forEach(function (b) {
+                各品牌按日期市占率[b] = ((srcData[sourceKey] || {})[b] || []).slice(idxStart, idxEnd + 1);
+              });
+            }
+          } else {
+            var endMonthLastDay = endVal + '-31';
+            var idxStart = allDates.findIndex(function (dt) { return dt >= startVal; });
+            var idxEnd = allDates.length - 1;
+            for (var i = allDates.length - 1; i >= 0; i--) { if (allDates[i] <= endMonthLastDay) { idxEnd = i; break; } }
+            if (idxStart >= 0 && idxEnd >= idxStart) {
+              dates = allDates.slice(idxStart, idxEnd + 1);
+              各品牌按日期市占率 = {};
+              Object.keys(srcData[sourceKey] || srcData.各品牌按日期市占率).forEach(function (b) {
+                各品牌按日期市占率[b] = ((srcData[sourceKey] || srcData.各品牌按日期市占率)[b] || []).slice(idxStart, idxEnd + 1);
+              });
+            }
           }
         }
         var brands = Object.keys(各品牌按日期市占率);
@@ -3977,6 +4051,15 @@
       /** Date对象转本地日期字符串 YYYY-MM-DD（避免toISOString的UTC偏移问题） */
       function localDateStr(d) {
         return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      }
+      // 在日期列表中查找匹配项：先精确匹配，再前缀匹配（支持跨日度/周度/月度切换）
+      function findDateMatch(target, dates) {
+        if (!target || !dates || !dates.length) return null;
+        if (dates.indexOf(target) >= 0) return target;
+        for (var i = 0; i < dates.length; i++) {
+          if (dates[i].substring(0, target.length) === target) return dates[i];
+        }
+        return null;
       }
       /** 类目轴/悬浮：展示到日期（取 YYYY-MM-DD）- 新零售专用 */
       function chartAxisDateLabelDay(v) {
@@ -9390,8 +9473,8 @@
 
           var curStart = selStart.value;
           var curEnd = selEnd.value;
-          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
-          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          curStart = findDateMatch(curStart, dates) || defaultStart;
+          curEnd = findDateMatch(curEnd, dates) || defaultEnd;
           if (curStart < minD) curStart = minD;
           if (curEnd > maxD) curEnd = maxD;
 
@@ -9464,23 +9547,21 @@
                     b.classList.remove('is-loading');
                     b.disabled = false;
                   });
-                  // 继续切换
-                  window.fourPlatformMode = mode;
-                  Array.from(modeSw.querySelectorAll('[data-mode]')).forEach(function(b) {
-                    b.classList.toggle('active', b.getAttribute('data-mode') === mode);
-                  });
-                  initFourPlatformSwitches();
-                  renderFourPlatform();
+                  continueSwitch(mode);
                 }, 500);
                 return;
               }
 
-              window.fourPlatformMode = mode;
-              Array.from(modeSw.querySelectorAll('[data-mode]')).forEach(function(b) {
-                b.classList.toggle('active', b.getAttribute('data-mode') === mode);
-              });
-              initFourPlatformSwitches();
-              renderFourPlatform();
+              continueSwitch(mode);
+
+              function continueSwitch(mode) {
+                window.fourPlatformMode = mode;
+                Array.from(modeSw.querySelectorAll('[data-mode]')).forEach(function(b) {
+                  b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+                });
+                initFourPlatformSwitches();
+                renderFourPlatform();
+              }
             });
             modeSw.__bound__ = true;
           }
@@ -9804,8 +9885,8 @@
           // 如果当前值在有效范围内则保留，否则使用默认值
           var curStart = selStart.value;
           var curEnd = selEnd.value;
-          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
-          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          curStart = findDateMatch(curStart, dates) || defaultStart;
+          curEnd = findDateMatch(curEnd, dates) || defaultEnd;
           // 确保不超出数据范围
           if (curStart < minD) curStart = minD;
           if (curEnd > maxD) curEnd = maxD;
@@ -9931,40 +10012,11 @@
               continueSwitch(mode);
 
               function continueSwitch(mode) {
-                // 保存当前日期选择（在改变window.fuwuGmvMode之前）
-                var currentStart = selStart.value;
-                var currentEnd = selEnd.value;
                 window.fuwuGmvMode = mode;
                 Array.from(sw.querySelectorAll('[data-fuwu-gmv-mode]')).forEach(function (b) {
                   b.classList.toggle('active', b.getAttribute('data-fuwu-gmv-mode') === mode);
                 });
-                // 重新初始化下拉框
                 initFuwuGmvSwitches();
-                // 强制恢复日期选择
-                if (currentStart && currentEnd) {
-                  var fuwuMode = window.fuwuGmvMode || 'daily';
-                  var metric = window.fuwuMetric || 'gmv';
-                  var dataKey = metric === 'refundRate' ? 'fuwuRefundRate' : (metric === 'gsv' ? 'fuwuGsv' : 'fuwuGmv');
-                  var raw = window.__FOUR_PLATFORM_DATA__;
-                  var dates = [];
-                  if (raw && raw[dataKey]) {
-                    var dataPoints = fuwuMode === 'monthly' ? (raw[dataKey].monthly.data || []) : (fuwuMode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
-                    dates = dataPoints.map(function(p) { return p.date; });
-                  }
-                  // 月度模式：截取年月部分匹配
-                  var lookupStart = fuwuMode === 'monthly' ? currentStart.substring(0, 7) : currentStart;
-                  var lookupEnd = fuwuMode === 'monthly' ? currentEnd.substring(0, 7) : currentEnd;
-                  if (dates.indexOf(lookupStart) >= 0) {
-                    selStart.value = lookupStart;
-                  } else if (dates.length > 0) {
-                    selStart.value = dates[0];
-                  }
-                  if (dates.indexOf(lookupEnd) >= 0) {
-                    selEnd.value = lookupEnd;
-                  } else if (dates.length > 0) {
-                    selEnd.value = dates[dates.length - 1];
-                  }
-                }
                 renderFuwuGmv();
               }
             });
@@ -10252,8 +10304,8 @@
 
           var curStart = selStart.value;
           var curEnd = selEnd.value;
-          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
-          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          curStart = findDateMatch(curStart, dates) || defaultStart;
+          curEnd = findDateMatch(curEnd, dates) || defaultEnd;
           if (curStart < minD) curStart = minD;
           if (curEnd > maxD) curEnd = maxD;
 
@@ -10320,37 +10372,11 @@
               if (!btn) return;
               var mode = btn.getAttribute('data-zhidui-business-gmv-mode');
               if (mode !== 'daily' && mode !== 'weekly' && mode !== 'monthly') return;
-              var currentStart = selStart.value;
-              var currentEnd = selEnd.value;
               window.zhiduiBusinessGmvMode = mode;
               Array.from(modeSw.querySelectorAll('[data-zhidui-business-gmv-mode]')).forEach(function(b) {
                 b.classList.toggle('active', b.getAttribute('data-zhidui-business-gmv-mode') === mode);
               });
               initZhiduiBusinessGmvSwitches();
-              if (currentStart && currentEnd) {
-                var zhiduiMode = window.zhiduiBusinessGmvMode || 'daily';
-                var metric = window.zhiduiBusinessMetric || 'gmv';
-                var dataKey = metric === 'refundRate' ? 'zhiduiBusinessRefundRate' : (metric === 'gsv' ? 'zhiduiBusinessGsv' : 'zhiduiBusinessGmv');
-                var raw = window.__FOUR_PLATFORM_DATA__;
-                var dates = [];
-                if (raw && raw[dataKey]) {
-                  var dataPoints = zhiduiMode === 'monthly' ? (raw[dataKey].monthly.data || []) : (zhiduiMode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
-                  dates = dataPoints.map(function(p) { return p.date; });
-                }
-                // 月度模式：截取年月部分匹配
-                var lookupStart = zhiduiMode === 'monthly' ? currentStart.substring(0, 7) : currentStart;
-                var lookupEnd = zhiduiMode === 'monthly' ? currentEnd.substring(0, 7) : currentEnd;
-                if (dates.indexOf(lookupStart) >= 0) {
-                  selStart.value = lookupStart;
-                } else if (dates.length > 0) {
-                  selStart.value = dates[0];
-                }
-                if (dates.indexOf(lookupEnd) >= 0) {
-                  selEnd.value = lookupEnd;
-                } else if (dates.length > 0) {
-                  selEnd.value = dates[dates.length - 1];
-                }
-              }
               renderZhiduiBusinessGmv();
             });
             modeSw.__bound__ = true;
@@ -10638,8 +10664,8 @@
 
           var curStart = selStart.value;
           var curEnd = selEnd.value;
-          if (!curStart || dates.indexOf(curStart) === -1) curStart = defaultStart;
-          if (!curEnd || dates.indexOf(curEnd) === -1) curEnd = defaultEnd;
+          curStart = findDateMatch(curStart, dates) || defaultStart;
+          curEnd = findDateMatch(curEnd, dates) || defaultEnd;
           if (curStart < minD) curStart = minD;
           if (curEnd > maxD) curEnd = maxD;
 
@@ -10753,36 +10779,11 @@
               continueSwitch(mode);
 
               function continueSwitch(mode) {
-                var currentStart = selStart.value;
-                var currentEnd = selEnd.value;
                 window.dpGmvMode = mode;
                 Array.from(sw.querySelectorAll('[data-dp-gmv-mode]')).forEach(function (b) {
                   b.classList.toggle('active', b.getAttribute('data-dp-gmv-mode') === mode);
                 });
                 initDpGmvSwitches();
-                if (currentStart && currentEnd) {
-                  var dpMode = window.dpGmvMode || 'daily';
-                  var metric = window.dpMetric || 'gmv';
-                  var dataKey = metric === 'refundRate' ? 'dpRefundRate' : (metric === 'gsv' ? 'dpGsv' : 'dpGmv');
-                  var raw = window.__FOUR_PLATFORM_DATA__;
-                  var dates = [];
-                  if (raw && raw[dataKey]) {
-                    var dataPoints = dpMode === 'monthly' ? (raw[dataKey].monthly.data || []) : (dpMode === 'weekly' ? (raw[dataKey].weekly.data || []) : raw[dataKey].daily.data);
-                    dates = dataPoints.map(function(p) { return p.date; });
-                  }
-                  var lookupStart = dpMode === 'monthly' ? currentStart.substring(0, 7) : currentStart;
-                  var lookupEnd = dpMode === 'monthly' ? currentEnd.substring(0, 7) : currentEnd;
-                  if (dates.indexOf(lookupStart) >= 0) {
-                    selStart.value = lookupStart;
-                  } else if (dates.length > 0) {
-                    selStart.value = dates[0];
-                  }
-                  if (dates.indexOf(lookupEnd) >= 0) {
-                    selEnd.value = lookupEnd;
-                  } else if (dates.length > 0) {
-                    selEnd.value = dates[dates.length - 1];
-                  }
-                }
                 renderDpGmv();
               }
             });
@@ -12284,6 +12285,3 @@
   </script>
 </body>
 </html>
-
-
-
