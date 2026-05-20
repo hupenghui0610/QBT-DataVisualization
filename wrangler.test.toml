@@ -10,6 +10,7 @@ database_id = "d4ba5d46-53b6-4eac-9a42-a15a5a268ad0"
 
 [vars]
 # JWT_SECRET 由 scripts/deploy-pages-test.js 从环境变量 JWT_SECRET 写入临时 wrangler.toml（勿把密钥提交进仓库）
+FEISHU_AUTH_APP_ID = "cli_aa8cc21920badcde"
 FEISHU_DOUYIN_MODEL_ORDER_RANGE = "tuec5U!A2:AO20000"
 FEISHU_LIVESTREAM_FUNNEL_SPREADSHEET_TOKEN = "P1zusUMg2haMGctskH6cydLqn5e"
 

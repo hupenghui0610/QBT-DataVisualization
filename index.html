@@ -1175,16 +1175,7 @@
       <div id="chartAllChannelRefund" class="chart"></div>
     </div>
 
-    <!-- 全渠道型号销量趋势（仅销量：四平台 GSV 路径件数 + 京东/天猫表内数量） -->
-    <div class="card wide">
-      <h3>
-        <i class="chart-title-icon fa fa-line-chart"></i><span>全渠道型号销量趋势</span>
-      </h3>
-      <span id="modelDailyTrendStatus" class="daily-feishu-status"></span>
-      <div class="date-range">起始：<select id="modelDailyTrendStart"></select> 结束：<select id="modelDailyTrendEnd"></select></div>
-      <div id="chartModelDailyTrend" class="chart"></div>
-      <div id="modelDailyTrendPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期型号销量合计"></div>
-    </div>
+
   </div>
   </div>
   </div>
@@ -1331,6 +1322,41 @@
         </div>
       </div>
       <div id="fuwuGmvPeriodTotals" class="all-channel-gmv-period-totals" aria-label="所选周期服务商合计"></div>
+    </div>
+
+    <!-- 达人退款率图表（按达人名称筛选） -->
+    <div class="card wide">
+      <h3>
+        <i class="chart-title-icon fa fa-line-chart"></i><span>达人退款率</span>
+        <span class="chart-view-switch metric-switch" id="darenRefundRateMetricSwitch" style="margin-right:8px">
+          <button type="button" class="view-btn active" data-daren-refund-metric="gmv">GMV</button>
+          <button type="button" class="view-btn" data-daren-refund-metric="gsv">GSV</button>
+          <button type="button" class="view-btn" data-daren-refund-metric="refundRate">退款率</button>
+        </span>
+        <span class="chart-view-switch" id="darenRefundRateModeSwitch">
+          <button type="button" class="view-btn active" data-daren-refund-mode="daily">日度</button>
+          <button type="button" class="view-btn" data-daren-refund-mode="weekly">周度</button>
+          <button type="button" class="view-btn" data-daren-refund-mode="monthly">月度</button>
+        </span>
+      </h3>
+      <span id="darenRefundRateStatus" class="daily-feishu-status"></span>
+      <div class="date-range">起始：<select id="darenRefundRateStart"></select> 结束：<select id="darenRefundRateEnd"></select></div>
+      <div class="daren-filter-bar" style="margin: 8px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <label style="font-size: 13px; color: #555;">达人筛选：</label>
+        <div class="daren-search-select" style="position: relative; flex: 1; min-width: 200px; max-width: 400px;">
+          <input type="text" id="darenRefundRateSearch" placeholder="搜索达人名称..."
+            style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box;"
+            autocomplete="off">
+          <select id="darenRefundRateSelect" style="width: 100%; margin-top: 4px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; background: #fff;"></select>
+        </div>
+      </div>
+      <div class="chart-wrap--overlay">
+        <div id="chartDarenRefundRate" class="chart"></div>
+        <div class="chart-dim-loading-overlay" id="darenRefundRateDimLoading">
+          <div class="dim-spinner"></div>
+          <span class="dim-loading-text" id="darenRefundRateDimLoadingText">正在计算数据...</span>
+        </div>
+      </div>
     </div>
 
     <!-- 直对-商务业绩图表（按商务人员拆分） -->
@@ -1611,7 +1637,7 @@
     </div>
   </div>
 
-  <script src="js/auth-client.js"></script>
+  <script src="js/auth-client.js?v=4"></script>
   <script>
     (function () {
       var authGate = document.getElementById('auth-gate');
@@ -1677,6 +1703,7 @@
       function updateUserBar() {
         var bar = document.getElementById('userSessionBar');
         var nameEl = document.getElementById('userDisplayName');
+        var changePwdBtn = document.getElementById('authChangePwdBtn');
         var adminBtn = document.getElementById('adminLogsBtn');
         var adminUsersBtn = document.getElementById('adminUsersBtn');
         var adminSecurityBtn = document.getElementById('adminSecurityBtn');
@@ -1684,11 +1711,13 @@
         if (currentUser) {
           bar.style.display = 'flex';
           nameEl.textContent = currentUser.name || currentUser.phone || '';
+          if (changePwdBtn) changePwdBtn.style.display = currentUser.password_login_enabled === false ? 'none' : 'inline-block';
           if (adminBtn) adminBtn.style.display = currentUser.is_admin ? 'inline-block' : 'none';
           if (adminUsersBtn) adminUsersBtn.style.display = currentUser.is_admin ? 'inline-block' : 'none';
           if (adminSecurityBtn) adminSecurityBtn.style.display = currentUser.is_admin ? 'inline-block' : 'none';
         } else {
           bar.style.display = 'none';
+          if (changePwdBtn) changePwdBtn.style.display = 'inline-block';
           if (adminBtn) adminBtn.style.display = 'none';
           if (adminUsersBtn) adminUsersBtn.style.display = 'none';
           if (adminSecurityBtn) adminSecurityBtn.style.display = 'none';
@@ -2156,14 +2185,36 @@
       }
       function bootstrapAuth() {
         mainContent.style.display = 'none';
+        console.log('[QBT-DIAG][boot] bootstrapAuth:start', {
+          href: location.href,
+          authClient: typeof XbsAuth,
+          apiBase: typeof XbsAuth !== 'undefined' && XbsAuth.getApiBase ? (XbsAuth.getApiBase() || '(same-origin)') : '(missing)',
+          hasToken: typeof XbsAuth !== 'undefined' && XbsAuth.getToken ? !!XbsAuth.getToken() : false,
+        });
         if (typeof XbsAuth === 'undefined') {
+          console.log('[QBT-DIAG][boot] XbsAuth missing');
           showLoginGate();
           return;
         }
+        if (XbsAuth.consumeFeishuTokenFromHash) XbsAuth.consumeFeishuTokenFromHash();
+        var feishuLoginError = XbsAuth.consumeFeishuLoginError ? XbsAuth.consumeFeishuLoginError() : '';
         var tok = XbsAuth.getToken();
         if (!tok) {
+          console.log('[QBT-DIAG][boot] no token');
+          if (XbsAuth.shouldAutoStartFeishuLogin && XbsAuth.shouldAutoStartFeishuLogin()) {
+            console.log('[QBT-DIAG][boot] start Feishu login');
+            XbsAuth.startFeishuLogin(location.href);
+            return;
+          }
           showLoginGate();
           wireLoginForm();
+          if (feishuLoginError) {
+            var errEl = document.getElementById('auth-error');
+            if (errEl) {
+              errEl.textContent = feishuLoginError;
+              errEl.classList.add('show');
+            }
+          }
           return;
         }
         XbsAuth.ping()
@@ -2174,18 +2225,32 @@
           })
           .then(function (o) {
             if (!o.res.ok) {
+              console.log('[QBT-DIAG][boot] ping failed', { status: o.res.status, body: o.data });
               XbsAuth.clearSession();
+              if (XbsAuth.shouldAutoStartFeishuLogin && XbsAuth.shouldAutoStartFeishuLogin()) {
+                XbsAuth.startFeishuLogin(location.href);
+                return;
+              }
               showLoginGate();
               wireLoginForm();
               return;
             }
             currentUser = o.data.user;
+            console.log('[QBT-DIAG][boot] ping ok', {
+              user: currentUser && (currentUser.name || currentUser.phone || ''),
+              isAdmin: !!(currentUser && currentUser.is_admin),
+            });
             updateUserBar();
             enterApp();
             if (window.__runAfterAuth__) window.__runAfterAuth__();
           })
-          .catch(function () {
+          .catch(function (err) {
+            console.log('[QBT-DIAG][boot] ping error', { message: err && err.message ? err.message : String(err) });
             XbsAuth.clearSession();
+            if (XbsAuth.shouldAutoStartFeishuLogin && XbsAuth.shouldAutoStartFeishuLogin()) {
+              XbsAuth.startFeishuLogin(location.href);
+              return;
+            }
             showLoginGate();
             wireLoginForm();
           });
@@ -2194,6 +2259,67 @@
       bootstrapAuth();
 
       var charts = {};
+
+      function qbtDiag(event, detail) {
+        try {
+          var root = window.__QBT_DIAG__ || (window.__QBT_DIAG__ = {});
+          var list = root.app || (root.app = []);
+          var item = {
+            at: new Date().toISOString(),
+            event: event,
+            detail: detail || {},
+          };
+          list.push(item);
+          if (list.length > 300) list.shift();
+          console.log('[QBT-DIAG][app] ' + event, item.detail);
+        } catch (e) {}
+      }
+
+      function qbtRun(name, fn) {
+        var start = Date.now();
+        qbtDiag('task:start', { name: name });
+        try {
+          return Promise.resolve(fn()).then(
+            function (value) {
+              qbtDiag('task:end', { name: name, durationMs: Date.now() - start });
+              return value;
+            },
+            function (err) {
+              qbtDiag('task:error', {
+                name: name,
+                durationMs: Date.now() - start,
+                message: err && err.message ? err.message : String(err),
+              });
+              return undefined;
+            }
+          );
+        } catch (err) {
+          qbtDiag('task:throw', {
+            name: name,
+            durationMs: Date.now() - start,
+            message: err && err.message ? err.message : String(err),
+          });
+          return Promise.resolve();
+        }
+      }
+
+      if (!window.__QBT_DIAG_BOUND__) {
+        window.__QBT_DIAG_BOUND__ = true;
+        window.addEventListener('error', function (e) {
+          qbtDiag('window:error', {
+            message: e && e.message,
+            source: e && e.filename,
+            line: e && e.lineno,
+            col: e && e.colno,
+          });
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          var reason = e && e.reason;
+          qbtDiag('window:unhandledrejection', {
+            message: reason && reason.message ? reason.message : String(reason),
+          });
+        });
+      }
 
       /** 与 loadDefaultData 内各 fetch 共用；fetchChannelOrderTrend 在顶层，必须能访问到此函数 */
       function parseJsonRes(r) {
@@ -7072,6 +7198,8 @@
         addFromPts(gmv);
         addFromPts(gsv);
         var cur = currentYearMonthStr();
+        var dataMonths = Object.keys(monthsSet).sort();
+        var latestDataYm = dataMonths.length ? dataMonths[dataMonths.length - 1] : '';
         monthsSet[cur] = true;
         var keys = Object.keys(monthsSet).sort();
         var minYmFloor = '2026-01';
@@ -7091,6 +7219,7 @@
           })
           .join('');
         if (prev && months.indexOf(prev) >= 0) sel.value = prev;
+        else if (latestDataYm && months.indexOf(latestDataYm) >= 0) sel.value = latestDataYm;
         else if (months.indexOf(cur) >= 0) sel.value = cur;
         else sel.value = months.length ? months[months.length - 1] : minYmFloor;
         if (!sel.getAttribute('data-bound')) {
@@ -7396,202 +7525,6 @@
         charts.chartAllChannelGsv.setOption(applyMobileChartOption(opt), true);
         renderAllChannelGsvPeriodTotals(filtered);
       }
-      // ============ 全渠道型号销量趋势图表 ============
-      var modelDailyTrendData = null;
-
-      function initModelDailyTrend() {
-        var el = document.getElementById('chartModelDailyTrend');
-        if (!el) return;
-        charts.chartModelDailyTrend = echarts.init(el);
-        // 不在此处拉数：首屏执行时用户可能尚未登录；登录后由 loadDefaultData 统一拉取
-      }
-
-      function loadModelDailyTrendData() {
-        var statusEl = document.getElementById('modelDailyTrendStatus');
-        if (statusEl) statusEl.textContent = '正在加载数据...';
-
-        if (typeof XbsAuth === 'undefined' || !XbsAuth.fetchModelDailySalesTrend) {
-          if (statusEl) statusEl.textContent = '加载失败: 请先加载 auth-client';
-          return;
-        }
-        (function () {
-          var dbg =
-            typeof location !== 'undefined' &&
-            new URLSearchParams(location.search || '').get('debugModels') === '1';
-          var qs = dbg ? '?nocache=1&debugModels=1' : '';
-          return XbsAuth.fetchModelDailySalesTrend(qs);
-        })()
-          .then(function(r) {
-            return r.json().then(function(data) {
-              if (!r.ok) throw new Error((data && data.error) || 'HTTP ' + r.status);
-              return data;
-            });
-          })
-          .then(function(data) {
-            if (data.error) throw new Error(data.error);
-            if (data.debug) {
-              console.log('[model-daily-sales-trend] 京东型号清单', data.debug.jdModels);
-              console.log('[model-daily-sales-trend] 天猫型号清单', data.debug.tmallModels);
-              console.log('[model-daily-sales-trend] 四平台GSV型号清单', data.debug.gsvModels);
-            }
-            modelDailyTrendData = data;
-            populateModelDailyTrendSelects();
-            renderModelDailyTrend();
-            if (statusEl) {
-              statusEl.textContent = '数据已加载 | 共 ' + data.totalDays + ' 天, ' + data.totalModels + ' 个型号';
-            }
-          })
-          .catch(function(e) {
-            if (statusEl) statusEl.textContent = '加载失败: ' + e.message;
-          });
-      }
-
-      function populateModelDailyTrendSelects() {
-        if (!modelDailyTrendData || !modelDailyTrendData.dates) return;
-        var dates = modelDailyTrendData.dates;
-        var selS = document.getElementById('modelDailyTrendStart');
-        var selE = document.getElementById('modelDailyTrendEnd');
-        if (!selS || !selE) return;
-
-        var prevS = selS.value || '';
-        var prevE = selE.value || '';
-        selS.innerHTML = '';
-        selE.innerHTML = '';
-        dates.forEach(function(d) {
-          var optS = document.createElement('option');
-          optS.value = d; optS.textContent = d;
-          selS.appendChild(optS);
-          var optE = document.createElement('option');
-          optE.value = d; optE.textContent = d;
-          selE.appendChild(optE);
-        });
-        selS.value = prevS && dates.indexOf(prevS) >= 0 ? prevS : dates[0];
-        selE.value = prevE && dates.indexOf(prevE) >= 0 ? prevE : dates[dates.length - 1];
-        selS.onchange = renderModelDailyTrend;
-        selE.onchange = renderModelDailyTrend;
-      }
-
-      function renderModelDailyTrend() {
-        if (!modelDailyTrendData || !charts.chartModelDailyTrend) return;
-        var data = modelDailyTrendData;
-        var dates = data.dates;
-        var models = data.models;
-        var series = data.series;
-
-        var selS = document.getElementById('modelDailyTrendStart');
-        var selE = document.getElementById('modelDailyTrendEnd');
-        if (!selS || !selE) return;
-
-        var startVal = selS.value || dates[0];
-        var endVal = selE.value || dates[dates.length - 1];
-
-        var startIdx = dates.indexOf(startVal);
-        var endIdx = dates.indexOf(endVal);
-        if (startIdx < 0) startIdx = 0;
-        if (endIdx < 0) endIdx = dates.length - 1;
-        if (startIdx > endIdx) { var tmp = startIdx; startIdx = endIdx; endIdx = tmp; }
-
-        var filteredDates = dates.slice(startIdx, endIdx + 1);
-
-        // 仅销量：四平台（GSV 路径订单件数）+ 京东/天猫表内数量，后端已合并
-        var modelTotals = models.map(function(model) {
-          var total = 0;
-          for (var i = startIdx; i <= endIdx; i++) {
-            total += series[model]?.quantity?.[i] || 0;
-          }
-          return { model: model, total: total };
-        }).sort(function(a, b) { return b.total - a.total; });
-
-        var lineSeries = modelTotals.map(function(item) {
-          var model = item.model;
-          var values = series[model]?.quantity?.slice(startIdx, endIdx + 1) || [];
-          return {
-            name: model,
-            type: 'line',
-            data: values,
-            smooth: true,
-            symbol: 'circle',
-            symbolSize: 6,
-            emphasis: { focus: 'series' }
-          };
-        });
-
-        var option = {
-          title: {
-            text: '各型号销量趋势',
-            left: 'center',
-            textStyle: { fontSize: 14, fontWeight: 'normal' }
-          },
-          tooltip: {
-            trigger: 'axis',
-            axisPointer: { type: 'cross' },
-            formatter: function(params) {
-              var result = params[0].axisValue + '<br/>';
-              params.forEach(function(item) {
-                result += item.marker + ' ' + item.seriesName + ': ' + item.value + '<br/>';
-              });
-              return result;
-            }
-          },
-          legend: {
-            type: 'scroll',
-            orient: 'horizontal',
-            top: 30,
-            data: modelTotals.map(function(item) { return item.model; })
-          },
-          grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '15%',
-            top: '20%',
-            containLabel: true
-          },
-          xAxis: {
-            type: 'category',
-            boundaryGap: false,
-            data: filteredDates,
-            axisLabel: { rotate: 45 }
-          },
-          yAxis: {
-            type: 'value',
-            name: '销量',
-            axisLabel: {
-              formatter: function(value) {
-                return value;
-              }
-            }
-          },
-          dataZoom: [
-            { type: 'inside', start: 0, end: 100 },
-            { type: 'slider', start: 0, end: 100, bottom: 10 }
-          ],
-          series: lineSeries
-        };
-
-        charts.chartModelDailyTrend.setOption(option, true);
-        if (charts.chartModelDailyTrend.resize) charts.chartModelDailyTrend.resize();
-
-        var totalQuantity = 0;
-        modelTotals.forEach(function(item) {
-          var model = item.model;
-          for (var i = startIdx; i <= endIdx; i++) {
-            totalQuantity += series[model]?.quantity?.[i] || 0;
-          }
-        });
-        var totalsDiv = document.getElementById('modelDailyTrendPeriodTotals');
-        if (totalsDiv) {
-          totalsDiv.innerHTML = '<div style="display:flex;gap:24px;">' +
-            '<div><strong>所选周期合计（销量）</strong></div>' +
-            '<div>总销量: <strong>' + totalQuantity.toLocaleString() + '</strong></div>' +
-            '</div>';
-        }
-      }
-
-      // 初始化全渠道型号销量趋势图表
-      if (document.getElementById('chartModelDailyTrend')) {
-        initModelDailyTrend();
-      }
-
       function renderAllChannelRefund() {
         var el = document.getElementById('chartAllChannelRefund');
         if (!el) return;
@@ -9570,6 +9503,7 @@
         function refreshFourPlatformCharts() {
           initFourPlatformSwitches();
           initFuwuGmvSwitches();
+          initDarenRefundRateSwitches();
           initZhiduiBusinessGmvSwitches();
           initDpGmvSwitches();
           initNewretailModelDist();
@@ -9579,6 +9513,7 @@
           initModelDistDaren();
           renderFourPlatform();
           renderFuwuGmv();
+          renderDarenRefundRate();
           renderZhiduiBusinessGmv();
           renderDpGmv();
           renderNewretailModelDist();
@@ -10021,6 +9956,215 @@
               }
             });
             sw.__bound__ = true;
+          }
+        }
+
+        // ==================== 达人退款率图表（按达人名称筛选） ====================
+        window.darenRefundRateMode = 'daily';
+        window.darenRefundRateMetric = 'gmv';
+
+        function getDarenRefundRateDataKey() {
+          var metric = window.darenRefundRateMetric || 'gmv';
+          return metric === 'refundRate' ? 'darenRefundRate' : (metric === 'gsv' ? 'darenGsv' : 'darenGmv');
+        }
+
+        function getDarenRefundRateSelectedName() {
+          var select = document.getElementById('darenRefundRateSelect');
+          return select && select.value ? select.value : '';
+        }
+
+        function initDarenRefundRateFilter() {
+          var select = document.getElementById('darenRefundRateSelect');
+          var searchInput = document.getElementById('darenRefundRateSearch');
+          if (!select) return;
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          var list = raw && raw.darenRefundRateList ? raw.darenRefundRateList : [];
+          var names = list.map(function(item) { return item && item.name ? String(item.name) : ''; }).filter(Boolean);
+          if (!names.length && raw && raw.darenGmv && raw.darenGmv.daily && raw.darenGmv.daily.channels) {
+            names = raw.darenGmv.daily.channels.slice();
+          }
+          names = names.filter(function(name, idx, arr) { return arr.indexOf(name) === idx; }).sort(function(a, b) { return a.localeCompare(b, 'zh-CN'); });
+
+          function renderOptions(filterText) {
+            var current = select.value;
+            var kw = String(filterText || '').trim().toLowerCase();
+            var filtered = kw ? names.filter(function(name) { return name.toLowerCase().indexOf(kw) !== -1; }) : names.slice();
+            if (!filtered.length) {
+              select.innerHTML = '<option value="">无匹配达人</option>';
+              select.disabled = true;
+              renderDarenRefundRate();
+              return;
+            }
+            select.disabled = false;
+            select.innerHTML = filtered.map(function(name) {
+              return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>';
+            }).join('');
+            select.value = filtered.indexOf(current) !== -1 ? current : filtered[0];
+            renderDarenRefundRate();
+          }
+
+          renderOptions(searchInput ? searchInput.value : '');
+          if (searchInput) {
+            searchInput.oninput = function() {
+              renderOptions(searchInput.value);
+            };
+          }
+          select.onchange = renderDarenRefundRate;
+        }
+
+        function renderDarenRefundRate() {
+          var el = document.getElementById('chartDarenRefundRate');
+          if (!el) return;
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!charts.chartDarenRefundRate) charts.chartDarenRefundRate = echarts.init(el);
+
+          var metric = window.darenRefundRateMetric || 'gmv';
+          var isRefundRate = metric === 'refundRate';
+          var dataKey = getDarenRefundRateDataKey();
+          var metricName = isRefundRate ? '退款率' : (metric === 'gsv' ? 'GSV' : 'GMV');
+          var mode = window.darenRefundRateMode || 'daily';
+          var selectedName = getDarenRefundRateSelectedName();
+
+          if (!raw || !raw[dataKey] || !raw[dataKey][mode] || !raw[dataKey][mode].data || !raw[dataKey][mode].data.length) {
+            var err = window.__FOUR_PLATFORM_ERROR__ || '';
+            charts.chartDarenRefundRate.setOption({
+              title: { text: err || '暂无达人数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+              series: []
+            }, true);
+            return;
+          }
+          if (!selectedName) {
+            charts.chartDarenRefundRate.setOption({
+              title: { text: '请选择达人', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+              series: []
+            }, true);
+            return;
+          }
+
+          var startVal = document.getElementById('darenRefundRateStart') && document.getElementById('darenRefundRateStart').value;
+          var endVal = document.getElementById('darenRefundRateEnd') && document.getElementById('darenRefundRateEnd').value;
+          var pts = raw[dataKey][mode].data || [];
+          var filtered = pts;
+          if (startVal && endVal && startVal <= endVal) {
+            filtered = pts.filter(function(p) { return p.date >= startVal && p.date <= endVal; });
+          }
+          var x = filtered.map(function(p) { return p.date; });
+          var y = filtered.map(function(p) {
+            var val = p ? p[selectedName] : null;
+            return val != null && isFinite(Number(val)) ? Number(val) : (isRefundRate ? null : 0);
+          });
+          var hasData = y.some(function(v) { return v != null && isFinite(Number(v)); });
+          if (!hasData && isRefundRate) {
+            charts.chartDarenRefundRate.setOption({
+              title: { text: '该达人暂无数据', left: 'center', top: 'middle', textStyle: { fontSize: 14, fontWeight: 'normal', color: '#999' } },
+              series: []
+            }, true);
+            return;
+          }
+
+          var opt = {
+            tooltip: {
+              trigger: 'axis',
+              formatter: function(params) {
+                var p = params && params[0] ? params[0] : {};
+                var val = p.value != null ? Number(p.value) : null;
+                var displayVal = isRefundRate ? (val != null && !isNaN(val) ? (val * 100).toFixed(2) + '%' : '-') : (val != null && !isNaN(val) ? val.toFixed(2) + ' 万' : '-');
+                return (p.axisValue || '') + '<br/>' + (p.marker || '') + selectedName + ': ' + displayVal;
+              }
+            },
+            legend: { data: [selectedName], top: 6, left: 'center' },
+            grid: { left: 56, right: 40, top: 40, bottom: 60 },
+            xAxis: { type: 'category', data: x, axisLabel: { rotate: 35, interval: 0, formatter: chartAxisDateLabelDay } },
+            yAxis: {
+              type: 'value',
+              name: isRefundRate ? '退款率（%）' : metricName + '（万）',
+              axisLabel: {
+                formatter: function(v) {
+                  if (isRefundRate) return (v * 100).toFixed(0) + '%';
+                  return Number(v).toFixed(0) + '万';
+                }
+              },
+              max: isRefundRate ? 1 : undefined
+            },
+            series: [{
+              name: selectedName,
+              type: 'line',
+              smooth: true,
+              data: y,
+              showSymbol: x.length <= 40,
+              connectNulls: false
+            }]
+          };
+          charts.chartDarenRefundRate.setOption(applyMobileChartOption(opt), true);
+        }
+
+        function initDarenRefundRateSwitches() {
+          initDarenRefundRateFilter();
+          var selStart = document.getElementById('darenRefundRateStart');
+          var selEnd = document.getElementById('darenRefundRateEnd');
+          var raw = window.__FOUR_PLATFORM_DATA__;
+          if (!selStart || !selEnd) return;
+          var dataKey = getDarenRefundRateDataKey();
+          var mode = window.darenRefundRateMode || 'daily';
+          var dataPoints = raw && raw[dataKey] && raw[dataKey][mode] ? (raw[dataKey][mode].data || []) : [];
+          if (!dataPoints.length) {
+            selStart.innerHTML = '<option value="">-</option>';
+            selEnd.innerHTML = '<option value="">-</option>';
+            return;
+          }
+          var dates = dataPoints.map(function(p) { return p.date; });
+          var minD = dates[0];
+          var maxD = dates[dates.length - 1];
+          var defaultStart = dates[0];
+          var defaultEnd = dates[dates.length - 1];
+          if (mode === 'weekly') {
+            defaultStart = dates[Math.max(0, dates.length - 12)];
+          } else if (mode === 'daily') {
+            defaultStart = dates[Math.max(0, dates.length - 31)];
+          }
+          var curStart = findDateMatch(selStart.value, dates) || defaultStart;
+          var curEnd = findDateMatch(selEnd.value, dates) || defaultEnd;
+          if (curStart < minD) curStart = minD;
+          if (curEnd > maxD) curEnd = maxD;
+          selStart.innerHTML = dates.map(function(d) { return '<option value="' + d + '"' + (d === curStart ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          selEnd.innerHTML = dates.map(function(d) { return '<option value="' + d + '"' + (d === curEnd ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+          selStart.value = curStart;
+          selEnd.value = curEnd;
+          selStart.onchange = renderDarenRefundRate;
+          selEnd.onchange = renderDarenRefundRate;
+
+          var metricSw = document.getElementById('darenRefundRateMetricSwitch');
+          if (metricSw && !metricSw.__bound__) {
+            metricSw.addEventListener('click', function(e) {
+              var btn = e.target.closest && e.target.closest('[data-daren-refund-metric]');
+              if (!btn) return;
+              var metric = btn.getAttribute('data-daren-refund-metric');
+              if (metric !== 'gmv' && metric !== 'gsv' && metric !== 'refundRate') return;
+              window.darenRefundRateMetric = metric;
+              Array.from(metricSw.querySelectorAll('[data-daren-refund-metric]')).forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-daren-refund-metric') === metric);
+              });
+              initDarenRefundRateSwitches();
+              renderDarenRefundRate();
+            });
+            metricSw.__bound__ = true;
+          }
+
+          var modeSw = document.getElementById('darenRefundRateModeSwitch');
+          if (modeSw && !modeSw.__bound__) {
+            modeSw.addEventListener('click', function(e) {
+              var btn = e.target.closest && e.target.closest('[data-daren-refund-mode]');
+              if (!btn) return;
+              var mode = btn.getAttribute('data-daren-refund-mode');
+              if (mode !== 'daily' && mode !== 'weekly' && mode !== 'monthly') return;
+              window.darenRefundRateMode = mode;
+              Array.from(modeSw.querySelectorAll('[data-daren-refund-mode]')).forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-daren-refund-mode') === mode);
+              });
+              initDarenRefundRateSwitches();
+              renderDarenRefundRate();
+            });
+            modeSw.__bound__ = true;
           }
         }
 
@@ -11840,26 +11984,33 @@
               renderMonthlyCumulativeAchievement();
             });
         }
+        qbtDiag('loadDefaultData:start', {
+          hasToken: typeof XbsAuth !== 'undefined' && XbsAuth.getToken ? !!XbsAuth.getToken() : false,
+        });
         Promise.all([
-          fetchDapan(),
-          fetchBrand(),
-          fetchFeishuDaily(),
-          fetchFeishuDouyinDailyTrend().then(function () {
-            return fetchFeishuDouyinModelDistributionLoad();
+          qbtRun('fetchDapan', fetchDapan),
+          qbtRun('fetchBrand', fetchBrand),
+          qbtRun('fetchFeishuDaily', fetchFeishuDaily),
+          qbtRun('fetchFeishuDouyinDailyTrend+ModelDistribution', function () {
+            return fetchFeishuDouyinDailyTrend().then(function () {
+              return fetchFeishuDouyinModelDistributionLoad();
+            });
           }),
-          fetchFeishuGmvCombined(),
-          fetchFeishuDouyin(),
-          fetchFeishuTmall(),
-          fetchChannelOrderTrend(),
-          fetchFeishuLivestreamFunnel(),
-          fetchFourPlatformData(),
+          qbtRun('fetchFeishuGmvCombined', fetchFeishuGmvCombined),
+          qbtRun('fetchFeishuDouyin', fetchFeishuDouyin),
+          qbtRun('fetchFeishuTmall', fetchFeishuTmall),
+          qbtRun('fetchChannelOrderTrend', fetchChannelOrderTrend),
+          qbtRun('fetchFeishuLivestreamFunnel', fetchFeishuLivestreamFunnel),
+          qbtRun('fetchFourPlatformData', fetchFourPlatformData),
         ]).then(function () {
+          qbtDiag('loadDefaultData:end', {
+            hasDapan: !!window.__QBT_FEATURES_OUTPUT__,
+            hasFourPlatform: !!window.__FOUR_PLATFORM_DATA__,
+            fourPlatformError: window.__FOUR_PLATFORM_ERROR__ || '',
+          });
           initMainTabNav();
           // 数据加载完成，显示主内容并隐藏骨架屏
           showMainContent();
-          if (typeof loadModelDailyTrendData === 'function') {
-            loadModelDailyTrendData();
-          }
           if (typeof done === 'function') done();
           requestAnimationFrame(function () {
             requestAnimationFrame(function () {

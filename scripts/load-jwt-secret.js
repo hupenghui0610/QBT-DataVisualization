@@ -5,8 +5,16 @@
 const fs = require("fs");
 const path = require("path");
 
-function loadJwtSecret(rootDir) {
-  var fromEnv = String(process.env.JWT_SECRET || "").trim();
+function unquote(v) {
+  v = String(v || "").trim();
+  if ((v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') || (v.charAt(0) === "'" && v.charAt(v.length - 1) === "'")) {
+    v = v.slice(1, -1);
+  }
+  return v;
+}
+
+function loadDeployVar(rootDir, name) {
+  var fromEnv = String(process.env[name] || "").trim();
   if (fromEnv) return fromEnv;
 
   var envFile = path.join(rootDir, ".env.deploy.local");
@@ -17,16 +25,18 @@ function loadJwtSecret(rootDir) {
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i].trim();
     if (!line || line.charAt(0) === "#") continue;
-    var m = /^\s*JWT_SECRET\s*=\s*(.*)$/.exec(line);
-    if (m) {
-      var v = m[1].trim();
-      if ((v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') || (v.charAt(0) === "'" && v.charAt(v.length - 1) === "'")) {
-        v = v.slice(1, -1);
-      }
-      return v;
+    var eq = line.indexOf("=");
+    if (eq <= 0) continue;
+    var key = line.slice(0, eq).trim();
+    if (key === name) {
+      return unquote(line.slice(eq + 1));
     }
   }
   return "";
 }
 
-module.exports = { loadJwtSecret };
+function loadJwtSecret(rootDir) {
+  return loadDeployVar(rootDir, "JWT_SECRET");
+}
+
+module.exports = { loadDeployVar, loadJwtSecret };

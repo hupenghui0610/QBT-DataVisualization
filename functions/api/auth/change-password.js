@@ -9,6 +9,9 @@ export async function onRequestPost(context) {
 
   var auth = await authenticateRequest(request, env);
   if (auth.error) return auth.error;
+  if (auth.row.password_login_enabled === 0) {
+    return jsonResponse({ error: '椋炰功蹇嵎鐧诲綍璐﹀彿鏃犻渶淇敼瀵嗙爜' }, 403, origin);
+  }
 
   var body;
   try {

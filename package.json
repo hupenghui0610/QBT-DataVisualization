@@ -8,7 +8,7 @@
     "deploy": "node scripts/prepare-dist.js && node scripts/deploy-pages-prod.js",
     "deploy:test": "node scripts/prepare-dist.js && node scripts/deploy-pages-test.js",
     "deploy:prod": "node scripts/prepare-dist.js && node scripts/deploy-pages-prod.js",
-    "db:migrate:test": "npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0001_init.sql && npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0002_login_security.sql && npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0003_cache_system.sql"
+    "db:migrate:test": "npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0001_init.sql && npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0002_login_security.sql && npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0003_cache_system.sql && npx wrangler d1 execute qbt-auth-test --remote --file=./migrations/0004_feishu_auth.sql"
   },
   "keywords": [],
   "author": "",

@@ -157,6 +157,37 @@ npx wrangler pages secret put FEISHU_APP_SECRET --project-name=qbt-datavisualiza
 
 非敏感项（如 `FEISHU_APP_ID`）在控制台以明文变量配置即可。若未配置 `FEISHU_APP_ID` / `FEISHU_APP_SECRET`，接口返回 503，前端会静默跳过（`window.__QBT_FEISHU_DAILY_SALES__` 为 `null`）。
 
+### 飞书快捷登录（独立登录企业）
+
+飞书登录应用可以和读表应用来自不同企业。读表仍使用 `FEISHU_APP_ID` / `FEISHU_APP_SECRET`；快捷登录只读取下面这组独立变量：
+
+| 变量名 | 说明 |
+|--------|------|
+| `FEISHU_AUTH_APP_ID` | 登录企业自建应用 App ID，仓库 `wrangler*.toml` 已配置 `cli_aa8cc21920badcde` |
+| `FEISHU_AUTH_APP_SECRET` | 登录企业自建应用 Secret，必须在 Cloudflare 控制台或 secret 中配置，勿写入仓库 |
+
+飞书开放平台登录应用需配置 OAuth 回调地址：
+
+```text
+https://qbt-datavisualization.pages.dev/api/auth/feishu/callback
+https://qbt-datavisualization-test.pages.dev/api/auth/feishu/callback
+```
+
+所需权限：
+
+```text
+auth:user_access_token:read
+contact:user.base:readonly
+contact:user.phone:readonly
+```
+
+应用可用范围即本系统飞书登录白名单；首次飞书登录会自动创建普通账号。部署前需对 D1 执行：
+
+```bash
+npx wrangler d1 execute qbt-auth --remote --file=./migrations/0004_feishu_auth.sql
+npx wrangler pages secret put FEISHU_AUTH_APP_SECRET --project-name=qbt-datavisualization
+```
+
 ### 直播间转化漏斗 `feishu-livestream-funnel`
 
 登录后请求 `GET /api/data/feishu-livestream-funnel`。读取 wiki 中 **sheet4**（`sheet=fBPMjm`）范围，列 **B** 主播昵称、**H/K/X/Y** 曝光/观看/点击/成交订单；按昵称汇总后供「新零售」页下拉筛选。

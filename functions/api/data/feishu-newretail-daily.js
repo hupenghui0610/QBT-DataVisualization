@@ -36,7 +36,12 @@ import {
   aggregateDpRefundRateByChannel,
   calculateTotalsByCategory,
   calculateFuwuTotalsByChannel,
-  calculateDpTotalsByChannel
+  calculateDpTotalsByChannel,
+  aggregateDarenByName,
+  aggregateDarenByNameWeekly,
+  aggregateDarenByNameMonthly,
+  aggregateDarenRefundRateByName,
+  buildDarenRefundRateList
 } from './newretail-gmv-logic.js';
 
 var DEFAULT_SPREADSHEET_TOKEN = 'WNp4wbOI3ib7J7kiX2fcZf6Fn8b';
@@ -363,6 +368,18 @@ export async function onRequestGet(context) {
     var dpTotalsWeekly = calculateDpTotalsByChannel(dpByChannelWeekly, dpByChannelGsvWeekly);
     var dpTotalsMonthly = calculateDpTotalsByChannel(dpByChannelMonthly, dpByChannelGsvMonthly);
 
+    // 4j. 达人按名称汇总（DP + 直对 + 服务商）
+    var darenByName = aggregateDarenByName(allOrdersGmv, darenIdToDarenNameMap, shipinhaoNameToDarenNameMap);
+    var darenByNameWeekly = aggregateDarenByNameWeekly(darenByName.data);
+    var darenByNameMonthly = aggregateDarenByNameMonthly(darenByName.data);
+    var darenByNameGsv = aggregateDarenByName(allOrdersGsv, darenIdToDarenNameMap, shipinhaoNameToDarenNameMap);
+    var darenByNameGsvWeekly = aggregateDarenByNameWeekly(darenByNameGsv.data);
+    var darenByNameGsvMonthly = aggregateDarenByNameMonthly(darenByNameGsv.data);
+    var darenRefundRateDaily = aggregateDarenRefundRateByName(darenByName, darenByNameGsv);
+    var darenRefundRateWeekly = aggregateDarenRefundRateByName(darenByNameWeekly, darenByNameGsvWeekly);
+    var darenRefundRateMonthly = aggregateDarenRefundRateByName(darenByNameMonthly, darenByNameGsvMonthly);
+    var darenRefundRateList = buildDarenRefundRateList(darenByName, darenByNameGsv);
+
     // 4k. 直对按商务人员汇总
     console.log('[直对商务] channelToBusinessPerson映射:', JSON.stringify(channelMaps.channelToBusinessPerson, null, 2));
     var zhiduiOrders = allOrdersGmv.filter(o => o.category === 'zhidui');
@@ -538,6 +555,22 @@ export async function onRequestGet(context) {
         weekly: dpRefundRateWeekly,
         monthly: dpRefundRateMonthly
       },
+      darenGmv: {
+        daily: darenByName,
+        weekly: darenByNameWeekly,
+        monthly: darenByNameMonthly
+      },
+      darenGsv: {
+        daily: darenByNameGsv,
+        weekly: darenByNameGsvWeekly,
+        monthly: darenByNameGsvMonthly
+      },
+      darenRefundRate: {
+        daily: darenRefundRateDaily,
+        weekly: darenRefundRateWeekly,
+        monthly: darenRefundRateMonthly
+      },
+      darenRefundRateList: darenRefundRateList,
       zhiduiBusinessGmv: {
         daily: zhiduiByBusinessPerson,
         weekly: zhiduiByBusinessPersonWeekly,

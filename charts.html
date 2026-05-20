@@ -856,7 +856,7 @@
     </div>
   </div>
 
-  <script src="js/auth-client.js?v=2"></script>
+  <script src="js/auth-client.js?v=3"></script>
   <script>
     (function () {
       var authGate = document.getElementById('auth-gate');
@@ -895,14 +895,17 @@
       function updateUserBar() {
         var bar = document.getElementById('userSessionBar');
         var nameEl = document.getElementById('userDisplayName');
+        var changePwdBtn = document.getElementById('authChangePwdBtn');
         var adminBtn = document.getElementById('adminLogsBtn');
         if (!bar || !nameEl) return;
         if (currentUser) {
           bar.style.display = 'flex';
           nameEl.textContent = currentUser.name || currentUser.phone || '';
+          if (changePwdBtn) changePwdBtn.style.display = currentUser.password_login_enabled === false ? 'none' : 'inline-block';
           if (adminBtn) adminBtn.style.display = currentUser.is_admin ? 'inline-block' : 'none';
         } else {
           bar.style.display = 'none';
+          if (changePwdBtn) changePwdBtn.style.display = 'inline-block';
           if (adminBtn) adminBtn.style.display = 'none';
         }
       }
@@ -1124,10 +1127,23 @@
           showLoginGate();
           return;
         }
+        if (XbsAuth.consumeFeishuTokenFromHash) XbsAuth.consumeFeishuTokenFromHash();
+        var feishuLoginError = XbsAuth.consumeFeishuLoginError ? XbsAuth.consumeFeishuLoginError() : '';
         var tok = XbsAuth.getToken();
         if (!tok) {
+          if (XbsAuth.shouldAutoStartFeishuLogin && XbsAuth.shouldAutoStartFeishuLogin()) {
+            XbsAuth.startFeishuLogin(location.href);
+            return;
+          }
           showLoginGate();
           wireLoginForm();
+          if (feishuLoginError) {
+            var errEl = document.getElementById('auth-error');
+            if (errEl) {
+              errEl.textContent = feishuLoginError;
+              errEl.classList.add('show');
+            }
+          }
           return;
         }
         XbsAuth.ping()
@@ -1139,6 +1155,10 @@
           .then(function (o) {
             if (!o.res.ok) {
               XbsAuth.clearSession();
+              if (XbsAuth.shouldAutoStartFeishuLogin && XbsAuth.shouldAutoStartFeishuLogin()) {
+                XbsAuth.startFeishuLogin(location.href);
+                return;
+              }
               showLoginGate();
               wireLoginForm();
               return;
@@ -1153,6 +1173,10 @@
           })
           .catch(function () {
             XbsAuth.clearSession();
+            if (XbsAuth.shouldAutoStartFeishuLogin && XbsAuth.shouldAutoStartFeishuLogin()) {
+              XbsAuth.startFeishuLogin(location.href);
+              return;
+            }
             showLoginGate();
             wireLoginForm();
           });
@@ -5599,6 +5623,8 @@
         addFromPts(gmv);
         addFromPts(gsv);
         var cur = currentYearMonthStr();
+        var dataMonths = Object.keys(monthsSet).sort();
+        var latestDataYm = dataMonths.length ? dataMonths[dataMonths.length - 1] : '';
         monthsSet[cur] = true;
         var keys = Object.keys(monthsSet).sort();
         var minYmFloor = '2026-01';
@@ -5618,6 +5644,7 @@
           })
           .join('');
         if (prev && months.indexOf(prev) >= 0) sel.value = prev;
+        else if (latestDataYm && months.indexOf(latestDataYm) >= 0) sel.value = latestDataYm;
         else if (months.indexOf(cur) >= 0) sel.value = cur;
         else sel.value = months.length ? months[months.length - 1] : minYmFloor;
         if (!sel.getAttribute('data-bound')) {

@@ -1160,6 +1160,174 @@ function aggregateDpByDarenMonthly(allOrdersGmv, allOrdersGsv) {
   return result;
 }
 
+function resolveOrderDarenName(order, darenIdToDarenNameMap, shipinhaoNameToDarenNameMap) {
+  if (!order) return '';
+  if (order.platform === 'shipinhao') {
+    const shipinhaoName = String(order.darenId || '').trim();
+    return String((shipinhaoNameToDarenNameMap || {})[shipinhaoName] || shipinhaoName || '').trim();
+  }
+  const darenId = String(order.darenId || '').trim();
+  return String((darenIdToDarenNameMap || {})[darenId] || '').trim();
+}
+
+/** Aggregate GMV/GSV by influencer name across DP, direct, and service-provider orders. */
+function aggregateDarenByName(allOrders, darenIdToDarenNameMap, shipinhaoNameToDarenNameMap) {
+  const bucket = {};
+  const darenNames = new Set();
+
+  allOrders.forEach(order => {
+    if (!order || !order.date) return;
+    if (order.category !== 'dp' && order.category !== 'zhidui' && order.category !== 'fuwu') return;
+
+    const darenName = resolveOrderDarenName(order, darenIdToDarenNameMap, shipinhaoNameToDarenNameMap);
+    if (!darenName) return;
+
+    darenNames.add(darenName);
+    if (!bucket[order.date]) bucket[order.date] = {};
+    if (!bucket[order.date][darenName]) bucket[order.date][darenName] = 0;
+    bucket[order.date][darenName] += order.amount || 0;
+  });
+
+  const sortedDays = Object.keys(bucket).sort();
+  const sortedDarenNames = Array.from(darenNames).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+
+  return {
+    days: sortedDays,
+    channels: sortedDarenNames,
+    data: sortedDays.map(day => {
+      const row = { date: day };
+      sortedDarenNames.forEach(name => {
+        row[name] = Number(((bucket[day][name] || 0) / 10000).toFixed(2));
+      });
+      return row;
+    })
+  };
+}
+
+function aggregateDarenByNameWeekly(dailyPoints) {
+  const bucket = {};
+  const darenNames = new Set();
+
+  dailyPoints.forEach(p => {
+    const week = weekStartFromDateStr(p.date);
+    if (!week) return;
+    Object.keys(p).forEach(key => {
+      if (key === 'date') return;
+      darenNames.add(key);
+      if (!bucket[week]) bucket[week] = {};
+      if (!bucket[week][key]) bucket[week][key] = 0;
+      bucket[week][key] += p[key] || 0;
+    });
+  });
+
+  const sortedWeeks = Object.keys(bucket).sort();
+  const sortedDarenNames = Array.from(darenNames).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+
+  return {
+    days: sortedWeeks,
+    channels: sortedDarenNames,
+    data: sortedWeeks.map(week => {
+      const row = { date: week };
+      sortedDarenNames.forEach(name => {
+        row[name] = Number((bucket[week][name] || 0).toFixed(2));
+      });
+      return row;
+    })
+  };
+}
+
+function aggregateDarenByNameMonthly(dailyPoints) {
+  const bucket = {};
+  const darenNames = new Set();
+
+  dailyPoints.forEach(p => {
+    const month = monthFromDateStr(p.date);
+    if (!month) return;
+    Object.keys(p).forEach(key => {
+      if (key === 'date') return;
+      darenNames.add(key);
+      if (!bucket[month]) bucket[month] = {};
+      if (!bucket[month][key]) bucket[month][key] = 0;
+      bucket[month][key] += p[key] || 0;
+    });
+  });
+
+  const sortedMonths = Object.keys(bucket).sort();
+  const sortedDarenNames = Array.from(darenNames).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+
+  return {
+    days: sortedMonths,
+    channels: sortedDarenNames,
+    data: sortedMonths.map(month => {
+      const row = { date: month };
+      sortedDarenNames.forEach(name => {
+        row[name] = Number((bucket[month][name] || 0).toFixed(2));
+      });
+      return row;
+    })
+  };
+}
+
+function aggregateDarenRefundRateByName(darenGmvData, darenGsvData) {
+  const dates = Array.from(new Set([
+    ...((darenGmvData && darenGmvData.days) || []),
+    ...((darenGsvData && darenGsvData.days) || [])
+  ])).sort();
+  const darenNames = Array.from(new Set([
+    ...((darenGmvData && darenGmvData.channels) || []),
+    ...((darenGsvData && darenGsvData.channels) || [])
+  ])).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  const gmvMap = {};
+  const gsvMap = {};
+
+  ((darenGmvData && darenGmvData.data) || []).forEach(row => {
+    gmvMap[row.date] = row;
+  });
+  ((darenGsvData && darenGsvData.data) || []).forEach(row => {
+    gsvMap[row.date] = row;
+  });
+
+  return {
+    days: dates,
+    channels: darenNames,
+    data: dates.map(date => {
+      const row = { date: date };
+      const gmvRow = gmvMap[date] || {};
+      const gsvRow = gsvMap[date] || {};
+      darenNames.forEach(name => {
+        const gmv = gmvRow[name] || 0;
+        const gsv = gsvRow[name] || 0;
+        row[name] = gmv > 0 ? Number((1 - gsv / gmv).toFixed(4)) : null;
+      });
+      return row;
+    })
+  };
+}
+
+function buildDarenRefundRateList(darenGmvData, darenGsvData) {
+  const darenNames = Array.from(new Set([
+    ...((darenGmvData && darenGmvData.channels) || []),
+    ...((darenGsvData && darenGsvData.channels) || [])
+  ])).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+
+  return darenNames.map(name => {
+    let gmv = 0;
+    let gsv = 0;
+    ((darenGmvData && darenGmvData.data) || []).forEach(row => {
+      gmv += row[name] || 0;
+    });
+    ((darenGsvData && darenGsvData.data) || []).forEach(row => {
+      gsv += row[name] || 0;
+    });
+    return {
+      name: name,
+      totalGmv: Number(gmv.toFixed(2)),
+      totalGsv: Number(gsv.toFixed(2)),
+      refundRate: gmv > 0 ? Number((1 - gsv / gmv).toFixed(4)) : null
+    };
+  }).filter(item => item.totalGmv > 0 || item.totalGsv > 0);
+}
+
 /** ==================== 按产品型号聚合分布数据（按日）====================
  * 根据产品型号映射表聚合订单数据，返回按日的型号分布
  * 规则：
@@ -1755,6 +1923,11 @@ export {
   aggregateDpByChannelMonthly,
   aggregateDpRefundRateByChannel,
   calculateDpTotalsByChannel,
+  aggregateDarenByName,
+  aggregateDarenByNameWeekly,
+  aggregateDarenByNameMonthly,
+  aggregateDarenRefundRateByName,
+  buildDarenRefundRateList,
   aggregateZhiduiByBusinessPerson,
   aggregateZhiduiByBusinessPersonWeekly,
   aggregateZhiduiByBusinessPersonMonthly,

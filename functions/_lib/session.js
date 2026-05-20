@@ -7,6 +7,8 @@ export function publicUser(row) {
     name: row.name,
     phone: row.phone,
     is_admin: !!row.is_admin,
+    auth_provider: row.auth_provider || 'password',
+    password_login_enabled: row.password_login_enabled == null ? true : !!row.password_login_enabled,
   };
 }
 
@@ -43,7 +45,7 @@ export async function authenticateRequest(request, env) {
     return { error: jsonResponse({ error: '无效令牌' }, 401, origin) };
   }
   var row = await env.DB.prepare(
-    'SELECT id, name, phone, password_hash, token_version, is_admin, created_at FROM users WHERE id = ?'
+    'SELECT id, name, phone, password_hash, token_version, is_admin, auth_provider, password_login_enabled, created_at FROM users WHERE id = ?'
   )
     .bind(uid)
     .first();

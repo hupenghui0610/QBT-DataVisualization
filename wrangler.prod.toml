@@ -11,6 +11,7 @@ database_name = "qbt-auth"
 database_id = "8e33f508-e226-4040-a4ba-df1754713733"
 
 [vars]
+FEISHU_AUTH_APP_ID = "cli_aa8cc21920badcde"
 FEISHU_DOUYIN_MODEL_ORDER_RANGE = "tuec5U!A2:AO20000"
 FEISHU_LIVESTREAM_FUNNEL_SPREADSHEET_TOKEN = "P1zusUMg2haMGctskH6cydLqn5e"
 OPENCLAW_MONTHLY_API_URL = "https://qbt-datavisualization.pages.dev/api/data/monthly-cumulative-summary"

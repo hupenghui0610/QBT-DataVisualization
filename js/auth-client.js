@@ -4,7 +4,23 @@
  */
 (function (global) {
   var TOKEN_KEY = 'xbs_token';
-  console.log('[AuthClient] v2 loaded - Perf monitor fixed');
+  var FEISHU_AUTO_LOGIN_KEY = 'xbs_feishu_auto_login_attempted';
+  var FEISHU_LOGIN_ERROR_KEY = 'xbs_feishu_login_error';
+  console.log('[AuthClient] v4 loaded - diagnostics enabled');
+  function qbtDiag(event, detail) {
+    try {
+      var root = global.__QBT_DIAG__ || (global.__QBT_DIAG__ = {});
+      var list = root.auth || (root.auth = []);
+      var item = {
+        at: new Date().toISOString(),
+        event: event,
+        detail: detail || {},
+      };
+      list.push(item);
+      if (list.length > 200) list.shift();
+      console.log('[QBT-DIAG][auth] ' + event, item.detail);
+    } catch (e) {}
+  }
   /** 本地打开页面时与 /api 不同源，跨域指向正式站（见下方 isLocalPageOrigin）。多独立域名共用账号时，其它业务站也应把 API 指向同一鉴权入口，并在服务端配置 ALLOWED_ORIGINS。详见仓库根目录「多域名共用账号-部署说明.md」。 */
   var REMOTE_API_ORIGIN = 'https://qbt-datavisualization.pages.dev';
   /** 可选：仅在本地页下生效，覆盖正式 API 根（如预览环境），需在控制台设置 localStorage */
@@ -58,6 +74,59 @@
     } catch (e) {}
   }
 
+  function consumeFeishuTokenFromHash() {
+    try {
+      if (!location || !location.hash) return null;
+      var hash = location.hash.charAt(0) === '#' ? location.hash.slice(1) : location.hash;
+      var params = new URLSearchParams(hash);
+      var token = params.get('xbs_token');
+      if (!token) return null;
+      setToken(token);
+      params.delete('xbs_token');
+      params.delete('xbs_auth');
+      params.delete('xbs_user');
+      var nextHash = params.toString();
+      var clean = location.pathname + location.search + (nextHash ? '#' + nextHash : '');
+      history.replaceState(null, document.title, clean);
+      try {
+        sessionStorage.removeItem(FEISHU_AUTO_LOGIN_KEY);
+        sessionStorage.removeItem(FEISHU_LOGIN_ERROR_KEY);
+      } catch (e) {}
+      return token;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function consumeFeishuLoginError() {
+    try {
+      var u = new URL(location.href);
+      var msg = u.searchParams.get('feishu_login_error') || sessionStorage.getItem(FEISHU_LOGIN_ERROR_KEY) || '';
+      if (u.searchParams.has('feishu_login_error')) {
+        u.searchParams.delete('feishu_login_error');
+        history.replaceState(null, document.title, u.pathname + u.search + u.hash);
+      }
+      sessionStorage.removeItem(FEISHU_LOGIN_ERROR_KEY);
+      return msg;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function shouldAutoStartFeishuLogin() {
+    try {
+      return sessionStorage.getItem(FEISHU_AUTO_LOGIN_KEY) !== '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markFeishuAutoLoginAttempted() {
+    try {
+      sessionStorage.setItem(FEISHU_AUTO_LOGIN_KEY, '1');
+    } catch (e) {}
+  }
+
   function authHeaders() {
     var h = { 'Content-Type': 'application/json' };
     var tok = getToken();
@@ -96,6 +165,7 @@
     return function () {
       var args = arguments;
       var start = performance.now();
+      qbtDiag('fetch:start', { name: name, apiBase: getApiBase() || '(same-origin)' });
       var res = fetchFn.apply(null, args);
       // 确保是 Promise
       if (!res || typeof res.then !== 'function') {
@@ -105,7 +175,26 @@
       return res.then(
         function (response) {
           var duration = performance.now() - start;
+          qbtDiag('fetch:end', {
+            name: name,
+            ok: !!(response && response.ok),
+            status: response && response.status,
+            durationMs: Math.round(duration),
+          });
           if (response && typeof response.ok === 'boolean' && !response.ok) {
+            try {
+              response
+                .clone()
+                .text()
+                .then(function (txt) {
+                  qbtDiag('fetch:body', {
+                    name: name,
+                    status: response.status,
+                    body: String(txt || '').slice(0, 500),
+                  });
+                })
+                .catch(function () {});
+            } catch (e) {}
             console.log(
               '[Perf] ' + name + ' HTTP ' + response.status + ': ' + duration.toFixed(2) + 'ms'
             );
@@ -116,6 +205,11 @@
         },
         function (err) {
           var duration = performance.now() - start;
+          qbtDiag('fetch:error', {
+            name: name,
+            durationMs: Math.round(duration),
+            message: err && err.message ? err.message : String(err),
+          });
           console.log('[Perf] ' + name + ' 失败: ' + duration.toFixed(2) + 'ms, 错误: ' + (err && err.message ? err.message : String(err)));
           throw err;
         }
@@ -128,6 +222,10 @@
     /** 调试用：在控制台看当前 API 根，空字符串表示与页面同源（线上） */
     getApiBase: getApiBase,
     getToken: getToken,
+    consumeFeishuTokenFromHash: consumeFeishuTokenFromHash,
+    consumeFeishuLoginError: consumeFeishuLoginError,
+    shouldAutoStartFeishuLogin: shouldAutoStartFeishuLogin,
+    markFeishuAutoLoginAttempted: markFeishuAutoLoginAttempted,
     setToken: setToken,
     clearSession: function () {
       setToken(null);
@@ -139,6 +237,11 @@
         body: JSON.stringify({ phone: phone, password: password }),
       });
     }),
+    startFeishuLogin: function (returnTo) {
+      markFeishuAutoLoginAttempted();
+      var target = returnTo || (location && location.href) || '/';
+      location.href = getApiBase() + '/api/auth/feishu/start?return_to=' + encodeURIComponent(target);
+    },
     ping: timedFetch('ping', function () {
       return fetch(getApiBase() + '/api/auth/ping', {
         method: 'POST',
@@ -266,11 +369,6 @@
     fetchFeishuLivestreamFunnel: timedFetch('fetchFeishuLivestreamFunnel', function () {
       return fetchGetWithTimeout('/api/data/feishu-livestream-funnel', 90000);
     }),
-    /** 需登录；全渠道型号销量趋势（多平台 sheet 聚合）。可选 query，如 '?nocache=1&debugModels=1' */
-    fetchModelDailySalesTrend: timedFetch('fetchModelDailySalesTrend', function (query) {
-      var q = query && typeof query === 'string' ? query : '';
-      if (q && q.charAt(0) !== '?') q = '?' + q;
-      return fetchGetWithTimeout('/api/data/model-daily-sales-trend' + q, 120000);
-    }),
+
   };
 })(typeof window !== 'undefined' ? window : globalThis);

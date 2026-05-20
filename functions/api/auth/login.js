@@ -59,7 +59,7 @@ export async function onRequestPost(context) {
   }
 
   var row = await env.DB.prepare(
-    'SELECT id, name, phone, password_hash, token_version, is_admin FROM users WHERE phone = ?'
+    'SELECT id, name, phone, password_hash, token_version, is_admin, auth_provider, password_login_enabled FROM users WHERE phone = ?'
   )
     .bind(phone)
     .first();
@@ -68,6 +68,12 @@ export async function onRequestPost(context) {
     var missingResult = await registerFailedLogin(env, request, phone, null);
     await sleepMs(failedLoginDelayMs(missingResult.accountShortCount, missingResult.ipCount));
     return jsonResponse({ error: '账号或密码错误' }, 401, origin);
+  }
+
+  if (row.password_login_enabled === 0) {
+    var disabledResult = await registerFailedLogin(env, request, row.phone, row.id);
+    await sleepMs(failedLoginDelayMs(disabledResult.accountShortCount, disabledResult.ipCount));
+    return jsonResponse({ error: '璇ヨ处鍙蜂粎鏀寔椋炰功蹇嵎鐧诲綍' }, 401, origin);
   }
 
   var ok = await verifyPassword(password, row.password_hash);
@@ -81,6 +87,9 @@ export async function onRequestPost(context) {
   }
 
   await registerSuccessfulLogin(env, request, row);
+  await env.DB.prepare('UPDATE users SET last_login_provider = ?, last_login_at = datetime(\'now\') WHERE id = ?')
+    .bind('password', row.id)
+    .run();
 
   var now = Math.floor(Date.now() / 1000);
   var token = await signJwt(
